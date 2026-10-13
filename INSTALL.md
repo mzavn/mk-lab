@@ -25,7 +25,7 @@ Hướng dẫn ngắn cho cả người và agent. Nhờ agent cài, dán câu n
    ```
    Lệnh clone vào `~/.mk-skills` rồi cài từ đó. Chạy lại không sao.
 
-4. **Cài vào repo hiện tại** — chỉ khi người dùng muốn repo này làm theo SDD; chưa rõ thì hỏi:
+4. **Cài vào repo hiện tại** — chỉ khi người dùng muốn SDD đầy đủ (mức 4) cho repo này; chưa rõ thì hỏi. Dự án nhỏ làm PRD (mức 1–3) không cần bước này:
    ```bash
    bash ~/.mk-skills/install.sh --project .
    ```
@@ -33,7 +33,7 @@ Hướng dẫn ngắn cho cả người và agent. Nhờ agent cài, dán câu n
 
 5. **Kiểm kết quả** — chạy lại lệnh ở bước 2: các bản phải cùng phiên bản; với bước 4, `AGENTS.md` có dòng `<!-- mk-specs:start`.
 
-6. **Báo người dùng**: phiên bản đã cài, file đã tạo/sửa. Bước kế: mode `init` để điền `specs/mk-specs.yml` (contexts, ids, lệnh liệt kê test) — nói "Khởi tạo SDD cho repo này theo mk-specs". Không tự commit; người dùng muốn thì commit `chore(specs): adopt mk-specs`.
+6. **Báo người dùng**: phiên bản đã cài, file đã tạo/sửa. Bước kế, tuỳ dự án: nhỏ/MVP → "Viết PRD cho app này theo mk-specs" (agent hỏi chọn mức 1–3, phỏng vấn, dừng trước khi code); lớn → "Khởi tạo SDD cho repo này theo mk-specs" (mode `init`). Không tự commit; người dùng muốn thì commit `chore(specs): adopt mk-specs`.
 
 ## Cập nhật
 
