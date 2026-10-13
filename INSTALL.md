@@ -2,7 +2,7 @@
 
 Hướng dẫn ngắn cho cả người và agent. Nhờ agent cài, dán câu này:
 
-> Đọc https://raw.githubusercontent.com/minhtv0101/mk-skills/main/INSTALL.md và cài mk-specs theo đó.
+> Đọc https://raw.githubusercontent.com/mzavn/mk-skills/main/INSTALL.md và cài mk-specs theo đó.
 
 ## Agent: làm theo thứ tự
 
@@ -21,7 +21,7 @@ Hướng dẫn ngắn cho cả người và agent. Nhờ agent cài, dán câu n
 
 3. **Cài chung cho máy** (`~/.claude/skills` và `~/.agents/skills`):
    ```bash
-   curl -fsSL https://raw.githubusercontent.com/minhtv0101/mk-skills/main/install.sh | bash -s -- --global
+   curl -fsSL https://raw.githubusercontent.com/mzavn/mk-skills/main/install.sh | bash -s -- --global
    ```
    Lệnh clone vào `~/.mk-skills` rồi cài từ đó. Chạy lại không sao.
 

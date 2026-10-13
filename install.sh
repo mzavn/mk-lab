@@ -9,7 +9,7 @@
 #   --force           → overwrite a project copy that has local edits
 #   --uninstall       → remove instead of install (with --global and/or --project; config and import lines are kept)
 # Flags combine: install.sh --update --global --project .
-# Without a clone: curl -fsSL https://raw.githubusercontent.com/minhtv0101/mk-skills/main/install.sh | bash -s -- --global
+# Without a clone: curl -fsSL https://raw.githubusercontent.com/mzavn/mk-skills/main/install.sh | bash -s -- --global
 #   (clones to $MK_SKILLS_HOME, default ~/.mk-skills, then runs from there)
 set -euo pipefail
 
@@ -18,7 +18,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd)"
 SRC="$ROOT/skills/$SKILL"
 MANIFEST=.mk-specs-manifest
 SOURCE_FILE=.mk-specs-source  # global copies only: path of the mk-skills checkout, so agents can suggest the update command
-REPO_URL="${MK_SKILLS_REPO:-https://github.com/minhtv0101/mk-skills.git}"
+REPO_URL="${MK_SKILLS_REPO:-https://github.com/mzavn/mk-skills.git}"
 ARGS=("$@")
 
 usage() { sed -n '2,13p' "$ROOT/install.sh" 2>/dev/null | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }

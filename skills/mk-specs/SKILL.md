@@ -3,8 +3,8 @@ name: mk-specs
 description: Spec-Driven Development (SDD) for repos with a specs/ folder - business requirements (BR), use cases (UC), acceptance criteria (AC), ADR, change proposals, generated traceability. Use this skill whenever the user wants to add or change behaviour, write or update a spec, UC, AC, BR, entity or ADR, propose a change, self-review a freshly written spec or proposal for contradictions and gaps, implement an approved proposal, merge a change into specs, regenerate traceability.md or open-issues.md, check spec-to-test links, write a commit message carrying a UC ID, audit spec quality, or bootstrap specs for a new or existing codebase. Trigger also on Vietnamese requests such as "đặc tả", "viết spec", "đề xuất thay đổi", "proposal", "thêm AC", "use case", "làm tính năng mới", "đổi luật", "soát spec", "review proposal", "hợp nhất change", "sinh lại traceability", "kiểm spec", "commit theo UC", and whenever a repo contains specs/mk-specs.yml.
 license: MIT
 metadata:
-  author: minhtv0101
-  version: "1.2.1"
+  author: mzavn
+  version: "1.2.2"
 ---
 
 # mk-specs — Spec-Driven Development
@@ -22,7 +22,7 @@ Spec đứng giữa người và AI: người chốt *ý định* trong `specs/`
    grep -m1 -H 'version:' .claude/skills/mk-specs/SKILL.md ~/.claude/skills/mk-specs/SKILL.md ~/.agents/skills/mk-specs/SKILL.md 2>/dev/null
    cat ~/.claude/skills/mk-specs/.mk-specs-source ~/.agents/skills/mk-specs/.mk-specs-source 2>/dev/null | head -1
    ```
-   Khác nhau → báo một dòng kèm lệnh cập nhật: `bash <dòng .mk-specs-source>/install.sh --update --global --project .` (kéo bản mới nhất rồi cài cả hai chỗ; không có `.mk-specs-source` → `curl -fsSL https://raw.githubusercontent.com/minhtv0101/mk-skills/main/install.sh | bash -s -- --update --global --project .`). Chỉ chạy khi người dùng đồng ý; sau đó nhắc commit `.claude/skills/mk-specs` (`chore(specs): update mk-specs to vX.Y.Z`).
+   Khác nhau → báo một dòng kèm lệnh cập nhật: `bash <dòng .mk-specs-source>/install.sh --update --global --project .` (kéo bản mới nhất rồi cài cả hai chỗ; không có `.mk-specs-source` → `curl -fsSL https://raw.githubusercontent.com/mzavn/mk-skills/main/install.sh | bash -s -- --update --global --project .`). Chỉ chạy khi người dùng đồng ý; sau đó nhắc commit `.claude/skills/mk-specs` (`chore(specs): update mk-specs to vX.Y.Z`).
 4. Xác định mode theo bảng dưới; chỉ đọc reference mode đó cần.
 
 ## Chọn mode

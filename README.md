@@ -32,13 +32,13 @@ Hướng dẫn ngắn từng bước (đưa cho agent tự cài được): [INST
 Nhanh nhất — không cần tự clone (script clone vào `~/.mk-skills`, đổi bằng biến `MK_SKILLS_HOME`):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/minhtv0101/mk-skills/main/install.sh | bash -s -- --global
+curl -fsSL https://raw.githubusercontent.com/mzavn/mk-skills/main/install.sh | bash -s -- --global
 ```
 
 Hoặc clone tay:
 
 ```bash
-git clone https://github.com/minhtv0101/mk-skills.git
+git clone https://github.com/mzavn/mk-skills.git
 cd mk-skills
 
 ./install.sh --global                      # ~/.claude/skills/mk-specs và ~/.agents/skills/mk-specs
