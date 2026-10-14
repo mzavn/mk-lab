@@ -12,18 +12,35 @@
 ## 1. Vì sao
 - Vấn đề: <vấn đề cụ thể, ai đang khổ vì nó>
 - Giải pháp: <app giải quyết thế nào, một hai câu>
-- Người dùng chính: <ai · hằng ngày làm gì · đang dùng công cụ gì>
+- Người dùng chính: P1, P2 (chi tiết ngay dưới)
 - Nền tảng: Web | Mobile | Cả hai
 - Thành công khi: <số đo + mốc, vd "tuần 1: 10 người dùng tạo ≥ 1 đơn">
 - Ngoài phạm vi: <điều chắc chắn KHÔNG làm ở bản này>
 - Giới hạn: <thời hạn, ngân sách, số người>
-- Giả định: <điều đang coi là đúng mà chưa kiểm>
+- Giả định: <điều đang coi là đúng mà chưa kiểm; ô chân dung người dùng để "tuỳ bạn" cũng ghi ở đây>
+
+### Chân dung người dùng (Personas)
+<1–3 nhóm, mỗi nhóm một mã P1, P2, P3 vĩnh viễn. Ô người dùng chưa nói: `(chưa nói)`. Bỏ nhóm: ghi "(bỏ: lý do)", không dùng lại mã.>
+
+#### P1 — <vai, vd chủ tiệm>
+- Vai và số lượng: <ai, bao nhiêu người>
+- Bối cảnh dùng: <lúc nào, ở đâu, thiết bị gì>
+- Đang làm việc này bằng gì: <Zalo, giấy, Excel, gọi điện… — đường cũ có còn chạy song song không>
+- Nỗi đau: <cụ thể, có ví dụ, bao lâu một lần>
+- Mức quen công nghệ: <thấp | vừa | cao — dấu hiệu, vd "chỉ dùng Zalo">
+- Thành công với họ là: <việc gì xong trong bao lâu>
+- Không chấp nhận: <vd không cài app, không nhớ mật khẩu, không nhập quá 3 ô>
+
+### Suy ra từ chân dung
+| Ô chân dung | Hệ quả cho sản phẩm | Ở đâu trong PRD |
+|---|---|---|
+| <P1 · Mức quen công nghệ: thấp> | <tối đa 3 bước, chữ to, không cần đăng nhập> | <story ORD-01, §5> |
 
 ## 2. Tính năng và story
 
 ### [<MÃ>] <Tên tính năng>
 
-#### [<MÃ>-01] Là <ai>, tôi muốn <làm gì>, để <lý do>
+#### [<MÃ>-01] Là P1 (<vai>), tôi muốn <làm gì>, để <lý do>
 - Ưu tiên: Must | Should | Could
 - Status: Todo | Blocked ([OPEN] Ox) | In Progress | Partial | Done | Dropped
 - Phụ thuộc: <mã story phải xong trước, hoặc —>
@@ -62,7 +79,7 @@
 ## Tự soát
 - Ngày: YYYY-MM-DD · script: không chạy (mức 1–3) | audit.py/verify.py: <kết quả>
 - Đã tự sửa: <mỗi ý một cụm ngắn, hoặc —>
-- Đã hỏi (N câu): <câu hỏi ngắn> → <lựa chọn, ai trả lời>
+- Đã hỏi (N câu): <câu hỏi ngắn> → <lựa chọn, ai trả lời | chưa trả lời (Ox)>
 - Còn mở: <O…, hoặc —>
 
 ## History

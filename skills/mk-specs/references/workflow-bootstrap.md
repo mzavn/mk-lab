@@ -16,7 +16,7 @@ Rồi chọn nhánh greenfield (§2) hoặc brownfield (§3).
 
 Diễn giải theo nhật ký 5 ngày của sách (tr.32–43).
 
-1. **Inception (BR)** — 60–90 phút với người nghiệp vụ, không bàn DB/UI. Hỏi: hằng ngày đang làm gì; phần nào tốn thời gian nhất; nếu chỉ làm được 3 việc thì là gì; cái gì chắc chắn chưa cần. Kết quả: BR một trang có Goal, Success Metrics, **Out of Scope**.
+1. **Inception (BR)** — 60–90 phút với người nghiệp vụ, không bàn DB/UI. Điền `## Personas` theo khung 7 ô (workflow-prd.md §2 bước 1) cho từng nhóm người dùng, rồi hỏi: phần nào tốn thời gian nhất; nếu chỉ làm được 3 việc thì là gì; cái gì chắc chắn chưa cần. Kết quả: BR một trang có Personas, Goal, Success Metrics, **Out of Scope**; UC sau đó lấy `- Actor:` từ mã chân dung.
 2. **Danh mục UC** — AI đề xuất danh sách UC từ BR; người gộp/bỏ. Mỗi UC chỉ là **stub**: ID + tên + một dòng. Commit `docs(BR-01): initial requirement catalog, N use cases`.
 3. **Entity Model sơ bộ** — AI đề xuất, người review cùng phía nghiệp vụ; chỗ cố ý chưa làm ghi vào entity + Out of Scope.
 4. **UC dẫn dắt** — chọn UC nhiều luật nhất, viết đầy đủ (time-box 1–2 giờ), làm mẫu cho các UC còn lại. Viết xong BR và UC dẫn dắt → tự soát (`review.md`) trước khi đưa người nghiệp vụ đọc.

@@ -47,7 +47,7 @@ Xong các AC, đọc lại một lượt từ góc người duyệt nghiệp v�
 
 | Cặp | Câu hỏi kiểm |
 |---|---|
-| PRD tự thân | Các story Must gộp lại có giải được "Vấn đề" ở §1 không — còn đường nào (gọi điện, giấy, công cụ cũ) khiến vấn đề vẫn xảy ra? "Thành công khi" đo được bằng dữ liệu app ghi lại, hay phải đếm ngoài app? Mã story trùng hoặc đánh số lại? Story Must thiếu "Done khi" đo được? Story mâu thuẫn `Ngoài phạm vi`? "Done khi" của một story đòi điều thuộc story làm sau nó? Bảng §7 thiếu story Must, có story không tồn tại, thứ tự trái `Phụ thuộc`, phụ thuộc vòng, `Status` khác §2? Story chặn bởi `[OPEN]` nhạy cảm (tiền, quyền, bảo mật, dữ liệu cá nhân, pháp lý) mà chưa `Blocked`? Lỗi ở §3 trỏ story không có? |
+| PRD tự thân | Các story Must gộp lại có giải được "Vấn đề" ở §1 không — đọc ô "Đang làm việc này bằng gì" của từng chân dung: đường cũ đó (gọi điện, giấy, công cụ cũ) còn làm vấn đề xảy ra không? Story nào mang vai không có trong chân dung? Nỗi đau nào không story nào giải mà cũng không nằm `Ngoài phạm vi`/`Để sau`? "Thành công khi" đo được bằng dữ liệu app ghi lại, hay phải đếm ngoài app? Mã story trùng hoặc đánh số lại? Story Must thiếu "Done khi" đo được? Story mâu thuẫn `Ngoài phạm vi`? "Done khi" của một story đòi điều thuộc story làm sau nó? Bảng §7 thiếu story Must, có story không tồn tại, thứ tự trái `Phụ thuộc`, phụ thuộc vòng, `Status` khác §2? Story chặn bởi `[OPEN]` nhạy cảm (tiền, quyền, bảo mật, dữ liệu cá nhân, pháp lý) mà chưa `Blocked`? Lỗi ở §3 trỏ story không có? |
 | PRD ↔ wireframe | Mỗi `data-story` trỏ story có thật? Story Must có giao diện mà không có trên màn chính cũng không có trong danh sách màn §5? Nút/trường/màn trên wireframe mà PRD không nói (tính năng lẻn vào)? Chữ, số, trạng thái hiển thị khớp "Done khi"? |
 | PRD ↔ TDD | Mỗi story Must có hành động (§4); story có chỗ khó có luồng (§5)? TDD có bảng, API, tính năng PRD không đòi (thừa)? Bảng dữ liệu khớp PRD §4? Stack hợp giới hạn PRD §1 (thời hạn, ngân sách, nền tảng)? Quyết định bảo mật/quyền/chi phí đã có người quyết hay trỏ `[OPEN]` của PRD? `[OPEN]` bị chép sang TDD thay vì trỏ số? |
 | Wireframe ↔ TDD | Dữ liệu hiển thị trên màn chính có nguồn trong TDD §3? |
@@ -90,7 +90,7 @@ Câu hỏi: Proposal ghi mã QR hết hạn sau 15 phút. Đơn đã quét mã n
 ## Tự soát
 - Ngày: YYYY-MM-DD · audit.py: <kết quả> · verify.py: <kết quả>   (mức 1–3 không config: "script: không chạy (mức 1–3)")
 - Đã tự sửa: <mỗi ý một cụm ngắn, hoặc —>
-- Đã hỏi (N câu): <câu hỏi ngắn> → <lựa chọn, ai trả lời>
+- Đã hỏi (N câu): <câu hỏi ngắn> → <lựa chọn, ai trả lời | chưa trả lời (Ox)>
 - Còn mở: <[OPEN] mới, hoặc —>
 ```
 

@@ -11,6 +11,18 @@
 ## Background
 <Vì sao có yêu cầu này: bối cảnh, phản hồi người dùng, quy định.>
 
+## Personas
+<Người dùng chính, 1–3 nhóm, mã P1, P2… vĩnh viễn; UC ghi `- Actor: P1 (<vai>)`. Ô chưa biết ghi `[OPEN]`.>
+
+### P1 — <vai>
+- Vai và số lượng: <ai, bao nhiêu người>
+- Bối cảnh dùng: <lúc nào, ở đâu, thiết bị>
+- Đang làm việc này bằng gì: <công cụ/cách hiện tại; có còn chạy song song không>
+- Nỗi đau: <cụ thể, có ví dụ>
+- Mức quen công nghệ: <thấp | vừa | cao — dấu hiệu>
+- Thành công với họ là: <việc gì xong trong bao lâu>
+- Không chấp nhận: <…>
+
 ## Goal
 <Một câu đo được. Tránh "tối ưu", "cải thiện" khi chưa có số.>
 

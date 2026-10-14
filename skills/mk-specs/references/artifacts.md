@@ -36,7 +36,7 @@ Mẫu tương ứng: `specs-readme.md`, `business-requirement.md`, `adr.md`, `co
 ## 3. Business Requirement
 
 - Trả lời "vì sao làm?": ngắn, đo được, chưa nói giải pháp (tr.13).
-- Bắt buộc: Goal, Success Metrics, Out of Scope. Nên có: Status, Owner, Stakeholders, Background, In Scope, Related Use Cases (liệt kê UC-ID, không chỉ trỏ thư mục), Constraints (Technical / Regulatory / Timeline), Open Questions, History (tr.71–72).
+- Bắt buộc: Goal, Success Metrics, Out of Scope. Nên có: Status, Owner, Stakeholders, Background, **Personas** (khung 7 ô như PRD, workflow-prd.md §2; UC ghi `- Actor: P1 (<vai>)`), In Scope, Related Use Cases (liệt kê UC-ID, không chỉ trỏ thư mục), Constraints (Technical / Regulatory / Timeline), Open Questions, History (tr.71–72).
 - Một file chung hay mỗi BR một file đều được; cả repo theo một cách. BR cũng tăng bản (v2 ghi phần mới đưa vào Out of Scope).
 
 ## 4. Use Case
