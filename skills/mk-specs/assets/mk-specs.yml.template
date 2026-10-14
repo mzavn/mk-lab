@@ -5,11 +5,11 @@ version: 1
 language: vi                 # vi | en — chữ trong file sinh ra
 specs_dir: specs
 
-# Context theo thứ tự hiện trong file sinh ra. Bỏ trống thì dùng contexts_glob.
-contexts:
-  - id: checkout
-    title: "Đặt hàng (checkout)"
-# contexts_glob: "*"         # hoặc "use-cases/*" — mọi thư mục con có file UC
+# Context theo thứ tự hiện trong file sinh ra; mỗi id là một thư mục trong specs/. Bỏ trống = mọi thư mục con có file UC.
+# contexts:
+#   - id: checkout
+#     title: "Đặt hàng (checkout)"
+# contexts_glob: "*"         # hoặc "use-cases/*"
 
 ids:
   uc: 'UC-\d{3}'

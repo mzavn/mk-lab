@@ -103,7 +103,7 @@ Khi dự án có dấu hiệu ở bảng đầu file, hoặc người dùng yêu
 | Từ | Thành |
 |---|---|
 | PRD §1 (vấn đề, thành công khi, ngoài phạm vi, giới hạn) | `BR-01` trong `business-requirements.md` |
-| Chân dung P1, P2 + bảng "Suy ra từ chân dung" | mục `## Personas` của BR-01, giữ nguyên mã |
+| Chân dung P1, P2 + bảng "Suy ra từ chân dung" | mục `## Personas` của BR-01, giữ nguyên mã; ô `(chưa nói)` thành dòng `- [OPEN] P2 · <ô>: chưa có` dưới chân dung đó |
 | Tính năng `[ORD]` | một UC (`UC-101…`) trong context tương ứng; `- Actor:` = các mã chân dung trong story của nó, vd `P1 (chủ tiệm), P2 (khách)` |
 | Story Must/Should + "Done khi" | các AC của UC đó, giữ nguyên câu; dòng `KHÔNG:` thành hệ quả phủ định |
 | PRD §3 | Exceptions của UC |

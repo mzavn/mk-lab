@@ -3,7 +3,7 @@
 - BR: BR-YY
 - Owner: <người chịu trách nhiệm nghiệp vụ>
 - Decisions: ADR-NN (<một dòng: vì sao>)
-- Actor: <ai khởi tạo: người dùng, quản trị, job định kỳ, webhook, CS…>
+- Actor: <P1 (<vai>) theo `## Personas` của BR; hoặc hệ thống: job định kỳ, webhook…>
 - Trigger: <khi nào bắt đầu: bấm nút, webhook tới, lịch chạy…>
 
 ## History
