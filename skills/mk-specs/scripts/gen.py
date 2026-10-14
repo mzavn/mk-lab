@@ -151,6 +151,23 @@ for ctx, title in P.contexts:
     total[1] += o
     sections.append(f"## {title} — {d} divergence, {o} open\n\n" + "\n".join(blocks))
 
+br_files = (["business-requirements.md"] if os.path.isfile(os.path.join(specs, "business-requirements.md")) else []) + \
+    sorted(f"business-requirements/{f}" for f in (os.listdir(os.path.join(specs, "business-requirements"))
+                                                 if os.path.isdir(os.path.join(specs, "business-requirements")) else [])
+           if f.endswith(".md"))
+br_blocks, d, o = [], 0, 0
+for rel in br_files:
+    items = [l for l in issues(os.path.join(specs, rel), os.path.dirname(rel) or ".")
+             if not re.search(r"<[^<>]+>", l)]  # unfilled template placeholders
+    if items:
+        d += sum(1 for l in items if l.startswith("- [DIVERGENCE]"))
+        o += sum(1 for l in items if l.startswith("- [OPEN]"))
+        br_blocks.append(f"### [{rel}]({rel})\n" + "\n".join(items) + "\n")
+if br_blocks:
+    total[0] += d
+    total[1] += o
+    sections.insert(0, f"## {t['br_section']} — {d} divergence, {o} open\n\n" + "\n".join(br_blocks))
+
 dec_name = P.cfg.get("decisions_file")
 dec_path = os.path.join(specs, dec_name) if dec_name else None
 if dec_path and os.path.exists(dec_path):

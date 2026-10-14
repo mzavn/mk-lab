@@ -7,6 +7,18 @@ Mỗi bản có số dạng `X.Y.Z`:
 - **Số đầu (X)** tăng: cập nhật xong bạn cần làm thêm một bước — bản đó sẽ ghi rõ bước gì.
 
 Cập nhật: `bash ~/.mk-skills/install.sh --update`. Agent cũng tự nhắc khi có bản mới.
+## Chưa phát hành
+
+Dự kiến: v1.5.1
+
+**Sửa**
+
+- Cấu hình của repo không thể làm các lệnh kiểm tra treo máy nữa: mẫu tìm kiếm dễ gây treo bị từ chối kèm gợi ý cách viết lại.
+- Cài, cập nhật, gỡ không bao giờ đi xuyên qua thư mục là đường tắt (symlink), tránh ghi đè hay xoá nhầm bản cài ở chỗ khác.
+- Bản skill trong `.agents/skills` của project được kiểm sửa tay trước khi cập nhật, như bản trong `.claude/skills`.
+- Gỡ khi chưa cài thì báo "chưa cài" thay vì "đã gỡ".
+- Câu hỏi mở trong yêu cầu nghiệp vụ (BR) giờ cũng hiện trong danh sách câu hỏi mở chung.
+
 ## v1.5.0 — 14/10/2026
 
 **Mới**

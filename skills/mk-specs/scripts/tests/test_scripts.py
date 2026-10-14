@@ -370,6 +370,36 @@ class ConfigSafety(unittest.TestCase):
         with open(victim, encoding="utf-8") as fh:
             self.assertEqual(fh.read(), "> Cập nhật 2026-01-01: giữ\n")
 
+    def test_regex_that_may_hang_is_refused(self):
+        for extra in ("ids:\n  uc: '(UC-\\d+)+$'\n", "tests:\n  file_pattern: '(a*)*b'\n",
+                      "readme:\n  banner:\n    match: '(x+){2,}'\n    keep: 1\n", f"ids:\n  adr: '{'A' * 501}'\n"):
+            self.config(extra)
+            res = run("gen.py", self.root)
+            self.assertNotEqual(res.returncode, 0, extra)
+            self.assertIn("may hang", res.stdout + res.stderr)
+
+    def test_shipped_and_reasonable_patterns_are_accepted(self):
+        with open(os.path.join(SCRIPTS, "..", "assets", "mk-specs.yml.template"), encoding="utf-8") as fh:
+            cfg = mkspecs._merge(mkspecs.DEFAULTS, mkspecs.parse_yaml(fh.read()))
+        patterns = [cfg["ids"][k] for k in ("uc", "br", "adr")] + [cfg["tests"]["file_pattern"], cfg["readme"]["banner"]["match"]]
+        patterns += [s["match"] for s in cfg["readme"]["lines"]] + [r"(?:\d{3})+", r"UC-[\d.]+", r"(?P<x>\S+) \((?P<y>\d+)/"]
+        for p in patterns:
+            self.assertEqual(mkspecs.safe_regex(p, "t"), p)
+
+    def test_br_open_questions_are_collected(self):
+        write_tree(self.root, {"specs/business-requirements.md": "## BR-01: X\n### Personas\n- [OPEN] P2 · Nỗi đau: chưa có\n",
+                               "specs/business-requirements/BR-02-y.md": "# BR-02: Y\n- [OPEN] Ngân sách? Xem [đây](../business-requirements.md)\n"
+                                                                         "- [OPEN] <câu hỏi phía nghiệp vụ chưa trả lời>\n"})
+        self.config("")
+        res = run("gen.py", self.root)
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+        with open(os.path.join(self.root, "specs", "open-issues.md"), encoding="utf-8") as fh:
+            oi = fh.read()
+        self.assertIn("- [OPEN] P2 · Nỗi đau: chưa có", oi)
+        self.assertIn("[business-requirements/BR-02-y.md](business-requirements/BR-02-y.md)", oi)
+        self.assertIn("Xem [đây](business-requirements.md)", oi)
+        self.assertIn("open 2", res.stdout)
+
     def test_list_command_is_announced_before_running(self):
         self.config('tests:\n  list_command: "echo []"\n')
         res = run("verify.py", self.root)
@@ -472,6 +502,10 @@ class Hook(unittest.TestCase):
         self.assertIn("gen.py", self.hook("Edit", {"file_path": os.path.join(self.root, "docs", "spec", "traceability.md")}))
         self.assertIsNone(self.hook("Edit", {"file_path": os.path.join(self.root, "specs", "traceability.md")}))
         self.assertIn("UC-", self.commit('git commit -m "feat: x"'))  # context checkout không có thư mục vẫn kiểm
+
+    def test_hanging_id_pattern_makes_hook_stand_down(self):
+        write_tree(self.root, {"specs/mk-specs.yml": CONFIG.replace("uc: 'UC-\\d{3}'", "uc: '(UC-\\d+)+$'")})
+        self.assertIsNone(self.commit('git commit -m "feat: x"'))
 
     def test_subshell_or_pushd_commit_is_not_judged(self):
         self.level4()

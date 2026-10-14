@@ -206,6 +206,7 @@ TEXT = {
             "> Danh sách đã lọc theo mức ảnh hưởng nằm ở `README.md` § \"Hàng đợi quyết định\".\n\n"
         ),
         "adr_section": "Quyết định (ADR)",
+        "br_section": "Yêu cầu nghiệp vụ (BR)",
         "decimal": ",",
         "since_word": "từ",
     },
@@ -225,6 +226,7 @@ TEXT = {
             "> The filtered list by impact lives in `README.md` § \"Decision queue\".\n\n"
         ),
         "adr_section": "Decisions (ADR)",
+        "br_section": "Business requirements (BR)",
         "decimal": ".",
         "since_word": "since",
     },
@@ -240,6 +242,25 @@ def _merge(base, over):
     return out
 
 
+# Config regexes run on spec/test text. Heuristic (not a proof) against catastrophic backtracking: refuse a group that
+# contains an open-ended quantifier and is itself repeated open-endedly ((a+)+, (a*)*, (x+){2,}), and very long patterns.
+_Q = r"(?:[+*]|\{\d*,\d*\})"
+_NESTED = re.compile(r"\((?:[^()\\]|\\.)*?" + _Q + r"(?:[^()\\]|\\.)*\)" + _Q)
+MAX_REGEX = 500
+
+
+def safe_regex(pattern, key):
+    pattern = str(pattern)
+    if len(pattern) > MAX_REGEX or _NESTED.search(pattern):
+        raise ConfigError(f"{key}: regex may hang (repeated group with a quantifier inside, or longer than {MAX_REGEX} chars): "
+                          f"{pattern[:60]} — write it flat, e.g. 'UC-[\\d.]+' instead of 'UC-\\d+(?:\\.\\d+)*'")
+    try:
+        re.compile(pattern)
+    except re.error as e:
+        raise ConfigError(f"{key}: invalid regex: {e}")
+    return pattern
+
+
 class Project:
     def __init__(self, root=".", config_path=None):
         self.root = os.path.abspath(root)
@@ -252,6 +273,15 @@ class Project:
         self.lang = self.cfg["language"] if self.cfg["language"] in TEXT else "vi"
         self.t = TEXT[self.lang]
         ids = self.cfg["ids"]
+        for k in ("uc", "br", "adr"):
+            if ids.get(k):
+                safe_regex(ids[k], f"ids.{k}")
+        safe_regex(self.cfg["tests"]["file_pattern"], "tests.file_pattern")
+        rcfg = self.cfg.get("readme") or {}
+        if (rcfg.get("banner") or {}).get("match"):
+            safe_regex(rcfg["banner"]["match"], "readme.banner.match")
+        for spec in rcfg.get("lines") or []:
+            safe_regex(spec.get("match", ""), "readme.lines.match")
         self.uc_id = ids["uc"]
         self.id_patterns = [ids[k] for k in ("uc", "br", "adr") if ids.get(k)]
         self.uc_file = re.compile(rf"({self.uc_id})-.*\.md$")

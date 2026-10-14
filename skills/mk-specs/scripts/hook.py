@@ -141,7 +141,13 @@ def check_commit(command, cwd):
         deny(f"commit `{subject}` thiếu mã story. Mẫu: `{kind or 'feat'}(BOOK-01): …` (mã trong specs/PRD.md); "
              f"việc không thuộc story nào dùng scope miễn trừ, vd `chore(specs): …`.")
         return
-    patterns = [p for p in (cfg["ids"].get(k) for k in ("uc", "br", "adr")) if p and len(p) <= 200]
+    import mkspecs
+    patterns = [p for p in (cfg["ids"].get(k) for k in ("uc", "br", "adr")) if p]
+    try:
+        for p in patterns:
+            mkspecs.safe_regex(p, "ids")
+    except mkspecs.ConfigError:
+        return  # a pattern that may hang: stand down rather than risk it
     if any(any(re.fullmatch(p, s) for p in patterns) for s in scopes) or (scopes and all(s in exempt for s in scopes)):
         return
     deny(f"commit `{subject}` thiếu ID UC/BR/ADR. Mẫu: `{kind or 'feat'}(UC-101): …`; việc toàn repo dùng scope miễn trừ "

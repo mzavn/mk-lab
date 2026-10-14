@@ -12,7 +12,7 @@
 <Vì sao có yêu cầu này: bối cảnh, phản hồi người dùng, quy định.>
 
 ## Personas
-<Người dùng chính, 1–3 nhóm, mã P1, P2… vĩnh viễn; UC ghi `- Actor: P1 (<vai>)`. Ô chưa biết ghi `[OPEN]`.>
+<Người dùng chính, 1–3 nhóm, mã P1, P2… vĩnh viễn; UC ghi `- Actor: P1 (<vai>)`. Ô chưa biết: dòng riêng `- [OPEN] P1 · <ô>: chưa có` (để open-issues.md gom được).>
 
 ### P1 — <vai>
 - Vai và số lượng: <ai, bao nhiêu người>
