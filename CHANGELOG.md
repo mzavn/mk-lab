@@ -8,9 +8,7 @@ Mỗi bản có số dạng `X.Y.Z`:
 
 Cập nhật: `bash ~/.mk-skills/install.sh --update`. Agent cũng tự nhắc khi có bản mới.
 
-## Chưa phát hành
-
-Dự kiến: v1.4.0
+## v1.4.0 — 14/10/2026
 
 **Mới**
 
