@@ -12,6 +12,7 @@ The agent tells the user only lines containing "có bản mới" or "khác bản
 """
 import os
 import re
+import shlex
 import subprocess
 import sys
 
@@ -40,10 +41,12 @@ def key(v):
 
 
 def latest_tag():
+    if REPO.startswith("-"):  # never let an env value become a git option (--upload-pack=…)
+        return None
     env = {**os.environ, "GIT_TERMINAL_PROMPT": "0", "GIT_HTTP_LOW_SPEED_LIMIT": "1000", "GIT_HTTP_LOW_SPEED_TIME": "10"}
     try:
-        res = subprocess.run(["git", "ls-remote", "--tags", "--refs", REPO, "v*"], capture_output=True, text=True,
-                             timeout=20, env=env)
+        res = subprocess.run(["git", "ls-remote", "--tags", "--refs", "--", REPO, "v*"], capture_output=True, text=True,
+                             timeout=10, env=env)
     except (OSError, subprocess.TimeoutExpired):
         return None
     if res.returncode:
@@ -52,8 +55,8 @@ def latest_tag():
     return max(found, key=key) if found else ""
 
 
-def update_command(has_project):
-    scope = "--global --project ." if has_project else "--global"
+def update_command(has_project, has_global):
+    scope = " ".join(([] if not has_global else ["--global"]) + (["--project ."] if has_project else [])) or "--global"
     for g in GLOBALS:
         try:
             with open(os.path.join(g, ".mk-specs-source"), encoding="utf-8") as fh:
@@ -61,7 +64,7 @@ def update_command(has_project):
         except OSError:
             continue
         if src and os.path.isfile(os.path.join(src, "install.sh")):
-            return f'bash "{src}/install.sh" --update {scope}'
+            return f"bash {shlex.quote(os.path.join(src, 'install.sh'))} --update {scope}"
     return f"{CURL} --update {scope}"
 
 
@@ -71,7 +74,8 @@ def main():
     glob = next((v for v in [version_of(g) for g in GLOBALS] if v), None)
     in_use = project or glob or version_of(HERE)
     if project and glob and project != glob:
-        print(f"mk-specs: bản trong project {project} khác bản cài chung {glob} — scripts dùng bản project.")
+        print(f"mk-specs: bản trong project {project} khác bản cài chung {glob} — Claude Code đọc bản cài chung, scripts dùng bản project."
+              f" Đồng bộ: {update_command(True, True)}")
     if os.environ.get("MK_SKILLS_NO_UPDATE_CHECK") == "1":
         print("mk-specs: đã tắt kiểm bản mới (MK_SKILLS_NO_UPDATE_CHECK=1).")
         return
@@ -92,7 +96,7 @@ def main():
     else:
         major = key(latest)[0] > key(in_use)[0]
         print(f"mk-specs: có bản mới v{latest} (đang dùng {in_use})." + (" Đây là bản lớn — cần làm thêm bước, đọc CHANGELOG trước khi cập nhật." if major else ""))
-        print(f"  Có gì mới: {CHANGELOG} · Cập nhật: {update_command(has_project)}")
+        print(f"  Có gì mới: {CHANGELOG} · Cập nhật: {update_command(has_project, glob is not None)}")
 
 
 if __name__ == "__main__":

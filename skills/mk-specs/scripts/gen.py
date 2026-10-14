@@ -198,7 +198,10 @@ M = {
 
 # ── README: drop old banner lines, refresh counter lines ──
 rcfg = P.cfg["readme"]
-readme_path = os.path.join(specs, rcfg["file"]) if rcfg.get("file") else None
+try:
+    readme_path = P.inside(rcfg["file"], specs, "readme.file") if rcfg.get("file") else None
+except mkspecs.ConfigError as e:
+    sys.exit(f"mk-specs: {e}")
 notes = []
 if readme_path and os.path.exists(readme_path):
     lines = read(readme_path).split("\n")

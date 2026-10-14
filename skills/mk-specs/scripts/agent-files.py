@@ -48,6 +48,8 @@ def read(path):
 
 
 def write(path, text):
+    if os.path.islink(path):
+        sys.exit(f"agent-files: {path} is a symlink — refusing to write through it; replace it with a regular file")
     with open(path, "w", encoding="utf-8") as fh:
         fh.write(text)
 

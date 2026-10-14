@@ -7,6 +7,21 @@ Mỗi bản có số dạng `X.Y.Z`:
 - **Số đầu (X)** tăng: cập nhật xong bạn cần làm thêm một bước — bản đó sẽ ghi rõ bước gì.
 
 Cập nhật: `bash ~/.mk-skills/install.sh --update`. Agent cũng tự nhắc khi có bản mới.
+## Chưa phát hành
+
+Dự kiến: v1.5.0
+
+**Mới**
+
+- **Chặn tự động trên Claude Code.** Sau khi gọi skill, Claude Code tự chặn hai lỗi hay gặp: sửa tay file tổng hợp do máy sinh (`traceability.md`, `open-issues.md`) và commit thiếu mã việc (UC hoặc mã story). Bị chặn thì agent thấy lý do và cách làm đúng. Ở repo không dùng mk-specs, hoặc khi không chắc, nó không chặn gì. Agent khác vẫn làm theo hướng dẫn như cũ. Cần cập nhật cả bản cài chung (`--update --global`), vì Claude Code đọc bản đó.
+
+**Sửa**
+
+- Project mới cài xong chạy kiểm tra được ngay, không còn báo thiếu thư mục mẫu `checkout`. Project cài từ trước mà vẫn báo lỗi này: mở `specs/mk-specs.yml`, xoá mục `checkout` trong `contexts` (thông báo lỗi giờ chỉ rõ cách sửa).
+- Hướng dẫn cài tay (không dùng `install.sh`) nói đủ bước để lần cập nhật sau không bị từ chối.
+- Vài chỗ hướng dẫn lệch với cách skill thực sự làm đã được sửa cho khớp.
+- An toàn hơn khi mở repo lạ: lệnh cài một dòng không còn lấy nhầm skill nằm sẵn trong thư mục đang đứng; cấu hình của repo không thể trỏ ra ngoài repo; lệnh chạy test khai trong cấu hình được in ra trước khi chạy; kiểm bản mới không bị lợi dụng để chạy lệnh lạ.
+
 
 ## v1.4.0 — 14/10/2026
 

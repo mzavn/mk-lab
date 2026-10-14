@@ -15,7 +15,10 @@
 set -euo pipefail
 
 SKILL=mk-specs
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd)"
+# Piped (`curl … | bash`) → BASH_SOURCE is empty: never trust the current directory, always bootstrap from the clone.
+SELF="${BASH_SOURCE[0]:-}"
+ROOT=""
+if [ -n "$SELF" ] && [ -f "$SELF" ]; then ROOT="$(cd "$(dirname "$SELF")" && pwd)"; fi
 SRC="$ROOT/skills/$SKILL"
 MANIFEST=.mk-specs-manifest
 SOURCE_FILE=.mk-specs-source  # global copies only: path of the mk-skills checkout, so agents can suggest the update command
@@ -26,7 +29,7 @@ usage() { sed -n '2,14p' "$ROOT/install.sh" 2>/dev/null | sed 's/^# \{0,1\}//'; 
 die() { echo "install.sh: $*" >&2; exit 1; }
 
 # Piped from curl (no checkout around the script): clone or refresh $MK_SKILLS_HOME and run the installer from there.
-if [ ! -f "$SRC/SKILL.md" ]; then
+if [ -z "$ROOT" ] || [ ! -f "$SRC/SKILL.md" ]; then
   case " ${ARGS[*]-} " in *" --check "*)
     die "--check runs from a local copy: python3 ~/.claude/skills/mk-specs/scripts/check-update.py (nothing is downloaded)";;
   esac

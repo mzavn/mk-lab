@@ -248,7 +248,7 @@ class Project:
             raise ConfigError(f"config not found: {path} (run install.sh --project or mode init)")
         with open(path, encoding="utf-8") as fh:
             self.cfg = _merge(DEFAULTS, parse_yaml(fh.read()) or {})
-        self.specs = os.path.join(self.root, self.cfg["specs_dir"])
+        self.specs = self.inside(self.cfg["specs_dir"], self.root, "specs_dir")
         self.lang = self.cfg["language"] if self.cfg["language"] in TEXT else "vi"
         self.t = TEXT[self.lang]
         ids = self.cfg["ids"]
@@ -263,7 +263,9 @@ class Project:
             out = [(c["id"], c.get("title") or c["id"]) if isinstance(c, dict) else (c, c) for c in listed]
             missing = [c for c, _ in out if not os.path.isdir(os.path.join(self.specs, c))]
             if missing:
-                raise ConfigError(f"context folder(s) missing under {self.cfg['specs_dir']}/: {', '.join(missing)}")
+                raise ConfigError(f"context folder(s) missing under {self.cfg['specs_dir']}/: {', '.join(missing)} — "
+                                  "create the folder or remove it from `contexts` in specs/mk-specs.yml "
+                                  "(old templates listed an example `checkout`)")
             return out
         pattern = self.cfg.get("contexts_glob") or "*"
         out = []
@@ -292,6 +294,18 @@ class Project:
                     found.update(heading.findall(read(os.path.join(root, f))))
         return found
 
+    def inside(self, rel, base, key):
+        """Join a config path under base; refuse anything that resolves outside the repo (config is data)."""
+        path = os.path.realpath(os.path.join(base, str(rel)))
+        root = os.path.realpath(self.root)
+        try:
+            outside = os.path.isabs(str(rel)) or os.path.commonpath([path, root]) != root
+        except ValueError:  # different drives on Windows
+            outside = True
+        if outside:
+            raise ConfigError(f"{key} points outside the repo: {rel}")
+        return os.path.join(base, str(rel))
+
     def test_list(self, tests_json=None):
         """[(relative file, full test name)] from a JSON file or tests.list_command; None if unavailable."""
         if tests_json:
@@ -301,6 +315,7 @@ class Project:
             cmd = self.cfg["tests"].get("list_command")
             if not cmd:
                 return None
+            sys.stderr.write(f"mk-specs: running tests.list_command: {cmd}\n")  # the one config value that is executed
             res = subprocess.run(cmd, shell=True, cwd=self.root, capture_output=True, text=True)
             if res.returncode != 0:
                 sys.stderr.write(res.stderr)
