@@ -17,6 +17,78 @@ def version(path):
     return None
 
 
+class SymlinkedDestination(unittest.TestCase):
+    """A skill folder that is a symlink is refused, never copied into or deleted through."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.proj = os.path.join(self.tmp, "proj")
+        self.elsewhere = os.path.join(self.tmp, "elsewhere")
+        os.makedirs(os.path.join(self.proj, ".claude", "skills"))
+        os.makedirs(self.elsewhere)
+        with open(os.path.join(self.elsewhere, "keep.txt"), "w") as fh:
+            fh.write("keep")
+        os.symlink(self.elsewhere, os.path.join(self.proj, ".claude", "skills", "mk-specs"))
+        subprocess.run(["git", "init", "-q", self.proj], check=True)
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_install_update_and_uninstall_refuse_symlinked_skill_folder(self):
+        env = {**os.environ, "HOME": os.path.join(self.tmp, "home")}
+        for args in (["--project", self.proj], ["--project", self.proj, "--force"], ["--uninstall", "--project", self.proj]):
+            res = subprocess.run(["bash", INSTALL, *args], capture_output=True, text=True, env=env)
+            self.assertNotEqual(res.returncode, 0, args)
+            self.assertIn("symlink", res.stderr)
+        self.assertEqual(os.listdir(self.elsewhere), ["keep.txt"])
+        self.assertTrue(os.path.islink(os.path.join(self.proj, ".claude", "skills", "mk-specs")))
+
+
+class ProjectCopies(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.proj = os.path.join(self.tmp, "proj")
+        os.makedirs(self.proj)
+        subprocess.run(["git", "init", "-q", self.proj], check=True)
+        self.env = {**os.environ, "HOME": os.path.join(self.tmp, "home")}
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def install(self, *args):
+        return subprocess.run(["bash", INSTALL, *args], capture_output=True, text=True, env=self.env)
+
+    def test_hand_edit_in_agents_copy_is_not_overwritten(self):
+        self.assertEqual(self.install("--project", self.proj, "--agents-dir", "--no-agent-files").returncode, 0)
+        skill = os.path.join(self.proj, ".agents", "skills", "mk-specs", "SKILL.md")
+        with open(skill, "a", encoding="utf-8") as fh:
+            fh.write("\nluật riêng\n")
+        res = self.install("--project", self.proj, "--no-agent-files")
+        self.assertNotEqual(res.returncode, 0)
+        self.assertIn(".agents/skills/mk-specs", res.stderr)
+        with open(skill, encoding="utf-8") as fh:
+            self.assertIn("luật riêng", fh.read())
+
+    def test_symlinked_parent_inside_project_is_refused(self):
+        target = os.path.join(self.tmp, "global-skills")
+        os.makedirs(os.path.join(target, "mk-specs"))
+        with open(os.path.join(target, "mk-specs", "keep.txt"), "w") as fh:
+            fh.write("keep")
+        os.makedirs(os.path.join(self.proj, ".claude"))
+        os.symlink(target, os.path.join(self.proj, ".claude", "skills"))
+        for args in (["--project", self.proj], ["--uninstall", "--project", self.proj]):
+            res = self.install(*args, "--no-agent-files")
+            self.assertNotEqual(res.returncode, 0, args)
+            self.assertIn("symlink", res.stderr)
+        self.assertEqual(os.listdir(os.path.join(target, "mk-specs")), ["keep.txt"])
+
+    def test_uninstall_when_nothing_installed_says_so(self):
+        res = self.install("--uninstall", "--project", self.proj, "--no-agent-files")
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertIn("not installed", res.stdout)
+        self.assertNotIn("removed", res.stdout)
+
+
 class PipedBootstrap(unittest.TestCase):
     """`curl … | bash` must install from the official clone, never from whatever sits in the current directory."""
 

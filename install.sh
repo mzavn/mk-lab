@@ -83,8 +83,13 @@ manifest_of() {
     while IFS= read -r f; do printf '%s %s\n' "$(cksum < "$f" | tr -s ' ' | cut -d' ' -f1,2)" "$f"; done)
 }
 
+no_symlink() {
+  if [ -L "$1" ]; then die "$1 is a symlink — replace it with a real folder (install.sh never writes or deletes through symlinks)"; fi
+}
+
 copy_skill() {
   local dest="$1" tmp
+  no_symlink "$dest"
   mkdir -p "$(dirname "$dest")"
   tmp="$(mktemp -d "$(dirname "$dest")/.$SKILL.XXXXXX")"
   (cd "$SRC" && tar cf - --exclude '__pycache__' --exclude '.DS_Store' .) | (cd "$tmp" && tar xf -)
@@ -98,7 +103,7 @@ copy_skill() {
 # manifest (copies older than the manifest), fall back to git: tracked files modified, or untracked files.
 # Prints the offending paths.
 has_local_edits() {
-  local proj="$1" dest="$2" rel=".claude/skills/$SKILL" changed
+  local proj="$1" dest="$2" rel="${2#"$1"/}" changed
   [ -d "$dest" ] || return 1
   if [ -f "$dest/$MANIFEST" ]; then
     changed="$(diff <(cat "$dest/$MANIFEST") <(manifest_of "$dest") | sed -n 's/^[<>] [0-9]* [0-9]* \.\///p' | LC_ALL=C sort -u)"
@@ -125,8 +130,9 @@ echo "mk-specs $VERSION"
 if [ "$GLOBAL" = 1 ]; then
   for base in "$HOME/.claude/skills" "$HOME/.agents/skills"; do
     dest="$base/$SKILL"
+    no_symlink "$dest"
     if [ "$UNINSTALL" = 1 ]; then
-      rm -rf "$dest" && echo "removed $dest"
+      if [ -e "$dest" ]; then rm -rf "$dest" && echo "removed $dest"; else echo "not installed: $dest"; fi
     else
       old="$(installed_version "$dest")"
       copy_skill "$dest"
@@ -140,14 +146,19 @@ for proj in ${PROJECTS[@]+"${PROJECTS[@]}"}; do
   [ -d "$proj" ] || die "project directory not found: $proj"
   proj="$(cd "$proj" && pwd)"
   dest="$proj/.claude/skills/$SKILL"
+  agents="$proj/.agents/skills/$SKILL"
+  # Inside the project nothing on the path may be a symlink (a linked .claude/skills could point at the global copy).
+  for p in "$proj/.claude" "$proj/.claude/skills" "$dest" "$proj/.agents" "$proj/.agents/skills" "$agents" \
+           "$proj/specs" "$proj/specs/mk-specs.yml"; do no_symlink "$p"; done
   if [ "$UNINSTALL" = 1 ]; then
     if [ "$FORCE" != 1 ] && has_local_edits "$proj" "$dest"; then refuse_edits "$dest"; fi
-    rm -rf "$dest" && echo "removed $dest (kept specs/mk-specs.yml)"
-    if [ -d "$proj/.agents/skills/$SKILL" ]; then rm -rf "$proj/.agents/skills/$SKILL" && echo "removed $proj/.agents/skills/$SKILL"; fi
+    if [ -e "$dest" ]; then rm -rf "$dest" && echo "removed $dest (kept specs/mk-specs.yml)"; else echo "not installed: $dest"; fi
+    if [ -d "$agents" ]; then rm -rf "$agents" && echo "removed $agents"; fi
     if [ "$AGENT_FILES" = 1 ]; then python3 "$SRC/scripts/agent-files.py" "$proj" --uninstall; fi
     continue
   fi
   if [ "$FORCE" != 1 ] && has_local_edits "$proj" "$dest"; then refuse_edits "$dest"; fi
+  if [ "$FORCE" != 1 ] && has_local_edits "$proj" "$agents"; then refuse_edits "$agents"; fi
   old="$(installed_version "$dest")"
   copy_skill "$dest"
   echo "project: $dest ($old → $VERSION)"
@@ -159,9 +170,9 @@ for proj in ${PROJECTS[@]+"${PROJECTS[@]}"}; do
     cp "$SRC/assets/mk-specs.yml.template" "$cfg"
     echo "config: $cfg (created from template — edit contexts, ids, tests, metrics.since)"
   fi
-  if [ "$AGENTS_DIR" = 1 ] || [ -d "$proj/.agents/skills/$SKILL" ]; then
-    copy_skill "$proj/.agents/skills/$SKILL"
-    echo "project: $proj/.agents/skills/$SKILL ($VERSION)"
+  if [ "$AGENTS_DIR" = 1 ] || [ -d "$agents" ]; then
+    copy_skill "$agents"
+    echo "project: $agents ($VERSION)"
   fi
   if [ "$AGENT_FILES" = 1 ]; then python3 "$SRC/scripts/agent-files.py" "$proj"; fi
 done
