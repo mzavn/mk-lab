@@ -38,11 +38,12 @@ Hướng dẫn ngắn cho cả người và agent. Nhờ agent cài, dán câu n
 ## Cập nhật
 
 ```bash
+bash ~/.mk-skills/install.sh --check                         # có bản mới không (chỉ đọc, không sửa gì)
 bash ~/.mk-skills/install.sh --update                        # bản cài chung
 bash ~/.mk-skills/install.sh --update --global --project .   # đứng trong repo: cả hai
 ```
 
-Sau khi cập nhật bản trong repo: commit `.claude/skills/mk-specs` (`chore(specs): update mk-specs to vX.Y.Z`).
+`--update` chỉ nhận bản đã phát hành ([CHANGELOG.md](CHANGELOG.md)). Bản tăng số đầu (X) cần làm thêm bước — CHANGELOG ghi rõ, đọc trước khi cập nhật. Sau khi cập nhật bản trong repo: commit `.claude/skills/mk-specs` (`chore(specs): update mk-specs to vX.Y.Z`). Agent tự nhắc khi có bản mới (một lần mỗi phiên); tắt bằng `MK_SKILLS_NO_UPDATE_CHECK=1`.
 
 ## Gặp lỗi
 
