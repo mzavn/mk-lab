@@ -7,9 +7,7 @@ Mỗi bản có số dạng `X.Y.Z`:
 - **Số đầu (X)** tăng: cập nhật xong bạn cần làm thêm một bước — bản đó sẽ ghi rõ bước gì.
 
 Cập nhật: `bash ~/.mk-skills/install.sh --update`. Agent cũng tự nhắc khi có bản mới.
-## Chưa phát hành
-
-Dự kiến: v1.5.0
+## v1.5.0 — 14/10/2026
 
 **Mới**
 

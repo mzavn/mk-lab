@@ -4,7 +4,7 @@ description: 'Spec-Driven Development at four levels on one structure: PRD, + wi
 license: MIT
 metadata:
   author: mzavn
-  version: "1.4.0"
+  version: "1.5.0"
 hooks:
   PreToolUse:
     - matcher: "Edit|Write|MultiEdit|Bash"
