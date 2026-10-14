@@ -5,7 +5,8 @@
 #                       mk-specs block in <dir>/AGENTS.md, `@AGENTS.md` in CLAUDE.md, a pointer line in GEMINI.md if present
 #   --agents-dir      → with --project: also copy to <dir>/.agents/skills/mk-specs (kept up to date once present)
 #   --no-agent-files  → with --project: don't touch AGENTS.md / CLAUDE.md / GEMINI.md
-#   --update          → first pull the latest mk-skills (fast-forward only), then install; alone = --update --global
+#   --update          → first pull the latest release (fast-forward `main`), then install; alone = --update --global
+#   --check           → only tell whether a newer release exists (reads tags, changes nothing)
 #   --force           → overwrite a project copy that has local edits
 #   --uninstall       → remove instead of install (with --global and/or --project; config and import lines are kept)
 # Flags combine: install.sh --update --global --project .
@@ -21,11 +22,14 @@ SOURCE_FILE=.mk-specs-source  # global copies only: path of the mk-skills checko
 REPO_URL="${MK_SKILLS_REPO:-https://github.com/mzavn/mk-skills.git}"
 ARGS=("$@")
 
-usage() { sed -n '2,13p' "$ROOT/install.sh" 2>/dev/null | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
+usage() { sed -n '2,14p' "$ROOT/install.sh" 2>/dev/null | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
 die() { echo "install.sh: $*" >&2; exit 1; }
 
 # Piped from curl (no checkout around the script): clone or refresh $MK_SKILLS_HOME and run the installer from there.
 if [ ! -f "$SRC/SKILL.md" ]; then
+  case " ${ARGS[*]-} " in *" --check "*)
+    die "--check runs from a local copy: python3 ~/.claude/skills/mk-specs/scripts/check-update.py (nothing is downloaded)";;
+  esac
   command -v git >/dev/null || die "git is required"
   home="${MK_SKILLS_HOME:-$HOME/.mk-skills}"
   if [ -d "$home/.git" ]; then
@@ -47,6 +51,7 @@ while [ $# -gt 0 ]; do
     --no-agent-files) AGENT_FILES=0 ;;
     --uninstall) UNINSTALL=1 ;;
     --update) UPDATE=1 ;;
+    --check) exec python3 "$SRC/scripts/check-update.py" ;;
     -h|--help) usage 0 ;;
     *) echo "install.sh: unknown option: $1" >&2; usage 1 ;;
   esac

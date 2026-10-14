@@ -232,6 +232,75 @@ class AgentFiles(unittest.TestCase):
         self.assertIn("Giữ nguyên dòng này.", self.read("AGENTS.md"))
 
 
+class UpdateCheck(unittest.TestCase):
+    """check-update.py: compare the version in use with the highest vX.Y.Z tag of the skill repo (read-only ls-remote)."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.home = os.path.join(self.tmp, "home")
+        self.proj = os.path.join(self.tmp, "proj")
+        self.repo = os.path.join(self.tmp, "repo")
+        os.makedirs(self.repo)
+        env = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t"}
+        for cmd in (["git", "init", "-q"], ["git", "commit", "-q", "--allow-empty", "-m", "x"]):
+            subprocess.run(cmd, cwd=self.repo, check=True, env=env)
+        self.env = env
+
+    def tag(self, *names):
+        for n in names:
+            subprocess.run(["git", "tag", n], cwd=self.repo, check=True, env=self.env)
+
+    def install(self, where, version):
+        d = os.path.join(where, "mk-specs")
+        os.makedirs(d, exist_ok=True)
+        with open(os.path.join(d, "SKILL.md"), "w", encoding="utf-8") as fh:
+            fh.write(f'---\nname: mk-specs\nmetadata:\n  version: "{version}"\n---\n')
+        return d
+
+    def check(self, repo=None, **env):
+        os.makedirs(self.proj, exist_ok=True)
+        res = subprocess.run([sys.executable, os.path.join(SCRIPTS, "check-update.py")], cwd=self.proj, capture_output=True,
+                             text=True, env={**self.env, "HOME": self.home, "MK_SKILLS_REPO": repo or self.repo, **env})
+        self.assertEqual(res.returncode, 0, res.stderr)
+        return res.stdout
+
+    def test_newer_release_is_reported_with_update_command_for_project_copy(self):
+        self.tag("v1.3.0", "v1.4.0", "v1.10.0", "release/x")
+        self.install(os.path.join(self.home, ".claude", "skills"), "1.4.0")
+        self.install(os.path.join(self.proj, ".claude", "skills"), "1.4.0")
+        out = self.check()
+        self.assertIn("có bản mới v1.10.0 (đang dùng 1.4.0)", out)
+        self.assertIn("--project .", out)
+        self.assertIn("CHANGELOG.md", out)
+        self.assertNotIn("bản lớn", out)
+
+    def test_project_copy_wins_over_global_copy(self):
+        self.tag("v1.5.0")
+        self.install(os.path.join(self.home, ".claude", "skills"), "1.5.0")
+        self.install(os.path.join(self.proj, ".claude", "skills"), "1.4.0")
+        out = self.check()
+        self.assertIn("đang dùng 1.4.0", out)
+        self.assertIn("bản trong project 1.4.0 khác bản cài chung 1.5.0", out)
+
+    def test_major_release_warns_about_extra_steps(self):
+        self.tag("v2.0.0")
+        self.install(os.path.join(self.home, ".claude", "skills"), "1.4.0")
+        self.assertIn("bản lớn", self.check())
+
+    def test_latest_or_unreleased_copy_is_not_asked_to_update(self):
+        self.tag("v1.4.0")
+        self.install(os.path.join(self.home, ".claude", "skills"), "1.4.0")
+        self.assertIn("đang dùng bản mới nhất v1.4.0", self.check())
+        self.install(os.path.join(self.home, ".claude", "skills"), "1.5.0")
+        out = self.check()
+        self.assertIn("chưa phát hành", out)
+        self.assertNotIn("có bản mới", out)
+
+    def test_unreachable_repo_or_opt_out_never_fails(self):
+        self.install(os.path.join(self.home, ".claude", "skills"), "1.4.0")
+        self.assertIn("không kiểm được bản mới", self.check(repo=os.path.join(self.tmp, "missing")))
+        self.assertIn("đã tắt", self.check(MK_SKILLS_NO_UPDATE_CHECK="1"))
+
 
 if __name__ == "__main__":
     unittest.main()
