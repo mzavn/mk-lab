@@ -25,6 +25,7 @@ Skill gồm:
 - **Chân dung người dùng (personas)**: agent hỏi người dùng chính theo khung 7 ô rồi suy ra story, nền tảng, giao diện từ đó — spec sát người dùng thật hơn là để AI tự đoán.
 - **Thuật ngữ cho người mới**: [`glossary.md`](skills/mk-specs/references/glossary.md) giải thích SDD, PRD, story, AC, UC, ADR… bằng tiếng Việt, kèm "gặp nó thì bạn làm gì"; hỏi agent "PRD là gì?" là được trả lời theo bảng. Tên chuẩn ngành giữ tiếng Anh.
 - **Mẫu** PRD, TDD, UC, BR, ADR, proposal, entity, README cho `specs/`.
+- **Chặn tự động trên Claude Code (hook)**: sau khi gọi skill, Claude Code tự chặn sửa tay file sinh (`traceability.md`, `open-issues.md`) và commit thiếu mã UC/story; im lặng ở repo không dùng mk-specs. Claude Code nạp **bản cài chung** khi có cả bản chung và bản project, nên giữ bản chung cập nhật (`install.sh --update --global`).
 - **Scripts** (Python chuẩn, không cần cài thêm gì): sinh `traceability.md` (UC ↔ AC ↔ test) và `open-issues.md` (mọi `[DIVERGENCE]`/`[OPEN]`), kiểm mọi tên test được trích có thật và mọi link mở được, tính chỉ số AC Coverage / Spec Coverage / Trace Ratio, báo cáo vệ sinh spec.
 - **Cổng cứng**: không AC thì không code; luật tiền / quyền truy cập / bảo mật do người quyết, AI chỉ đề xuất; spec không nói thì không đoán; không tự duyệt; commit spec trước code và mọi commit mang ID UC/BR/ADR.
 - **Kỷ luật viết spec** (theo [Karpathy guidelines](https://github.com/multica-ai/andrej-karpathy-skills)): yêu cầu mơ hồ thì hỏi lại trước khi viết; chỉ viết UC/AC được yêu cầu, không thêm thứ "phòng khi"; chỉ sửa đúng chỗ thay đổi cần.
@@ -176,17 +177,18 @@ mk-skills/
 ├── CHANGELOG.md
 ├── LICENSE
 ├── README.md
+├── tests/                       test cho install.sh (không chép vào skill)
 └── skills/mk-specs/
     ├── SKILL.md                 điểm vào: chọn mode, cổng cứng, scripts
     ├── references/              principles, artifacts, workflow-prd, workflow-change, workflow-bootstrap, review, traceability, anti-patterns, glossary
     ├── assets/                  mk-specs.yml.template, templates/ (PRD, TDD, UC, BR, ADR, proposal, entities, README)
-    └── scripts/                 gen.py, verify.py, audit.py, commit-hash.py, check-update.py, mkspecs.py, tests/
+    └── scripts/                 gen.py, verify.py, audit.py, commit-hash.py, check-update.py, hook.py, mkspecs.py, tests/
 ```
 
 ## Đóng góp
 
 - Issue/PR bằng tiếng Việt hoặc tiếng Anh đều được, gửi vào nhánh `dev` (`main` chỉ chứa bản đã phát hành). Commit theo Conventional Commits; loại commit quyết định số phiên bản (CHANGELOG.md) — đổi chữ trong `skills/` mà người dùng thấy khác là `feat`/`fix`, không phải `docs`.
-- Sửa scripts: giữ thư viện chuẩn, đầu ra tất định; chạy `python3 -m unittest discover -s skills/mk-specs/scripts/tests` và `bash -n install.sh`.
+- Sửa scripts: giữ thư viện chuẩn, đầu ra tất định; chạy `python3 -m unittest discover -s skills/mk-specs/scripts/tests` và `python3 -m unittest discover -s tests` (installer).
 - Sửa skill: `SKILL.md` và mỗi reference dưới 300 dòng, không lặp nội dung giữa chúng; ví dụ dùng dữ liệu giả, không đưa thông tin riêng của dự án nào vào. Khái niệm mới người dùng thấy → thêm dòng vào `glossary.md`.
 - Ghi thay đổi vào mục `## Chưa phát hành` của CHANGELOG.md bằng lời người dùng; số phiên bản và tag do người bảo trì đặt khi phát hành.
 

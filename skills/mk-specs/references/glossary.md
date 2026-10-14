@@ -63,4 +63,5 @@ Cột tiếng Việt là lời giải thích cho người mới, không phải t
 | **Conventional commit** | Commit theo mẫu | `feat(BOOK-01): khách đặt lịch` — loại (`feat` thêm, `fix` sửa, `docs` tài liệu…) + mã story/UC | Nhìn mã là biết commit thuộc việc nào |
 | **SemVer** (X.Y.Z) | Số phiên bản | Z tăng: sửa lỗi · Y tăng: thêm tính năng, cập nhật bình thường · X tăng: cập nhật cần bạn làm thêm bước | Gặp X mới thì đọc CHANGELOG trước khi cập nhật |
 | **Release / tag** | Bản phát hành | Một số phiên bản đã chốt, không sửa lại; lỗi thì ra bản sau | Cập nhật bằng `install.sh --update` |
+| **Hook** (Claude Code) | Lưới chặn tự động | Lệnh Claude Code tự chạy trước khi agent sửa file/chạy lệnh; mk-specs dùng để chặn sửa tay file sinh và commit thiếu mã | Bị chặn thì làm theo lý do nó in ra; không phải tắt |
 | **CHANGELOG** | Nhật ký thay đổi | `CHANGELOG.md` của skill: mỗi bản có gì mới, viết bằng lời người dùng | Đọc trước khi cập nhật |
