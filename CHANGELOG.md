@@ -7,6 +7,18 @@ Mỗi bản có số dạng `X.Y.Z`:
 - **Số đầu (X)** tăng: cập nhật xong bạn cần làm thêm một bước — bản đó sẽ ghi rõ bước gì.
 
 Cập nhật: `bash ~/.mk-skills/install.sh --update`. Agent cũng tự nhắc khi có bản mới.
+## Chưa phát hành
+
+Dự kiến: v1.6.0
+
+**Mới**
+
+- `install.sh` cài được nhiều skill: thêm `--skill <tên>` (mặc định `mk-specs`, lệnh cũ chạy như trước). `--update` giờ cập nhật mọi skill đã cài bằng `install.sh`. Thư mục skill cùng tên mà không do `install.sh` tạo thì bị từ chối thay vì bị ghi đè.
+
+**Sửa**
+
+- Repo đổi tên thành **mk-lab** (`github.com/mzavn/mk-lab`, bộ skill lập trình). Lệnh cài, nhắc bản mới và link CHANGELOG giờ trỏ tên mới. Bạn không phải làm gì: địa chỉ cũ tự chuyển sang tên mới, thư mục `~/.mk-skills` và các biến `MK_SKILLS_*` giữ nguyên.
+
 ## v1.5.1 — 14/10/2026
 
 **Sửa**

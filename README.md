@@ -1,6 +1,8 @@
-# mk-skills
+# mk-lab
 
-Bộ skill cho AI coding agent (Claude Code, omp và các agent đọc thư mục skill chuẩn). Hiện có một skill: **`mk-specs`** — Spec-Driven Development (SDD).
+Bộ skill **lập trình** cho AI coding agent (Claude Code, omp và các agent đọc thư mục skill chuẩn). Hiện có một skill: **`mk-specs`** — Spec-Driven Development (SDD); các skill lập trình khác sẽ thêm vào đây, cài riêng từng cái bằng `--skill <tên>`.
+
+> Trước đây repo tên **mk-skills** (`mzavn/mk-skills`). Lệnh, đường dẫn và biến cũ (`~/.mk-skills`, `MK_SKILLS_*`) vẫn chạy — máy đã cài không phải làm gì.
 
 *English summary at the end.*
 
@@ -37,7 +39,7 @@ Khi AI viết phần lớn code, điều gì không được viết ra thì vớ
 ## Yêu cầu
 
 - `bash` (macOS hoặc Linux), `python3` ≥ 3.8, `git`.
-- Một coding agent bất kỳ. Agent có hỗ trợ skill (Claude Code, omp, Codex…) tự kích hoạt `mk-specs`; agent khác đọc `AGENTS.md` và được trỏ tới `SKILL.md` (markdown thường).
+- Một coding agent bất kỳ. Agent có hỗ trợ skill (Claude Code, omp, Codex…) tự kích hoạt skill; agent khác đọc `AGENTS.md` và được trỏ tới `SKILL.md` (markdown thường).
 
 ## Cài đặt
 
@@ -46,25 +48,26 @@ Hướng dẫn ngắn từng bước (đưa cho agent tự cài được): [INST
 Nhanh nhất — không cần tự clone (script clone vào `~/.mk-skills`, đổi bằng biến `MK_SKILLS_HOME`):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mzavn/mk-skills/main/install.sh | bash -s -- --global
+curl -fsSL https://raw.githubusercontent.com/mzavn/mk-lab/main/install.sh | bash -s -- --global
 ```
 
 Hoặc clone tay:
 
 ```bash
-git clone https://github.com/mzavn/mk-skills.git
-cd mk-skills
+git clone https://github.com/mzavn/mk-lab.git
+cd mk-lab
 
 ./install.sh --global                      # ~/.claude/skills/mk-specs và ~/.agents/skills/mk-specs
 ./install.sh --project ~/code/my-shop      # cài vào một project
 ./install.sh --global --project ~/code/my-shop   # cả hai
+./install.sh --global --skill <tên>        # một skill khác trong skills/ (mặc định --skill mk-specs)
 ```
 
 Đang đứng trong project:
 
 ```bash
 cd ~/code/my-shop
-bash ~/.mk-skills/install.sh --project .   # hoặc đường dẫn tới nơi đã clone mk-skills
+bash ~/.mk-skills/install.sh --project .   # hoặc đường dẫn tới nơi đã clone mk-lab
 ```
 
 `--project` làm gì (chạy lại bao nhiêu lần cũng được — **thiếu thì thêm, có rồi thì giữ hoặc cập nhật**):
@@ -79,6 +82,8 @@ bash ~/.mk-skills/install.sh --project .   # hoặc đường dẫn tới nơi �
 | `.agents/skills/mk-specs/` | chỉ với `--agents-dir` (agent đọc `.agents/skills`, vd Codex) | thay bằng bản mới (tự cập nhật khi thư mục đã có, không cần nhắc lại cờ) |
 
 Không muốn đụng file hướng dẫn agent: thêm `--no-agent-files`.
+
+`--skill <tên>` khác `mk-specs` chỉ chép thư mục skill (`.claude/skills/<tên>`, `.agents/skills/<tên>` với `--agents-dir`), không tạo cấu hình hay đụng `AGENTS.md`/`CLAUDE.md`. Thư mục cùng tên mà không do `install.sh` tạo thì bị từ chối, trừ `--force`.
 
 ### Dùng với nhiều agent
 
@@ -99,7 +104,7 @@ Khi project dùng `npm`, thêm vào `package.json`:
 Skill phát hành theo bản (`vX.Y.Z`, xem [CHANGELOG.md](CHANGELOG.md)); `--update` chỉ nhận bản đã phát hành. Một lệnh:
 
 ```bash
-bash ~/.mk-skills/install.sh --update                          # chỉ bản cài chung
+bash ~/.mk-skills/install.sh --update                          # bản cài chung: mọi skill đã cài bằng install.sh
 bash ~/.mk-skills/install.sh --update --global --project .     # đứng trong project: cả hai
 bash ~/.mk-skills/install.sh --check                           # chỉ xem có bản mới không
 ```
@@ -115,6 +120,7 @@ Rồi trong project: chạy `specs:gen` — `traceability.md`/`open-issues.md` p
 ```bash
 ./install.sh --uninstall --global
 ./install.sh --uninstall --project ~/code/my-shop   # bỏ khối mk-specs trong AGENTS.md; giữ specs/, specs/mk-specs.yml và dòng @AGENTS.md
+./install.sh --uninstall --global --skill <tên>     # chỉ gỡ skill đó
 ```
 
 ## Cấu hình `specs/mk-specs.yml`
@@ -171,7 +177,7 @@ Gọi bằng lời thường; agent tự chọn mode.
 ## Cấu trúc repo
 
 ```
-mk-skills/
+mk-lab/
 ├── install.sh
 ├── INSTALL.md
 ├── CHANGELOG.md
@@ -188,9 +194,9 @@ mk-skills/
 ## Đóng góp
 
 - Issue/PR bằng tiếng Việt hoặc tiếng Anh đều được, gửi vào nhánh `dev` (`main` chỉ chứa bản đã phát hành). Commit theo Conventional Commits; loại commit quyết định số phiên bản (CHANGELOG.md) — đổi chữ trong `skills/` mà người dùng thấy khác là `feat`/`fix`, không phải `docs`.
-- Sửa scripts: giữ thư viện chuẩn, đầu ra tất định; chạy `python3 -m unittest discover -s skills/mk-specs/scripts/tests` và `python3 -m unittest discover -s tests` (installer).
+- Sửa scripts: giữ thư viện chuẩn, đầu ra tất định; chạy `python3 -m unittest discover -s skills/mk-specs/scripts/tests` (và `skills/<skill>/scripts/tests` của skill khác nếu có) và `python3 -m unittest discover -s tests` (installer).
 - Sửa skill: `SKILL.md` và mỗi reference dưới 300 dòng, không lặp nội dung giữa chúng; ví dụ dùng dữ liệu giả, không đưa thông tin riêng của dự án nào vào. Khái niệm mới người dùng thấy → thêm dòng vào `glossary.md`.
-- Ghi thay đổi vào mục `## Chưa phát hành` của CHANGELOG.md bằng lời người dùng; số phiên bản và tag do người bảo trì đặt khi phát hành.
+- Ghi thay đổi vào mục `## Chưa phát hành` của CHANGELOG.md bằng lời người dùng (khi repo có nhiều skill: chia nhóm `### <skill>`); số phiên bản (chung cho cả repo) và tag do người bảo trì đặt khi phát hành.
 
 ## Ghi công
 
@@ -207,6 +213,8 @@ MIT — xem [LICENSE](LICENSE).
 ---
 
 ## English
+
+**mk-lab** (formerly **mk-skills**; old URLs, `~/.mk-skills` and `MK_SKILLS_*` keep working) is a set of programming skills for AI coding agents; pick one with `install.sh --skill <name>` (default `mk-specs`).
 
 **mk-specs** is an agent skill for Spec-Driven Development at four levels of rigour on one structure: (1) an interviewed PRD with permanent story IDs, testable "done when" criteria and a build order; (2) plus a single-file HTML wireframe of the main screen; (3) plus a technical design (TDD); (4) full SDD with business requirements, use cases, entities, acceptance criteria and ADRs. Levels 1–3 stop before coding with cross-checked files ready for planning; `promote` lifts a PRD into full specs, keeping story IDs and checking against running code. The six-part structure (why · what · look · how · work breakdown · governance) is what ISO/IEC/IEEE 29148, GitHub Spec Kit, Kiro and BMAD share. It ships workflows (prd, promote, init, change, review, apply, merge, check, commit, audit), templates, and stdlib-only Python scripts that generate a UC ↔ AC ↔ test traceability matrix and an open-issues list, verify every cited test exists and every relative link resolves, and report AC Coverage, Spec Coverage and Trace Ratio. After writing a spec, PRD or proposal the agent self-reviews it (`review`): it fixes its own mistakes, asks the user about genuine decision points, and records the result. Spec-writing discipline (ask before assuming, nothing speculative, surgical edits) follows the Karpathy guidelines.
 
