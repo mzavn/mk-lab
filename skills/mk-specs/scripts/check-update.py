@@ -7,7 +7,7 @@ Usage (from the project root): python3 <skill>/scripts/check-update.py
 - "Latest" = highest tag vX.Y.Z of the skill repo, read with `git ls-remote --tags` (no download, nothing written, no code run).
 - Project copy and global copy differ → one extra line (no network needed).
 - MK_SKILLS_NO_UPDATE_CHECK=1 → no network. MK_SKILLS_REPO overrides the repo read for tags (tests, forks); the
-  CHANGELOG link and curl line still point at mzavn/mk-skills.
+  CHANGELOG link and curl line still point at mzavn/mk-lab.
 The agent tells the user only lines containing "có bản mới" or "khác bản cài chung". Always exits 0.
 """
 import os
@@ -17,9 +17,9 @@ import subprocess
 import sys
 
 sys.dont_write_bytecode = True
-REPO = os.environ.get("MK_SKILLS_REPO") or "https://github.com/mzavn/mk-skills.git"
-CHANGELOG = "https://github.com/mzavn/mk-skills/blob/main/CHANGELOG.md"
-CURL = "curl -fsSL https://raw.githubusercontent.com/mzavn/mk-skills/main/install.sh | bash -s --"
+REPO = os.environ.get("MK_SKILLS_REPO") or "https://github.com/mzavn/mk-lab.git"
+CHANGELOG = "https://github.com/mzavn/mk-lab/blob/main/CHANGELOG.md"
+CURL = "curl -fsSL https://raw.githubusercontent.com/mzavn/mk-lab/main/install.sh | bash -s --"
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HOME = os.path.expanduser("~")
 GLOBALS = [os.path.join(HOME, ".claude", "skills", "mk-specs"), os.path.join(HOME, ".agents", "skills", "mk-specs")]

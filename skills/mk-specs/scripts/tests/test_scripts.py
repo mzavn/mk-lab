@@ -337,6 +337,22 @@ class UpdateCheck(unittest.TestCase):
         self.assertIn("không kiểm được bản mới", self.check(repo=os.path.join(self.tmp, "missing")))
         self.assertIn("đã tắt", self.check(MK_SKILLS_NO_UPDATE_CHECK="1"))
 
+    def test_default_repo_is_mzavn_mk_lab_for_tags_changelog_and_curl(self):
+        self.tag("v9.0.0")
+        self.install(os.path.join(self.home, ".claude", "skills"), "1.4.0")
+        os.makedirs(self.proj, exist_ok=True)
+        # No MK_SKILLS_REPO: git rewrites only the mk-lab URL to the local repo and refuses https (no network).
+        env = {**{k: v for k, v in self.env.items() if not k.startswith(("MK_SKILLS_", "GIT_CONFIG_"))},
+               "HOME": self.home, "GIT_CONFIG_COUNT": "2", "GIT_CONFIG_KEY_0": f"url.{self.repo}.insteadOf",
+               "GIT_CONFIG_VALUE_0": "https://github.com/mzavn/mk-lab.git",
+               "GIT_CONFIG_KEY_1": "protocol.https.allow", "GIT_CONFIG_VALUE_1": "never"}
+        res = subprocess.run([sys.executable, os.path.join(SCRIPTS, "check-update.py")], cwd=self.proj,
+                             capture_output=True, text=True, env=env)
+        self.assertIn("có bản mới v9.0.0 (đang dùng 1.4.0)", res.stdout)
+        self.assertIn("https://github.com/mzavn/mk-lab/blob/main/CHANGELOG.md", res.stdout)
+        self.assertIn("curl -fsSL https://raw.githubusercontent.com/mzavn/mk-lab/main/install.sh | bash", res.stdout)
+        self.assertNotIn("mk-skills", res.stdout)
+
 
 def write_tree(root, files):
     for rel, text in files.items():

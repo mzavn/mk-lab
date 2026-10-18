@@ -41,7 +41,7 @@ def set_version(skill_md, ver):
 
 
 def make_checkout(path):
-    """Copy of the working tree's installer and mk-specs (uncommitted code included) plus a minimal `star`."""
+    """Copy of the working tree's installer and mk-specs (uncommitted code included) plus a fake second skill `star`."""
     os.makedirs(os.path.join(path, "skills"))
     shutil.copy2(INSTALL, path)
     shutil.copytree(os.path.join(ROOT, "skills", "mk-specs"), os.path.join(path, "skills", "mk-specs"),
@@ -163,6 +163,26 @@ class PipedBootstrap(unittest.TestCase):
         self.assertEqual(installed, version(os.path.join(self.upstream, "skills", "mk-specs", "SKILL.md")))
         self.assertNotEqual(installed, "9.9.9")
 
+    def test_default_repo_is_mzavn_mk_lab_for_clone_and_help(self):
+        with open(INSTALL, "rb") as fh:
+            script = fh.read()
+        # No MK_SKILLS_REPO/MK_SKILLS_HOME: git rewrites only the mk-lab URL to the local upstream and refuses https,
+        # so any other default URL fails instead of reaching GitHub.
+        env = {**{k: v for k, v in os.environ.items() if not k.startswith(("MK_SKILLS_", "GIT_CONFIG_"))},
+               "HOME": self.home, "MK_SKILLS_NO_UPDATE_CHECK": "1", "GIT_CONFIG_COUNT": "2",
+               "GIT_CONFIG_KEY_0": f"url.{self.upstream}.insteadOf", "GIT_CONFIG_VALUE_0": "https://github.com/mzavn/mk-lab.git",
+               "GIT_CONFIG_KEY_1": "protocol.https.allow", "GIT_CONFIG_VALUE_1": "never"}
+        res = subprocess.run(["bash", "-s", "--", "--global"], input=script, cwd=self.tmp, capture_output=True, env=env)
+        self.assertEqual(res.returncode, 0, res.stderr.decode())
+        clone = os.path.join(self.home, ".mk-skills")
+        origin = subprocess.run(["git", "-C", clone, "remote", "get-url", "origin"], capture_output=True, text=True)
+        self.assertEqual(origin.stdout.strip(), "https://github.com/mzavn/mk-lab.git")
+        with open(os.path.join(self.home, ".claude", "skills", "mk-specs", SOURCE_FILE), encoding="utf-8") as fh:
+            self.assertEqual(fh.read().strip(), clone)
+        res = subprocess.run(["bash", INSTALL, "--help"], capture_output=True, text=True, env=env)
+        self.assertIn("curl -fsSL https://raw.githubusercontent.com/mzavn/mk-lab/main/install.sh | bash", res.stdout)
+        self.assertNotIn("mzavn/mk-skills", res.stdout)
+
     def test_installer_parses_on_system_bash(self):
         for bash in ("bash", "/bin/bash"):
             if shutil.which(bash) or os.path.exists(bash):
@@ -170,7 +190,7 @@ class PipedBootstrap(unittest.TestCase):
 
 
 class SkillCase(unittest.TestCase):
-    """Checkout with skills mk-specs + star, fake HOME, installer run by the system bash."""
+    """Checkout with mk-specs + a fake second skill `star`, fake HOME, installer run by the system bash."""
 
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
@@ -359,7 +379,7 @@ class UpdateSkills(SkillCase):
         self.ok("--global", "--skill", "star")
         self.bump_source("9.0.0")
         res = self.ok("--update")
-        self.assertIn("mk-skills: ", res.stdout)
+        self.assertIn("mk-lab: ", res.stdout)
         for name in ("mk-specs", "star"):
             for base in (".claude", ".agents"):
                 self.assertIn(f"global: {self.h(base, 'skills', name)} (", res.stdout)
@@ -388,7 +408,7 @@ class UpdateSkills(SkillCase):
         self.bump_source("9.0.0")
         res = self.install("--update", "--skill", "khong-co")
         self.assertEqual(res.returncode, 1)
-        self.assertIn("mk-skills: ", res.stdout)
+        self.assertIn("mk-lab: ", res.stdout)
         self.assertIn("mk-specs, star", res.stderr)
         self.assertEqual(version(os.path.join(self.checkout, "skills", "star", "SKILL.md")), "9.0.0")
         self.assertEqual(os.listdir(self.home), [])

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install a skill of mk-skills (copies, never symlinks). Safe to re-run: missing pieces are added, existing ones kept or updated.
+# Install a skill of mk-lab (copies, never symlinks). Safe to re-run: missing pieces are added, existing ones kept or updated.
 #   --skill <name>    → which skill (default mk-specs; also --skill=<name>); the ones below say mk-specs, read <name>
 #   --global          → ~/.claude/skills/mk-specs and ~/.agents/skills/mk-specs
 #   --project <dir>   → <dir>/.claude/skills/mk-specs, <dir>/specs/mk-specs.yml (template, only if missing),
@@ -13,8 +13,8 @@
 #   --force           → overwrite a project copy that has local edits, or a skill folder install.sh did not create
 #   --uninstall       → remove instead of install (with --global and/or --project; config and import lines are kept)
 # Flags combine: install.sh --update --global --project .
-# Without a clone: curl -fsSL https://raw.githubusercontent.com/mzavn/mk-skills/main/install.sh | bash -s -- --global
-#   (clones to $MK_SKILLS_HOME, default ~/.mk-skills, then runs from there)
+# Without a clone: curl -fsSL https://raw.githubusercontent.com/mzavn/mk-lab/main/install.sh | bash -s -- --global
+#   (clones to $MK_SKILLS_HOME, default ~/.mk-skills — the name mk-lab had before — then runs from there)
 set -euo pipefail
 
 DEFAULT_SKILL=mk-specs
@@ -23,8 +23,8 @@ SELF="${BASH_SOURCE[0]:-}"
 ROOT=""
 if [ -n "$SELF" ] && [ -f "$SELF" ]; then ROOT="$(cd "$(dirname "$SELF")" && pwd)"; fi
 MANIFEST=.mk-specs-manifest
-SOURCE_FILE=.mk-specs-source  # global copies only: path of the mk-skills checkout, so agents can suggest the update command
-REPO_URL="${MK_SKILLS_REPO:-https://github.com/mzavn/mk-skills.git}"
+SOURCE_FILE=.mk-specs-source  # global copies only: path of the mk-lab checkout, so agents can suggest the update command
+REPO_URL="${MK_SKILLS_REPO:-https://github.com/mzavn/mk-lab.git}"
 ARGS=("$@")
 
 # The comment block at the top of this file, whatever its length.
@@ -86,11 +86,11 @@ if [ "$UPDATE" = 1 ]; then
   [ "$GLOBAL" = 1 ] || [ ${#PROJECTS[@]} -gt 0 ] || GLOBAL=1
   if [ -z "${MK_SKILLS_UPDATED:-}" ]; then
     git -C "$ROOT" rev-parse --git-dir >/dev/null 2>&1 ||
-      die "--update needs a git checkout of mk-skills ($ROOT is not one); reinstall with the curl line in --help"
+      die "--update needs a git checkout of mk-lab ($ROOT is not one); reinstall with the curl line in --help"
     before="$(git -C "$ROOT" rev-parse --short HEAD)"
     git -C "$ROOT" pull --ff-only -q ||
       die "cannot fast-forward $ROOT (local commits or edits?); resolve them, then re-run"
-    echo "mk-skills: $before → $(git -C "$ROOT" rev-parse --short HEAD)"
+    echo "mk-lab: $before → $(git -C "$ROOT" rev-parse --short HEAD)"
     MK_SKILLS_UPDATED=1 exec bash "$ROOT/install.sh" "${ARGS[@]}"  # the installer itself may have changed
   fi
 fi
