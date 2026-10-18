@@ -1,5 +1,6 @@
 """Installer tests (repo only, not shipped in the skill). Run: python3 -m unittest discover -s tests"""
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -7,6 +8,12 @@ import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 INSTALL = os.path.join(ROOT, "install.sh")
+# macOS ships bash 3.2 as /bin/bash: the multi-skill tests install for real with it (empty arrays under `set -u`).
+BASH = "/bin/bash" if os.path.exists("/bin/bash") else "bash"
+GIT_ID = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@example.com",
+          "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@example.com"}
+MANIFEST = ".mk-specs-manifest"
+SOURCE_FILE = ".mk-specs-source"
 
 
 def version(path):
@@ -15,6 +22,42 @@ def version(path):
             if line.strip().startswith("version:"):
                 return line.split(":", 1)[1].strip().strip('"')
     return None
+
+
+def write_skill(checkout, name, ver):
+    """A minimal skill: the installer tests must not depend on the content of any skill but mk-specs."""
+    os.makedirs(os.path.join(checkout, "skills", name, "references"), exist_ok=True)
+    with open(os.path.join(checkout, "skills", name, "SKILL.md"), "w", encoding="utf-8") as fh:
+        fh.write(f'---\nname: {name}\ndescription: test skill\nmetadata:\n  version: "{ver}"\n---\n# {name}\n')
+    with open(os.path.join(checkout, "skills", name, "references", "a.md"), "w", encoding="utf-8") as fh:
+        fh.write("a\n")
+
+
+def set_version(skill_md, ver):
+    with open(skill_md, encoding="utf-8") as fh:
+        text = fh.read()
+    with open(skill_md, "w", encoding="utf-8") as fh:
+        fh.write(re.sub(r'^(\s*version:\s*)"[^"]*"', rf'\g<1>"{ver}"', text, count=1, flags=re.M))
+
+
+def make_checkout(path):
+    """Copy of the working tree's installer and mk-specs (uncommitted code included) plus a minimal `star`."""
+    os.makedirs(os.path.join(path, "skills"))
+    shutil.copy2(INSTALL, path)
+    shutil.copytree(os.path.join(ROOT, "skills", "mk-specs"), os.path.join(path, "skills", "mk-specs"),
+                    ignore=shutil.ignore_patterns("__pycache__", ".DS_Store"))
+    write_skill(path, "star", "1.5.1")
+
+
+def snapshot(folder):
+    """relative path → bytes of every file under folder ({} when missing)."""
+    out = {}
+    for base, _, files in os.walk(folder):
+        for f in files:
+            p = os.path.join(base, f)
+            with open(p, "rb") as fh:
+                out[os.path.relpath(p, folder)] = fh.read()
+    return out
 
 
 class SymlinkedDestination(unittest.TestCase):
@@ -124,6 +167,231 @@ class PipedBootstrap(unittest.TestCase):
         for bash in ("bash", "/bin/bash"):
             if shutil.which(bash) or os.path.exists(bash):
                 self.assertEqual(subprocess.run([bash, "-n", INSTALL]).returncode, 0, bash)
+
+
+class SkillCase(unittest.TestCase):
+    """Checkout with skills mk-specs + star, fake HOME, installer run by the system bash."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.home = os.path.join(self.tmp, "home")
+        os.makedirs(self.home)
+        self.checkout = os.path.join(self.tmp, "checkout")
+        make_checkout(self.checkout)
+        self.env = {**{k: v for k, v in os.environ.items() if k != "MK_SKILLS_UPDATED"},
+                    "HOME": self.home, "MK_SKILLS_NO_UPDATE_CHECK": "1", **GIT_ID}
+        self.proj = os.path.join(self.tmp, "proj")
+        os.makedirs(self.proj)
+        subprocess.run(["git", "init", "-q", self.proj], check=True)
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def install(self, *args):
+        return subprocess.run([BASH, os.path.join(self.checkout, "install.sh"), *args],
+                              capture_output=True, text=True, env=self.env)
+
+    def ok(self, *args):
+        res = self.install(*args)
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+        return res
+
+    def h(self, *parts):
+        return os.path.join(self.home, *parts)
+
+    def p(self, *parts):
+        return os.path.join(self.proj, *parts)
+
+    def git(self, cwd, *args):
+        subprocess.run(["git", "-C", cwd, *args], check=True, capture_output=True, env=self.env)
+
+    def foreign(self, folder):
+        os.makedirs(folder)
+        with open(os.path.join(folder, "keep.txt"), "w") as fh:
+            fh.write("keep")
+
+
+class GlobalSkill(SkillCase):
+    def test_global_install_of_star_adds_its_copies_and_leaves_mk_specs_alone(self):
+        self.ok("--global")
+        before = snapshot(self.h(".claude", "skills", "mk-specs")), snapshot(self.h(".agents", "skills", "mk-specs"))
+        res = self.ok("--global", "--skill", "star")
+        self.assertIn("star 1.5.1", res.stdout)
+        for base in (".claude", ".agents"):
+            dest = self.h(base, "skills", "star")
+            for f in ("SKILL.md", os.path.join("references", "a.md"), MANIFEST, SOURCE_FILE):
+                self.assertTrue(os.path.isfile(os.path.join(dest, f)), (dest, f))
+            self.assertIn(f"global: {dest} (none → 1.5.1)", res.stdout)
+        after = snapshot(self.h(".claude", "skills", "mk-specs")), snapshot(self.h(".agents", "skills", "mk-specs"))
+        self.assertEqual(before, after)
+
+    def test_bad_skill_arguments_are_refused_with_the_skill_list_and_install_nothing(self):
+        for args in (["--global", "--skill", "khong-co"], ["--global", "--skill", "../x"], ["--global", "--skill", "-x"],
+                     ["--global", "--skill"], ["--skill", "--global"], ["--global", "--skill="],
+                     ["--global", "--skill", "star", "--skill", "star"], ["--global", "--skill=star", "--skill=mk-specs"],
+                     ["--skill", "star", "--check"], ["--check", "--skill=star"]):
+            res = self.install(*args)
+            self.assertEqual(res.returncode, 1, args)
+            self.assertIn("mk-specs, star", res.stderr, args)
+        self.assertEqual(os.listdir(self.home), [])
+
+    def test_global_star_refuses_a_folder_it_did_not_create_until_forced(self):
+        self.foreign(self.h(".agents", "skills", "star"))
+        res = self.install("--global", "--skill", "star")
+        self.assertEqual(res.returncode, 1)
+        self.assertIn("was not installed by install.sh", res.stderr)
+        self.assertEqual(os.listdir(self.h(".agents", "skills", "star")), ["keep.txt"])
+        self.assertFalse(os.path.exists(self.h(".claude", "skills", "star")))
+        self.ok("--global", "--skill", "star", "--force")
+        self.assertFalse(os.path.exists(self.h(".agents", "skills", "star", "keep.txt")))
+        self.assertTrue(os.path.isfile(self.h(".agents", "skills", "star", MANIFEST)))
+
+    def test_global_mk_specs_still_replaces_a_folder_without_manifest(self):
+        self.foreign(self.h(".agents", "skills", "mk-specs"))
+        self.ok("--global")
+        self.assertTrue(os.path.isfile(self.h(".agents", "skills", "mk-specs", MANIFEST)))
+        self.assertFalse(os.path.exists(self.h(".agents", "skills", "mk-specs", "keep.txt")))
+
+    def test_help_shows_the_whole_header_including_skill_flag_and_curl_line(self):
+        res = self.ok("--help")
+        self.assertIn("--skill", res.stdout)
+        self.assertIn("curl -fsSL", res.stdout)
+        self.assertIn("MK_SKILLS_HOME", res.stdout)
+        self.assertNotIn("set -euo", res.stdout)
+
+
+class ProjectSkill(SkillCase):
+    def test_project_install_of_star_touches_neither_config_nor_agent_files(self):
+        with open(self.p("GEMINI.md"), "w", encoding="utf-8") as fh:
+            fh.write("# Gemini\n")
+        self.ok("--project", self.proj, "--skill", "star")
+        self.assertTrue(os.path.isfile(self.p(".claude", "skills", "star", MANIFEST)))
+        self.assertFalse(os.path.exists(self.p("specs")))
+        self.assertFalse(os.path.exists(self.p("AGENTS.md")))
+        self.assertFalse(os.path.exists(self.p("CLAUDE.md")))
+        with open(self.p("GEMINI.md"), encoding="utf-8") as fh:
+            self.assertEqual(fh.read(), "# Gemini\n")
+        self.assertFalse(os.path.exists(self.p(".agents")))
+        self.ok("--project", self.proj, "--skill=star", "--agents-dir")
+        self.assertTrue(os.path.isfile(self.p(".agents", "skills", "star", MANIFEST)))
+        self.assertFalse(os.path.exists(self.p("AGENTS.md")))
+
+    def test_hand_edit_in_project_star_is_not_overwritten(self):
+        self.ok("--project", self.proj, "--skill", "star")
+        skill = self.p(".claude", "skills", "star", "SKILL.md")
+        with open(skill, "a", encoding="utf-8") as fh:
+            fh.write("\nsửa tay\n")
+        res = self.install("--project", self.proj, "--skill", "star")
+        self.assertEqual(res.returncode, 1)
+        self.assertIn("has edits not made by install.sh", res.stderr)
+        with open(skill, encoding="utf-8") as fh:
+            self.assertIn("sửa tay", fh.read())
+
+    def test_committed_star_folder_without_manifest_blocks_every_destination(self):
+        for foreign, other in ((".claude", ".agents"), (".agents", ".claude")):
+            self.foreign(self.p(foreign, "skills", "star"))
+            self.git(self.proj, "add", "-A")
+            self.git(self.proj, "commit", "-q", "-m", "foreign star")
+            res = self.install("--project", self.proj, "--skill", "star", "--agents-dir")
+            self.assertEqual(res.returncode, 1, foreign)
+            self.assertIn("was not installed by install.sh", res.stderr)
+            self.assertEqual(os.listdir(self.p(foreign, "skills", "star")), ["keep.txt"])
+            self.assertFalse(os.path.exists(self.p(other, "skills", "star")), foreign)
+            self.git(self.proj, "rm", "-q", "-r", foreign)
+            self.git(self.proj, "commit", "-q", "-m", "drop")
+
+
+class UninstallSkill(SkillCase):
+    def test_uninstalling_star_from_project_keeps_mk_specs_config_and_agent_files(self):
+        self.ok("--project", self.proj)
+        self.ok("--project", self.proj, "--skill", "star", "--agents-dir")
+        kept = {f: snapshot(self.p(f)) for f in (os.path.join(".claude", "skills", "mk-specs"), "specs")}
+        with open(self.p("AGENTS.md"), "rb") as fh:
+            agents_md = fh.read()
+        res = self.ok("--uninstall", "--project", self.proj, "--skill", "star")
+        self.assertFalse(os.path.exists(self.p(".claude", "skills", "star")))
+        self.assertFalse(os.path.exists(self.p(".agents", "skills", "star")))
+        self.assertNotIn("kept specs/mk-specs.yml", res.stdout)
+        self.assertEqual(kept, {f: snapshot(self.p(f)) for f in kept})
+        with open(self.p("AGENTS.md"), "rb") as fh:
+            self.assertEqual(fh.read(), agents_md)
+
+    def test_uninstalling_star_refuses_any_copy_without_manifest_and_removes_nothing(self):
+        self.ok("--global", "--skill", "star")
+        os.remove(self.h(".claude", "skills", "star", MANIFEST))
+        res = self.install("--uninstall", "--global", "--skill", "star")
+        self.assertEqual(res.returncode, 1)
+        self.assertIn("was not installed by install.sh", res.stderr)
+        self.assertTrue(os.path.isdir(self.h(".claude", "skills", "star")))
+        self.assertTrue(os.path.isdir(self.h(".agents", "skills", "star")))
+
+        self.ok("--project", self.proj, "--skill", "star", "--agents-dir")
+        os.remove(self.p(".agents", "skills", "star", MANIFEST))
+        res = self.install("--uninstall", "--project", self.proj, "--skill", "star")
+        self.assertEqual(res.returncode, 1)
+        self.assertIn("was not installed by install.sh", res.stderr)
+        self.assertTrue(os.path.isfile(self.p(".claude", "skills", "star", MANIFEST)))
+        self.assertTrue(os.path.isdir(self.p(".agents", "skills", "star")))
+
+
+class UpdateSkills(SkillCase):
+    """--update from a clone of a throwaway source repo built from the working tree, so uncommitted code is tested."""
+
+    def setUp(self):
+        super().setUp()
+        self.source = self.checkout
+        self.git(self.source, "init", "-q")
+        self.commit_source("v1")
+        self.checkout = os.path.join(self.tmp, "clone")
+        subprocess.run(["git", "clone", "-q", self.source, self.checkout], check=True, env=self.env)
+
+    def commit_source(self, msg):
+        self.git(self.source, "add", "-A")
+        self.git(self.source, "commit", "-q", "-m", msg)
+
+    def bump_source(self, ver):
+        for name in ("mk-specs", "star"):
+            set_version(os.path.join(self.source, "skills", name, "SKILL.md"), ver)
+        self.commit_source(f"bump {ver}")
+
+    def test_update_pulls_then_refreshes_every_global_skill(self):
+        self.ok("--global")
+        self.ok("--global", "--skill", "star")
+        self.bump_source("9.0.0")
+        res = self.ok("--update")
+        self.assertIn("mk-skills: ", res.stdout)
+        for name in ("mk-specs", "star"):
+            for base in (".claude", ".agents"):
+                self.assertIn(f"global: {self.h(base, 'skills', name)} (", res.stdout)
+                self.assertEqual(version(self.h(base, "skills", name, "SKILL.md")), "9.0.0")
+        self.assertRegex(res.stdout, r"\(1\.5\.1 → 9\.0\.0\)")
+
+    def test_update_of_project_with_only_star_does_not_add_mk_specs(self):
+        self.ok("--project", self.proj, "--skill", "star")
+        self.bump_source("9.0.0")
+        res = self.ok("--update", "--project", self.proj)
+        self.assertIn("(1.5.1 → 9.0.0)", res.stdout)
+        self.assertEqual(version(self.p(".claude", "skills", "star", "SKILL.md")), "9.0.0")
+        for path in ((".claude", "skills", "mk-specs"), ("specs", "mk-specs.yml"), ("AGENTS.md",), ("CLAUDE.md",)):
+            self.assertFalse(os.path.exists(self.p(*path)), path)
+        self.assertFalse(os.path.exists(self.h(".claude")))
+
+    def test_update_with_a_skill_added_upstream_installs_it_after_pulling(self):
+        write_skill(self.source, "moi", "1.5.1")
+        self.commit_source("add moi")
+        res = self.ok("--update", "--global", "--skill", "moi")
+        self.assertTrue(os.path.isfile(self.h(".claude", "skills", "moi", MANIFEST)))
+        self.assertFalse(os.path.exists(self.h(".claude", "skills", "mk-specs")))
+        self.assertIn("moi 1.5.1", res.stdout)
+
+    def test_update_with_unknown_skill_pulls_but_installs_nothing(self):
+        self.bump_source("9.0.0")
+        res = self.install("--update", "--skill", "khong-co")
+        self.assertEqual(res.returncode, 1)
+        self.assertIn("mk-skills: ", res.stdout)
+        self.assertIn("mk-specs, star", res.stderr)
+        self.assertEqual(version(os.path.join(self.checkout, "skills", "star", "SKILL.md")), "9.0.0")
+        self.assertEqual(os.listdir(self.home), [])
 
 
 if __name__ == "__main__":
