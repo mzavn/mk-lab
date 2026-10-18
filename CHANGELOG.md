@@ -6,10 +6,23 @@ Mỗi bản có số dạng `X.Y.Z`:
 - **Số giữa (Y)** tăng: có thêm tính năng; cập nhật xong dùng tiếp bình thường.
 - **Số đầu (X)** tăng: cập nhật xong bạn cần làm thêm một bước — bản đó sẽ ghi rõ bước gì.
 
-Cập nhật: `bash ~/.mk-skills/install.sh --update`. Agent cũng tự nhắc khi có bản mới.
+Cập nhật: `bash ~/.mk-lab/install.sh --update`. Agent cũng tự nhắc khi có bản mới.
+
 ## Chưa phát hành
 
-Dự kiến: v1.6.0
+Dự kiến: v2.0.0
+
+**Cần làm khi cập nhật** (máy đã cài trước bản này — có thư mục `~/.mk-skills`)
+
+Thư mục clone và biến môi trường đổi theo tên mới của repo: `~/.mk-skills` → `~/.mk-lab`, `MK_SKILLS_…` → `MK_LAB_…`. Tên cũ không còn tác dụng. Làm một lần, theo thứ tự:
+
+1. Đã đặt biến nào bắt đầu bằng `MK_SKILLS_` (vd `MK_SKILLS_NO_UPDATE_CHECK=1` trong `~/.zshrc`)? Đổi thành `MK_LAB_…` rồi mở terminal mới. Không đặt biến nào thì bỏ qua.
+2. Cài lại bản chung — lệnh clone vào `~/.mk-lab` và thay bản cũ:
+   `curl -fsSL https://raw.githubusercontent.com/mzavn/mk-lab/main/install.sh | bash -s -- --global`
+3. Xoá thư mục clone cũ nếu bạn không sửa gì trong đó: `rm -rf ~/.mk-skills` (clone ở chỗ khác thì xoá chỗ đó).
+4. Mỗi repo đã cài mk-specs: `bash ~/.mk-lab/install.sh --update --project .` (clone tay: thay `~/.mk-lab` bằng nơi clone) rồi commit `.claude/skills/mk-specs` như mọi lần cập nhật. Chưa làm bước này thì trong repo đó biến tắt nhắc mới (`MK_LAB_NO_UPDATE_CHECK`) chưa có tác dụng.
+
+Tự clone repo bằng tay (không ở `~/.mk-skills`) và không đặt biến nào: thay bước 2–3 bằng `bash <nơi clone>/install.sh --update` như mọi lần, rồi làm bước 4. Bỏ qua cả bốn bước thì lệnh cũ `bash ~/.mk-skills/install.sh --update` vẫn chạy, chỉ còn tên thư mục cũ.
 
 **Mới**
 
@@ -17,7 +30,7 @@ Dự kiến: v1.6.0
 
 **Sửa**
 
-- Repo đổi tên thành **mk-lab** (`github.com/mzavn/mk-lab`, bộ skill lập trình). Lệnh cài, nhắc bản mới và link CHANGELOG giờ trỏ tên mới. Bạn không phải làm gì: địa chỉ cũ tự chuyển sang tên mới, thư mục `~/.mk-skills` và các biến `MK_SKILLS_*` giữ nguyên.
+- Repo đổi tên thành **mk-lab** (`github.com/mzavn/mk-lab`, bộ skill lập trình). Lệnh cài, nhắc bản mới và link CHANGELOG giờ trỏ tên mới; địa chỉ cũ trên GitHub tự chuyển sang tên mới.
 
 ## v1.5.1 — 14/10/2026
 

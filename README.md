@@ -2,7 +2,7 @@
 
 Bộ skill **lập trình** cho AI coding agent (Claude Code, omp và các agent đọc thư mục skill chuẩn). Hiện có một skill: **`mk-specs`** — Spec-Driven Development (SDD); các skill lập trình khác sẽ thêm vào đây, cài riêng từng cái bằng `--skill <tên>`.
 
-> Trước đây repo tên **mk-skills** (`mzavn/mk-skills`). Lệnh, đường dẫn và biến cũ (`~/.mk-skills`, `MK_SKILLS_*`) vẫn chạy — máy đã cài không phải làm gì.
+> Cài trước v2.0.0 (máy có thư mục `~/.mk-skills` — tên cũ của repo)? Làm các bước "Cần làm khi cập nhật" của bản v2.0.0 trong [CHANGELOG.md](CHANGELOG.md).
 
 *English summary at the end.*
 
@@ -45,7 +45,7 @@ Khi AI viết phần lớn code, điều gì không được viết ra thì vớ
 
 Hướng dẫn ngắn từng bước (đưa cho agent tự cài được): [INSTALL.md](INSTALL.md).
 
-Nhanh nhất — không cần tự clone (script clone vào `~/.mk-skills`, đổi bằng biến `MK_SKILLS_HOME`):
+Nhanh nhất — không cần tự clone (script clone vào `~/.mk-lab`, đổi bằng biến `MK_LAB_HOME`):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/mzavn/mk-lab/main/install.sh | bash -s -- --global
@@ -67,7 +67,7 @@ cd mk-lab
 
 ```bash
 cd ~/code/my-shop
-bash ~/.mk-skills/install.sh --project .   # hoặc đường dẫn tới nơi đã clone mk-lab
+bash ~/.mk-lab/install.sh --project .   # hoặc đường dẫn tới nơi đã clone mk-lab
 ```
 
 `--project` làm gì (chạy lại bao nhiêu lần cũng được — **thiếu thì thêm, có rồi thì giữ hoặc cập nhật**):
@@ -104,14 +104,14 @@ Khi project dùng `npm`, thêm vào `package.json`:
 Skill phát hành theo bản (`vX.Y.Z`, xem [CHANGELOG.md](CHANGELOG.md)); `--update` chỉ nhận bản đã phát hành. Một lệnh:
 
 ```bash
-bash ~/.mk-skills/install.sh --update                          # bản cài chung: mọi skill đã cài bằng install.sh
-bash ~/.mk-skills/install.sh --update --global --project .     # đứng trong project: cả hai
-bash ~/.mk-skills/install.sh --check                           # chỉ xem có bản mới không
+bash ~/.mk-lab/install.sh --update                          # bản cài chung: mọi skill đã cài bằng install.sh
+bash ~/.mk-lab/install.sh --update --global --project .     # đứng trong project: cả hai
+bash ~/.mk-lab/install.sh --check                           # chỉ xem có bản mới không
 ```
 
-**Nhắc tự động:** mỗi phiên agent chạy `scripts/check-update.py` một lần — chỉ đọc danh sách tag trên GitHub, không tải, không gửi gì — có bản mới thì nhắc một dòng kèm lệnh, bạn đồng ý mới chạy. Tắt: đặt biến môi trường `MK_SKILLS_NO_UPDATE_CHECK=1`. Bản tăng số X luôn ghi trong CHANGELOG bước bạn cần làm thêm.
+**Nhắc tự động:** mỗi phiên agent chạy `scripts/check-update.py` một lần — chỉ đọc danh sách tag trên GitHub, không tải, không gửi gì — có bản mới thì nhắc một dòng kèm lệnh, bạn đồng ý mới chạy. Tắt: đặt biến môi trường `MK_LAB_NO_UPDATE_CHECK=1`. Bản tăng số X luôn ghi trong CHANGELOG bước bạn cần làm thêm.
 
-Clone ở chỗ khác thì thay `~/.mk-skills` bằng đường dẫn đó (đường dẫn được ghi trong `~/.claude/skills/mk-specs/.mk-specs-source`). Chạy lại bao nhiêu lần cũng được: file đã xoá ở bản mới bị bỏ, `specs/mk-specs.yml` và phần ngoài khối `mk-specs` của `AGENTS.md` giữ nguyên. Bản trong project chỉ bị từ chối khi có file khác với bản `install.sh` đã chép (sửa tay, kể cả đã commit): script liệt kê file đó; luật riêng chuyển sang `AGENTS.md` ngoài khối, rồi chạy lại với `--force`.
+Clone ở chỗ khác thì thay `~/.mk-lab` bằng đường dẫn đó (đường dẫn được ghi trong `~/.claude/skills/mk-specs/.mk-specs-source`). Chạy lại bao nhiêu lần cũng được: file đã xoá ở bản mới bị bỏ, `specs/mk-specs.yml` và phần ngoài khối `mk-specs` của `AGENTS.md` giữ nguyên. Bản trong project chỉ bị từ chối khi có file khác với bản `install.sh` đã chép (sửa tay, kể cả đã commit): script liệt kê file đó; luật riêng chuyển sang `AGENTS.md` ngoài khối, rồi chạy lại với `--force`.
 
 Rồi trong project: chạy `specs:gen` — `traceability.md`/`open-issues.md` phải không đổi nếu spec không đổi — và commit `.claude/skills/mk-specs` (`chore(specs): update mk-specs to vX.Y.Z`).
 
@@ -214,10 +214,10 @@ MIT — xem [LICENSE](LICENSE).
 
 ## English
 
-**mk-lab** (formerly **mk-skills**; old URLs, `~/.mk-skills` and `MK_SKILLS_*` keep working) is a set of programming skills for AI coding agents; pick one with `install.sh --skill <name>` (default `mk-specs`).
+**mk-lab** (formerly **mk-skills**; installs from before v2.0.0 live in `~/.mk-skills` — see "Cần làm khi cập nhật" under v2.0.0 in `CHANGELOG.md`) is a set of programming skills for AI coding agents; pick one with `install.sh --skill <name>` (default `mk-specs`).
 
 **mk-specs** is an agent skill for Spec-Driven Development at four levels of rigour on one structure: (1) an interviewed PRD with permanent story IDs, testable "done when" criteria and a build order; (2) plus a single-file HTML wireframe of the main screen; (3) plus a technical design (TDD); (4) full SDD with business requirements, use cases, entities, acceptance criteria and ADRs. Levels 1–3 stop before coding with cross-checked files ready for planning; `promote` lifts a PRD into full specs, keeping story IDs and checking against running code. The six-part structure (why · what · look · how · work breakdown · governance) is what ISO/IEC/IEEE 29148, GitHub Spec Kit, Kiro and BMAD share. It ships workflows (prd, promote, init, change, review, apply, merge, check, commit, audit), templates, and stdlib-only Python scripts that generate a UC ↔ AC ↔ test traceability matrix and an open-issues list, verify every cited test exists and every relative link resolves, and report AC Coverage, Spec Coverage and Trace Ratio. After writing a spec, PRD or proposal the agent self-reviews it (`review`): it fixes its own mistakes, asks the user about genuine decision points, and records the result. Spec-writing discipline (ask before assuming, nothing speculative, surgical edits) follows the Karpathy guidelines.
 
-Install with `./install.sh --global` (copies to `~/.claude/skills` and `~/.agents/skills`) and/or `./install.sh --project <repo>` (from inside a repo: `--project .`; idempotent — copies to `<repo>/.claude/skills`, creates `specs/mk-specs.yml` if missing, maintains a marked mk-specs block in `AGENTS.md` (the cross-agent standard) and adds `@AGENTS.md` to `CLAUDE.md`, so agents without skill support still follow the workflow; `--agents-dir` also copies to `.agents/skills`). Requirements: bash, python3 ≥ 3.8, git. Skill text is Vietnamese with industry-standard English terms; `references/glossary.md` explains each term for newcomers. PRDs and BRs capture personas with a fixed 7-field frame that stories are derived from. Releases follow SemVer (tags `vX.Y.Z`, `CHANGELOG.md`); `main` only carries released versions, `--update` installs the latest release, and the agent checks once per session for a newer tag (read-only `git ls-remote`, opt out with `MK_SKILLS_NO_UPDATE_CHECK=1`).
+Install with `./install.sh --global` (copies to `~/.claude/skills` and `~/.agents/skills`) and/or `./install.sh --project <repo>` (from inside a repo: `--project .`; idempotent — copies to `<repo>/.claude/skills`, creates `specs/mk-specs.yml` if missing, maintains a marked mk-specs block in `AGENTS.md` (the cross-agent standard) and adds `@AGENTS.md` to `CLAUDE.md`, so agents without skill support still follow the workflow; `--agents-dir` also copies to `.agents/skills`). Requirements: bash, python3 ≥ 3.8, git. Skill text is Vietnamese with industry-standard English terms; `references/glossary.md` explains each term for newcomers. PRDs and BRs capture personas with a fixed 7-field frame that stories are derived from. Releases follow SemVer (tags `vX.Y.Z`, `CHANGELOG.md`); `main` only carries released versions, `--update` installs the latest release, and the agent checks once per session for a newer tag (read-only `git ls-remote`, opt out with `MK_LAB_NO_UPDATE_CHECK=1`).
 
 Credits: thanks to Huy (huynt.dev) for the ebook *Spec Driven Development*, which the method follows; spec-writing discipline adapted from [andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) (MIT). License: MIT.
