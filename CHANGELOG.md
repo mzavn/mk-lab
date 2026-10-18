@@ -16,13 +16,13 @@ Dự kiến: v2.0.0
 
 Thư mục clone và biến môi trường đổi theo tên mới của repo: `~/.mk-skills` → `~/.mk-lab`, `MK_SKILLS_…` → `MK_LAB_…`. Tên cũ không còn tác dụng. Làm một lần, theo thứ tự:
 
-1. Đã đặt biến nào bắt đầu bằng `MK_SKILLS_` (vd `MK_SKILLS_NO_UPDATE_CHECK=1` trong `~/.zshrc`)? Đổi thành `MK_LAB_…` rồi mở terminal mới. Không đặt biến nào thì bỏ qua.
+1. Đã đặt biến nào bắt đầu bằng `MK_SKILLS_` (vd `MK_SKILLS_NO_UPDATE_CHECK=1` hoặc `MK_SKILLS_HOME=…` trong `~/.zshrc`)? Đổi thành `MK_LAB_…` (`MK_LAB_NO_UPDATE_CHECK`, `MK_LAB_HOME`) rồi mở terminal mới. Không đặt biến nào thì bỏ qua.
 2. Cài lại bản chung — lệnh clone vào `~/.mk-lab` và thay bản cũ:
    `curl -fsSL https://raw.githubusercontent.com/mzavn/mk-lab/main/install.sh | bash -s -- --global`
-3. Xoá thư mục clone cũ nếu bạn không sửa gì trong đó: `rm -rf ~/.mk-skills` (clone ở chỗ khác thì xoá chỗ đó).
+3. Xoá thư mục clone cũ `~/.mk-skills` khi cả hai đúng: `cat ~/.claude/skills/mk-specs/.mk-specs-source` in đường dẫn kết thúc bằng `.mk-lab` (không còn `.mk-skills`), và `git -C ~/.mk-skills status --short` không in gì (bạn không sửa gì trong đó). Rồi: `rm -rf ~/.mk-skills`. Không có thư mục này thì bỏ qua.
 4. Mỗi repo đã cài mk-specs: `bash ~/.mk-lab/install.sh --update --project .` (clone tay: thay `~/.mk-lab` bằng nơi clone) rồi commit `.claude/skills/mk-specs` như mọi lần cập nhật. Chưa làm bước này thì trong repo đó biến tắt nhắc mới (`MK_LAB_NO_UPDATE_CHECK`) chưa có tác dụng.
 
-Tự clone repo bằng tay (không ở `~/.mk-skills`) và không đặt biến nào: thay bước 2–3 bằng `bash <nơi clone>/install.sh --update` như mọi lần, rồi làm bước 4. Bỏ qua cả bốn bước thì lệnh cũ `bash ~/.mk-skills/install.sh --update` vẫn chạy, chỉ còn tên thư mục cũ.
+Tự clone repo bằng tay (không ở `~/.mk-skills`) và không đặt biến nào: thay bước 2–3 bằng `bash <nơi clone>/install.sh --update` như mọi lần, rồi làm bước 4. Bỏ qua cả bốn bước thì lệnh cũ `bash ~/.mk-skills/install.sh --update` vẫn chạy, nhưng các biến `MK_SKILLS_…` không còn tác dụng (vd đã tắt nhắc bản mới thì sẽ được nhắc lại) — ít nhất hãy làm bước 1.
 
 **Mới**
 
