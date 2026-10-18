@@ -6,7 +6,7 @@ Usage (from the project root): python3 <skill>/scripts/check-update.py
   else the copy this script belongs to.
 - "Latest" = highest tag vX.Y.Z of the skill repo, read with `git ls-remote --tags` (no download, nothing written, no code run).
 - Project copy and global copy differ → one extra line (no network needed).
-- MK_SKILLS_NO_UPDATE_CHECK=1 → no network. MK_SKILLS_REPO overrides the repo read for tags (tests, forks); the
+- MK_LAB_NO_UPDATE_CHECK=1 → no network. MK_LAB_REPO overrides the repo read for tags (tests, forks); the
   CHANGELOG link and curl line still point at mzavn/mk-lab.
 The agent tells the user only lines containing "có bản mới" or "khác bản cài chung". Always exits 0.
 """
@@ -17,7 +17,7 @@ import subprocess
 import sys
 
 sys.dont_write_bytecode = True
-REPO = os.environ.get("MK_SKILLS_REPO") or "https://github.com/mzavn/mk-lab.git"
+REPO = os.environ.get("MK_LAB_REPO") or "https://github.com/mzavn/mk-lab.git"
 CHANGELOG = "https://github.com/mzavn/mk-lab/blob/main/CHANGELOG.md"
 CURL = "curl -fsSL https://raw.githubusercontent.com/mzavn/mk-lab/main/install.sh | bash -s --"
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -76,8 +76,8 @@ def main():
     if project and glob and project != glob:
         print(f"mk-specs: bản trong project {project} khác bản cài chung {glob} — Claude Code đọc bản cài chung, scripts dùng bản project."
               f" Đồng bộ: {update_command(True, True)}")
-    if os.environ.get("MK_SKILLS_NO_UPDATE_CHECK") == "1":
-        print("mk-specs: đã tắt kiểm bản mới (MK_SKILLS_NO_UPDATE_CHECK=1).")
+    if os.environ.get("MK_LAB_NO_UPDATE_CHECK") == "1":
+        print("mk-specs: đã tắt kiểm bản mới (MK_LAB_NO_UPDATE_CHECK=1).")
         return
     latest = latest_tag()
     if latest is None:

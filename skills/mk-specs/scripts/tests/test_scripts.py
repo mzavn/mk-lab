@@ -271,9 +271,9 @@ class UpdateCheck(unittest.TestCase):
 
     def check(self, repo=None, **env):
         os.makedirs(self.proj, exist_ok=True)
-        base = {k: v for k, v in self.env.items() if k != "MK_SKILLS_NO_UPDATE_CHECK"}
+        base = {k: v for k, v in self.env.items() if k != "MK_LAB_NO_UPDATE_CHECK"}
         res = subprocess.run([sys.executable, os.path.join(SCRIPTS, "check-update.py")], cwd=self.proj, capture_output=True,
-                             text=True, env={**base, "HOME": self.home, "MK_SKILLS_REPO": repo or self.repo, **env})
+                             text=True, env={**base, "HOME": self.home, "MK_LAB_REPO": repo or self.repo, **env})
         self.assertEqual(res.returncode, 0, res.stderr)
         return res.stdout
 
@@ -335,14 +335,14 @@ class UpdateCheck(unittest.TestCase):
     def test_unreachable_repo_or_opt_out_never_fails(self):
         self.install(os.path.join(self.home, ".claude", "skills"), "1.4.0")
         self.assertIn("không kiểm được bản mới", self.check(repo=os.path.join(self.tmp, "missing")))
-        self.assertIn("đã tắt", self.check(MK_SKILLS_NO_UPDATE_CHECK="1"))
+        self.assertIn("đã tắt", self.check(MK_LAB_NO_UPDATE_CHECK="1"))
 
     def test_default_repo_is_mzavn_mk_lab_for_tags_changelog_and_curl(self):
         self.tag("v9.0.0")
         self.install(os.path.join(self.home, ".claude", "skills"), "1.4.0")
         os.makedirs(self.proj, exist_ok=True)
-        # No MK_SKILLS_REPO: git rewrites only the mk-lab URL to the local repo and refuses https (no network).
-        env = {**{k: v for k, v in self.env.items() if not k.startswith(("MK_SKILLS_", "GIT_CONFIG_"))},
+        # No MK_LAB_REPO: git rewrites only the mk-lab URL to the local repo and refuses https (no network).
+        env = {**{k: v for k, v in self.env.items() if not k.startswith(("MK_LAB_", "GIT_CONFIG_"))},
                "HOME": self.home, "GIT_CONFIG_COUNT": "2", "GIT_CONFIG_KEY_0": f"url.{self.repo}.insteadOf",
                "GIT_CONFIG_VALUE_0": "https://github.com/mzavn/mk-lab.git",
                "GIT_CONFIG_KEY_1": "protocol.https.allow", "GIT_CONFIG_VALUE_1": "never"}

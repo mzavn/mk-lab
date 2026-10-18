@@ -154,8 +154,8 @@ class PipedBootstrap(unittest.TestCase):
     def test_piped_run_ignores_skill_in_current_directory(self):
         with open(INSTALL, "rb") as fh:
             script = fh.read()
-        env = {**os.environ, "HOME": self.home, "MK_SKILLS_HOME": os.path.join(self.tmp, "clone"),
-               "MK_SKILLS_REPO": self.upstream, "MK_SKILLS_NO_UPDATE_CHECK": "1"}
+        env = {**os.environ, "HOME": self.home, "MK_LAB_HOME": os.path.join(self.tmp, "clone"),
+               "MK_LAB_REPO": self.upstream, "MK_LAB_NO_UPDATE_CHECK": "1"}
         res = subprocess.run(["bash", "-s", "--", "--global"], input=script, cwd=os.path.join(self.tmp, "repo"),
                              capture_output=True, env=env)
         self.assertEqual(res.returncode, 0, res.stderr.decode())
@@ -166,15 +166,15 @@ class PipedBootstrap(unittest.TestCase):
     def test_default_repo_is_mzavn_mk_lab_for_clone_and_help(self):
         with open(INSTALL, "rb") as fh:
             script = fh.read()
-        # No MK_SKILLS_REPO/MK_SKILLS_HOME: git rewrites only the mk-lab URL to the local upstream and refuses https,
+        # No MK_LAB_REPO/MK_LAB_HOME: git rewrites only the mk-lab URL to the local upstream and refuses https,
         # so any other default URL fails instead of reaching GitHub.
-        env = {**{k: v for k, v in os.environ.items() if not k.startswith(("MK_SKILLS_", "GIT_CONFIG_"))},
-               "HOME": self.home, "MK_SKILLS_NO_UPDATE_CHECK": "1", "GIT_CONFIG_COUNT": "2",
+        env = {**{k: v for k, v in os.environ.items() if not k.startswith(("MK_LAB_", "GIT_CONFIG_"))},
+               "HOME": self.home, "MK_LAB_NO_UPDATE_CHECK": "1", "GIT_CONFIG_COUNT": "2",
                "GIT_CONFIG_KEY_0": f"url.{self.upstream}.insteadOf", "GIT_CONFIG_VALUE_0": "https://github.com/mzavn/mk-lab.git",
                "GIT_CONFIG_KEY_1": "protocol.https.allow", "GIT_CONFIG_VALUE_1": "never"}
         res = subprocess.run(["bash", "-s", "--", "--global"], input=script, cwd=self.tmp, capture_output=True, env=env)
         self.assertEqual(res.returncode, 0, res.stderr.decode())
-        clone = os.path.join(self.home, ".mk-skills")
+        clone = os.path.join(self.home, ".mk-lab")
         origin = subprocess.run(["git", "-C", clone, "remote", "get-url", "origin"], capture_output=True, text=True)
         self.assertEqual(origin.stdout.strip(), "https://github.com/mzavn/mk-lab.git")
         with open(os.path.join(self.home, ".claude", "skills", "mk-specs", SOURCE_FILE), encoding="utf-8") as fh:
@@ -182,6 +182,34 @@ class PipedBootstrap(unittest.TestCase):
         res = subprocess.run(["bash", INSTALL, "--help"], capture_output=True, text=True, env=env)
         self.assertIn("curl -fsSL https://raw.githubusercontent.com/mzavn/mk-lab/main/install.sh | bash", res.stdout)
         self.assertNotIn("mzavn/mk-skills", res.stdout)
+
+    def test_old_mk_skills_home_and_repo_are_ignored_and_left_untouched(self):
+        git = lambda *a: subprocess.run(["git", *a], capture_output=True, text=True, check=True).stdout.strip()
+        # Old checkout one commit behind upstream: if it were still used, the bootstrap would pull and move its HEAD.
+        subprocess.run(["git", "-C", self.upstream, "commit", "-q", "--allow-empty", "-m", "newer"],
+                       check=True, env={**os.environ, **GIT_ID})
+        old = os.path.join(self.home, ".mk-skills")
+        git("clone", "-q", self.upstream, old)
+        git("-C", old, "reset", "-q", "--hard", "HEAD~1")
+        old_head = git("-C", old, "rev-parse", "HEAD")
+        with open(os.path.join(old, "mine.txt"), "w", encoding="utf-8") as fh:
+            fh.write("my notes")
+        other = os.path.join(self.tmp, "other")
+        git("clone", "-q", self.upstream, other)
+        with open(INSTALL, "rb") as fh:
+            script = fh.read()
+        env = {**{k: v for k, v in os.environ.items() if not k.startswith(("MK_LAB_", "MK_SKILLS_", "GIT_CONFIG_"))},
+               "HOME": self.home, "MK_SKILLS_HOME": old, "MK_SKILLS_REPO": other,
+               "MK_LAB_REPO": self.upstream, "MK_LAB_NO_UPDATE_CHECK": "1"}
+        res = subprocess.run(["bash", "-s", "--", "--global"], input=script, cwd=self.tmp, capture_output=True, env=env)
+        self.assertEqual(res.returncode, 0, res.stderr.decode())
+        clone = os.path.join(self.home, ".mk-lab")
+        self.assertEqual(git("-C", clone, "remote", "get-url", "origin"), self.upstream)
+        with open(os.path.join(self.home, ".claude", "skills", "mk-specs", SOURCE_FILE), encoding="utf-8") as fh:
+            self.assertEqual(fh.read().strip(), clone)
+        self.assertEqual(git("-C", old, "rev-parse", "HEAD"), old_head)
+        with open(os.path.join(old, "mine.txt"), encoding="utf-8") as fh:
+            self.assertEqual(fh.read(), "my notes")
 
     def test_installer_parses_on_system_bash(self):
         for bash in ("bash", "/bin/bash"):
@@ -198,8 +226,8 @@ class SkillCase(unittest.TestCase):
         os.makedirs(self.home)
         self.checkout = os.path.join(self.tmp, "checkout")
         make_checkout(self.checkout)
-        self.env = {**{k: v for k, v in os.environ.items() if k != "MK_SKILLS_UPDATED"},
-                    "HOME": self.home, "MK_SKILLS_NO_UPDATE_CHECK": "1", **GIT_ID}
+        self.env = {**{k: v for k, v in os.environ.items() if k != "MK_LAB_UPDATED"},
+                    "HOME": self.home, "MK_LAB_NO_UPDATE_CHECK": "1", **GIT_ID}
         self.proj = os.path.join(self.tmp, "proj")
         os.makedirs(self.proj)
         subprocess.run(["git", "init", "-q", self.proj], check=True)
@@ -276,7 +304,7 @@ class GlobalSkill(SkillCase):
         res = self.ok("--help")
         self.assertIn("--skill", res.stdout)
         self.assertIn("curl -fsSL", res.stdout)
-        self.assertIn("MK_SKILLS_HOME", res.stdout)
+        self.assertIn("MK_LAB_HOME", res.stdout)
         self.assertNotIn("set -euo", res.stdout)
 
 

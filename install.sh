@@ -14,7 +14,7 @@
 #   --uninstall       → remove instead of install (with --global and/or --project; config and import lines are kept)
 # Flags combine: install.sh --update --global --project .
 # Without a clone: curl -fsSL https://raw.githubusercontent.com/mzavn/mk-lab/main/install.sh | bash -s -- --global
-#   (clones to $MK_SKILLS_HOME, default ~/.mk-skills — the name mk-lab had before — then runs from there)
+#   (clones to $MK_LAB_HOME, default ~/.mk-lab, then runs from there)
 set -euo pipefail
 
 DEFAULT_SKILL=mk-specs
@@ -24,7 +24,7 @@ ROOT=""
 if [ -n "$SELF" ] && [ -f "$SELF" ]; then ROOT="$(cd "$(dirname "$SELF")" && pwd)"; fi
 MANIFEST=.mk-specs-manifest
 SOURCE_FILE=.mk-specs-source  # global copies only: path of the mk-lab checkout, so agents can suggest the update command
-REPO_URL="${MK_SKILLS_REPO:-https://github.com/mzavn/mk-lab.git}"
+REPO_URL="${MK_LAB_REPO:-https://github.com/mzavn/mk-lab.git}"
 ARGS=("$@")
 
 # The comment block at the top of this file, whatever its length.
@@ -36,19 +36,19 @@ skill_list() {
 }
 die_skill() { die "$* (skills: $(skill_list))"; }
 
-# Piped from curl (no checkout around the script): clone or refresh $MK_SKILLS_HOME and run the installer from there.
+# Piped from curl (no checkout around the script): clone or refresh $MK_LAB_HOME and run the installer from there.
 if [ -z "$ROOT" ] || [ ! -f "$ROOT/skills/$DEFAULT_SKILL/SKILL.md" ]; then
   case " ${ARGS[*]-} " in *" --check "*)
     die "--check runs from a local copy: python3 ~/.claude/skills/mk-specs/scripts/check-update.py (nothing is downloaded)";;
   esac
   command -v git >/dev/null || die "git is required"
-  home="${MK_SKILLS_HOME:-$HOME/.mk-skills}"
+  home="${MK_LAB_HOME:-$HOME/.mk-lab}"
   if [ -d "$home/.git" ]; then
     git -C "$home" pull --ff-only -q || die "cannot fast-forward $home; fix or delete it, then re-run"
   else
     git clone -q --depth 1 "$REPO_URL" "$home" || die "cannot clone $REPO_URL"
   fi
-  MK_SKILLS_UPDATED=1 exec bash "$home/install.sh" ${ARGS[@]+"${ARGS[@]}"}
+  MK_LAB_UPDATED=1 exec bash "$home/install.sh" ${ARGS[@]+"${ARGS[@]}"}
 fi
 
 # Only the syntax of --skill is checked here: the skill may exist only after --update has pulled.
@@ -84,14 +84,14 @@ fi
 if [ "$UPDATE" = 1 ]; then
   [ "$UNINSTALL" = 0 ] || die "--update and --uninstall do not combine"
   [ "$GLOBAL" = 1 ] || [ ${#PROJECTS[@]} -gt 0 ] || GLOBAL=1
-  if [ -z "${MK_SKILLS_UPDATED:-}" ]; then
+  if [ -z "${MK_LAB_UPDATED:-}" ]; then
     git -C "$ROOT" rev-parse --git-dir >/dev/null 2>&1 ||
       die "--update needs a git checkout of mk-lab ($ROOT is not one); reinstall with the curl line in --help"
     before="$(git -C "$ROOT" rev-parse --short HEAD)"
     git -C "$ROOT" pull --ff-only -q ||
       die "cannot fast-forward $ROOT (local commits or edits?); resolve them, then re-run"
     echo "mk-lab: $before → $(git -C "$ROOT" rev-parse --short HEAD)"
-    MK_SKILLS_UPDATED=1 exec bash "$ROOT/install.sh" "${ARGS[@]}"  # the installer itself may have changed
+    MK_LAB_UPDATED=1 exec bash "$ROOT/install.sh" "${ARGS[@]}"  # the installer itself may have changed
   fi
 fi
 if [ -n "$SKILL_ARG" ] && [ ! -f "$ROOT/skills/$SKILL_ARG/SKILL.md" ]; then die_skill "no skill named '$SKILL_ARG'"; fi
