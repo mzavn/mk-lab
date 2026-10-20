@@ -82,6 +82,7 @@ Không phải ERD: tên nghiệp vụ, nghĩa, trạng thái, quan hệ, bất b
 - `## Vì sao` trích nguyên lời người yêu cầu; chưa nói giải pháp.
 - `## Thay đổi spec` viết delta: `ADDED` / `MODIFIED` (cũ → mới) / `DEPRECATED` AC, đoạn flow đổi, thuộc tính entity đổi.
 - Dòng `Người duyệt nghiệp vụ` và `Người duyệt kỹ thuật` phải có tên + ngày trước khi code; dòng `Commit` ghi ba hash khi xong.
+- `## Bằng chứng nghiệm thu` (evidence pack) điền khi code xong (mode `apply`): AC ↔ test xanh, trạng thái DoD/CI, rationale, link truy vết; lưu vĩnh viễn trong proposal ở archive để review nhanh mà không làm phình UC chính.
 - Proposal chưa hợp nhất không có hiệu lực; spec chính chỉ đổi ở bước merge.
 
 ## 9. README của specs

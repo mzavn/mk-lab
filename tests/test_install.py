@@ -139,29 +139,72 @@ class PipedBootstrap(unittest.TestCase):
         self.tmp = tempfile.mkdtemp()
         self.home = os.path.join(self.tmp, "home")
         os.makedirs(self.home)
-        # Upstream = a clone of this checkout with its own skill version.
+        # Upstream = this working tree (uncommitted code included) released as v2.0.0, then one commit not released yet.
         self.upstream = os.path.join(self.tmp, "upstream")
-        subprocess.run(["git", "clone", "-q", ROOT, self.upstream], check=True)
-        # Hostile working directory that ships its own skill.
+        make_checkout(self.upstream)
+        set_version(os.path.join(self.upstream, "skills", "mk-specs", "SKILL.md"), "2.0.0")
+        git = lambda *a: subprocess.run(["git", "-C", self.upstream, *a], check=True, capture_output=True,
+                                        env={**os.environ, **GIT_ID})
+        git("init", "-q")
+        git("add", "-A")
+        git("commit", "-q", "-m", "release")
+        git("tag", "-a", "v2.0.0", "-m", "mk-lab v2.0.0")
+        set_version(os.path.join(self.upstream, "skills", "mk-specs", "SKILL.md"), "2.1.0")
+        git("commit", "-q", "-am", "not released")
+        # Hostile working directory that ships its own skill, plus files named like what BASH_SOURCE may report for a
+        # piped script inside a function on some bash versions (`bash`, `main`).
         self.cwd = os.path.join(self.tmp, "repo", "skills", "mk-specs")
         os.makedirs(self.cwd)
         with open(os.path.join(self.cwd, "SKILL.md"), "w", encoding="utf-8") as fh:
             fh.write('---\nname: mk-specs\nmetadata:\n  version: "9.9.9"\n---\nfake\n')
+        for name in ("bash", "main"):
+            with open(os.path.join(self.tmp, "repo", name), "w", encoding="utf-8") as fh:
+                fh.write("")
 
     def tearDown(self):
         shutil.rmtree(self.tmp, ignore_errors=True)
 
+    def pipe(self, env, script=None, cwd=None):
+        if script is None:
+            with open(INSTALL, "rb") as fh:
+                script = fh.read()
+        return subprocess.run(["bash", "-s", "--", "--global"], input=script, cwd=cwd or self.tmp, capture_output=True, env=env)
+
+    def env(self, clone):
+        return {**{k: v for k, v in os.environ.items() if not k.startswith(("MK_LAB_", "GIT_CONFIG_"))},
+                "HOME": self.home, "MK_LAB_HOME": clone, "MK_LAB_REPO": self.upstream, "MK_LAB_NO_UPDATE_CHECK": "1"}
+
     def test_piped_run_ignores_skill_in_current_directory(self):
-        with open(INSTALL, "rb") as fh:
-            script = fh.read()
-        env = {**os.environ, "HOME": self.home, "MK_LAB_HOME": os.path.join(self.tmp, "clone"),
-               "MK_LAB_REPO": self.upstream, "MK_LAB_NO_UPDATE_CHECK": "1"}
-        res = subprocess.run(["bash", "-s", "--", "--global"], input=script, cwd=os.path.join(self.tmp, "repo"),
-                             capture_output=True, env=env)
+        res = self.pipe(self.env(os.path.join(self.tmp, "clone")), cwd=os.path.join(self.tmp, "repo"))
         self.assertEqual(res.returncode, 0, res.stderr.decode())
         installed = version(os.path.join(self.home, ".claude", "skills", "mk-specs", "SKILL.md"))
-        self.assertEqual(installed, version(os.path.join(self.upstream, "skills", "mk-specs", "SKILL.md")))
+        self.assertEqual(installed, "2.0.0")
         self.assertNotEqual(installed, "9.9.9")
+
+    def test_piped_run_installs_newest_tag_not_untagged_head(self):
+        clone = os.path.join(self.tmp, "clone")
+        rev = lambda repo, ref: subprocess.run(["git", "-C", repo, "rev-parse", ref], capture_output=True, text=True,
+                                               check=True).stdout.strip()
+        res = self.pipe(self.env(clone))
+        self.assertEqual(res.returncode, 0, res.stderr.decode())
+        self.assertEqual(version(os.path.join(self.home, ".claude", "skills", "mk-specs", "SKILL.md")), "2.0.0")
+        self.assertEqual(rev(clone, "HEAD"), rev(self.upstream, "v2.0.0^{commit}"))
+        subprocess.run(["git", "-C", self.upstream, "tag", "-a", "v2.1.0", "-m", "mk-lab v2.1.0"], check=True,
+                       env={**os.environ, **GIT_ID})
+        res = self.pipe(self.env(clone))
+        self.assertEqual(res.returncode, 0, res.stderr.decode())
+        self.assertEqual(version(os.path.join(self.home, ".claude", "skills", "mk-specs", "SKILL.md")), "2.1.0")
+        self.assertEqual(rev(clone, "HEAD"), rev(self.upstream, "v2.1.0^{commit}"))
+
+    def test_truncated_script_runs_nothing(self):
+        with open(INSTALL, "rb") as fh:
+            lines = fh.read().splitlines(keepends=True)
+        self.assertEqual(lines[-1].strip(), b'main "$@"')
+        clone = os.path.join(self.tmp, "clone")
+        for n in range(1, len(lines)):  # the connection drops after line n: everything received but the last line
+            self.pipe(self.env(clone), script=b"".join(lines[:n]))
+            self.assertEqual(os.listdir(self.home), [], n)
+            self.assertFalse(os.path.exists(clone), n)
 
     def test_default_repo_is_mzavn_mk_lab_for_clone_and_help(self):
         with open(INSTALL, "rb") as fh:
@@ -294,10 +337,23 @@ class GlobalSkill(SkillCase):
         self.assertFalse(os.path.exists(self.h(".agents", "skills", "star", "keep.txt")))
         self.assertTrue(os.path.isfile(self.h(".agents", "skills", "star", MANIFEST)))
 
-    def test_global_mk_specs_still_replaces_a_folder_without_manifest(self):
+    def test_global_mk_specs_replaces_only_its_own_old_install(self):
         self.foreign(self.h(".agents", "skills", "mk-specs"))
+        for args in (["--global"], ["--uninstall", "--global"]):
+            res = self.install(*args)
+            self.assertEqual(res.returncode, 1, args)
+            self.assertIn("was not installed by install.sh", res.stderr)
+            self.assertEqual(os.listdir(self.h(".agents", "skills", "mk-specs")), ["keep.txt"])
+            self.assertFalse(os.path.exists(self.h(".claude", "skills", "mk-specs")))
+        # An old copy of this kit (source file, no manifest) is still replaced without --force.
+        with open(self.h(".agents", "skills", "mk-specs", SOURCE_FILE), "w") as fh:
+            fh.write("/old/checkout\n")
         self.ok("--global")
         self.assertTrue(os.path.isfile(self.h(".agents", "skills", "mk-specs", MANIFEST)))
+        self.assertFalse(os.path.exists(self.h(".agents", "skills", "mk-specs", "keep.txt")))
+        shutil.rmtree(self.h(".agents", "skills", "mk-specs"))
+        self.foreign(self.h(".agents", "skills", "mk-specs"))
+        self.ok("--global", "--force")
         self.assertFalse(os.path.exists(self.h(".agents", "skills", "mk-specs", "keep.txt")))
 
     def test_help_shows_the_whole_header_including_skill_flag_and_curl_line(self):
@@ -381,6 +437,18 @@ class UninstallSkill(SkillCase):
         self.assertTrue(os.path.isfile(self.p(".claude", "skills", "star", MANIFEST)))
         self.assertTrue(os.path.isdir(self.p(".agents", "skills", "star")))
 
+    def test_uninstall_refuses_hand_edit_in_agents_copy(self):
+        self.ok("--project", self.proj, "--agents-dir", "--no-agent-files")
+        with open(self.p(".agents", "skills", "mk-specs", "SKILL.md"), "a", encoding="utf-8") as fh:
+            fh.write("\nluật riêng\n")
+        res = self.install("--uninstall", "--project", self.proj, "--no-agent-files")
+        self.assertEqual(res.returncode, 1)
+        self.assertIn("SKILL.md", res.stderr)
+        self.assertTrue(os.path.isfile(self.p(".claude", "skills", "mk-specs", MANIFEST)))
+        self.assertTrue(os.path.isfile(self.p(".agents", "skills", "mk-specs", MANIFEST)))
+        self.ok("--uninstall", "--project", self.proj, "--no-agent-files", "--force")
+        self.assertFalse(os.path.exists(self.p(".agents", "skills", "mk-specs")))
+
 
 class UpdateSkills(SkillCase):
     """--update from a clone of a throwaway source repo built from the working tree, so uncommitted code is tested."""
@@ -390,6 +458,7 @@ class UpdateSkills(SkillCase):
         self.source = self.checkout
         self.git(self.source, "init", "-q")
         self.commit_source("v1")
+        self.tag_source("v1.5.1")
         self.checkout = os.path.join(self.tmp, "clone")
         subprocess.run(["git", "clone", "-q", self.source, self.checkout], check=True, env=self.env)
 
@@ -397,10 +466,34 @@ class UpdateSkills(SkillCase):
         self.git(self.source, "add", "-A")
         self.git(self.source, "commit", "-q", "-m", msg)
 
-    def bump_source(self, ver):
+    def tag_source(self, tag):
+        self.git(self.source, "tag", "-a", tag, "-m", f"mk-lab {tag}")
+
+    def bump_source(self, ver, release=True):
         for name in ("mk-specs", "star"):
             set_version(os.path.join(self.source, "skills", name, "SKILL.md"), ver)
         self.commit_source(f"bump {ver}")
+        if release:
+            self.tag_source(f"v{ver}")
+
+    def test_update_takes_newest_tag_never_untagged_commits(self):
+        self.ok("--global")
+        self.bump_source("9.0.0")
+        self.bump_source("9.1.0", release=False)
+        res = self.ok("--update")
+        self.assertIn("(v9.0.0)", res.stdout)
+        self.assertEqual(version(self.h(".claude", "skills", "mk-specs", "SKILL.md")), "9.0.0")
+        self.assertEqual(version(os.path.join(self.checkout, "skills", "mk-specs", "SKILL.md")), "9.0.0")
+
+    def test_update_refuses_a_checkout_past_the_newest_release(self):
+        with open(os.path.join(self.checkout, "notes.txt"), "w") as fh:
+            fh.write("dev work")
+        self.git(self.checkout, "add", "notes.txt")
+        self.git(self.checkout, "commit", "-q", "-m", "local work")
+        res = self.install("--update")
+        self.assertEqual(res.returncode, 1, res.stdout + res.stderr)
+        self.assertIn("past the newest release", res.stderr)
+        self.assertEqual(os.listdir(self.home), [])
 
     def test_update_pulls_then_refreshes_every_global_skill(self):
         self.ok("--global")
@@ -427,6 +520,7 @@ class UpdateSkills(SkillCase):
     def test_update_with_a_skill_added_upstream_installs_it_after_pulling(self):
         write_skill(self.source, "moi", "1.5.1")
         self.commit_source("add moi")
+        self.tag_source("v1.6.0")
         res = self.ok("--update", "--global", "--skill", "moi")
         self.assertTrue(os.path.isfile(self.h(".claude", "skills", "moi", MANIFEST)))
         self.assertFalse(os.path.exists(self.h(".claude", "skills", "mk-specs")))

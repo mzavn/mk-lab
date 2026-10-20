@@ -35,7 +35,7 @@ Máy đã cài trước v2.0.0 (có thư mục `~/.mk-skills` — tên cũ của
 
 5. **Kiểm kết quả** — chạy lại lệnh ở bước 2: các bản phải cùng phiên bản; với bước 4, `AGENTS.md` có dòng `<!-- mk-specs:start`.
 
-6. **Báo người dùng**: phiên bản đã cài, file đã tạo/sửa. Bước kế, tuỳ dự án: nhỏ/MVP → "Viết PRD cho app này theo mk-specs" (agent hỏi chọn mức 1–3, phỏng vấn, dừng trước khi code); lớn → "Khởi tạo SDD cho repo này theo mk-specs" (mode `init`). Không tự commit; người dùng muốn thì commit `chore(specs): adopt mk-specs`.
+6. **Báo người dùng**: phiên bản đã cài, file đã tạo/sửa, cách gọi (Claude Code: gõ `/mk:specs` rồi nói yêu cầu; agent khác: nói thẳng). Bước kế, tuỳ dự án: nhỏ/MVP → "Viết PRD cho app này theo mk-specs" (agent hỏi chọn mức 1–3, phỏng vấn, dừng trước khi code); lớn → "Khởi tạo SDD cho repo này theo mk-specs" (mode `init`). Không tự commit; người dùng muốn thì commit `chore(specs): adopt mk-specs`.
 
 ## Skill khác trong repo
 
@@ -49,15 +49,18 @@ bash ~/.mk-lab/install.sh --update                        # bản cài chung: m�
 bash ~/.mk-lab/install.sh --update --global --project .   # đứng trong repo: cả hai
 ```
 
-`--update` chỉ nhận bản đã phát hành ([CHANGELOG.md](CHANGELOG.md)). Bản tăng số đầu (X) cần làm thêm bước — CHANGELOG ghi rõ, đọc trước khi cập nhật. Sau khi cập nhật bản trong repo: commit `.claude/skills/mk-specs` (`chore(specs): update mk-specs to vX.Y.Z`). Agent tự nhắc khi có bản mới (một lần mỗi phiên); tắt bằng `MK_LAB_NO_UPDATE_CHECK=1`.
+`--update` chỉ đưa checkout tới tag phát hành mới nhất `vX.Y.Z` ([CHANGELOG.md](CHANGELOG.md)), không bao giờ chạy commit chưa gắn tag. Bản tăng số đầu (X) cần làm thêm bước — CHANGELOG ghi rõ, đọc trước khi cập nhật. Sau khi cập nhật bản trong repo: commit `.claude/skills/mk-specs` (`chore(specs): update mk-specs to vX.Y.Z`). Agent tự nhắc khi có bản mới (một lần mỗi phiên); tắt bằng `MK_LAB_NO_UPDATE_CHECK=1`.
 
 ## Gặp lỗi
 
 | Thông báo | Làm gì |
 |---|---|
 | `has edits not made by install.sh` | Có người sửa tay file trong skill (đã liệt kê). Luật riêng chuyển vào `AGENTS.md` ngoài khối mk-specs, rồi chạy lại với `--force` |
-| `cannot fast-forward ~/.mk-lab` | Thư mục clone có sửa đổi riêng. Không cần giữ → `rm -rf ~/.mk-lab` rồi chạy lại lệnh `curl` |
-| `was not installed by install.sh` | Đã có thư mục skill cùng tên (vd `~/.claude/skills/<tên>`) không do installer tạo — có thể là skill khác. Hỏi người dùng; giữ thì đổi tên thư mục đó, bỏ thì chạy lại với `--force` |
+| `cannot fast-forward ~/.mk-lab` | Thư mục clone do installer quản có sửa đổi riêng. Không cần giữ → `rm -rf ~/.mk-lab` rồi chạy lại lệnh `curl` |
+| `cannot fast-forward <clone tay>` / `is past the newest release` | Checkout tự clone có commit riêng hoặc đang ở bản chưa phát hành (vd nhánh `dev` của người đóng góp). **Đừng xoá** — `--update` chỉ nhận bản phát hành: cài thẳng bản đang có, bỏ `--update` (vd `install.sh --global --project .`), hoặc tự đưa checkout về `main` rồi chạy lại. Thư mục `~/.mk-lab` (do installer quản) → `rm -rf ~/.mk-lab` rồi chạy lại lệnh `curl` |
+| `no release tag` | Repo nguồn (vd bản fork qua `MK_LAB_REPO`) chưa có tag `vX.Y.Z` nào |
+| `was not installed by install.sh` | Đã có thư mục skill cùng tên (vd `~/.claude/skills/<tên>`, kể cả `mk-specs`) không do installer tạo — có thể là skill khác. Hỏi người dùng; giữ thì đổi tên thư mục đó, bỏ thì chạy lại với `--force` (với `mk-specs`: xem CHANGELOG v2.0.0 "Cần làm" bước 3) |
+| `tests.list_command … is not trusted` (verify.py/gen.py thoát mã 3) | Lệnh test của repo chưa được người dùng tin. Cho người dùng xem nguyên lệnh và hỏi; đồng ý thì chạy lại với `--trust-list-command`, không thì `--tests <list.json>`. Không tự thêm cờ |
 | `unknown option: --skill` | Installer cũ (≤ v1.5.1) → chạy `install.sh --update` trước |
 | `no skill named '…'` | Tên sau `--skill` không có trong `skills/` của checkout (thông báo kèm danh sách skill có) |
 | `--update needs a git checkout` | Bản tải về không phải clone git → dùng lệnh `curl` ở bước 3 |

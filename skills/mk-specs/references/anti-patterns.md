@@ -28,6 +28,9 @@ Tổng hợp từ ebook (tr.42, 59–60) và kinh nghiệm vận hành các repo
 | Baseline sửa tuỳ tiện | Đang nghĩ feature mới thì sửa thẳng UC chính | Đề xuất ở `changes/`; chỉ merge khi làm xong và đã review |
 | Khoá chặt vào tool | Spec nằm trong định dạng riêng của một tool | Markdown thuần trong git; scripts chỉ dùng Python chuẩn |
 | Chọn tool mất hàng tuần | Bàn tool thay vì làm | Làm thử một UC từ đầu tới cuối rồi đánh giá (tr.41) |
+| Ràng buộc dạng ước muốn | Viết ràng buộc nhưng không công cụ nào kiểm được ("nhanh", "hợp lý") | Viết lại Given/When/Then đo được hoặc đưa ra Out of Scope; `audit.py` bắt AC thiếu Then |
+| Trôi dạt đặc tả (drift) | Spec và code dần xa nhau do sửa code không cập nhật spec | Audit định kỳ (`audit.py`), đưa `verify.py` vào CI, sửa spec trước code |
+| Trộn lẫn lớp tài liệu | Đưa chi tiết feature vào `AGENTS.md` hoặc luật toàn cục vào proposal | 3 lớp rõ ràng: system spec (`AGENTS.md`), feature spec (`changes/`), skill (on-demand) |
 
 ## Câu hỏi review nhanh
 
@@ -37,3 +40,4 @@ Tổng hợp từ ebook (tr.42, 59–60) và kinh nghiệm vận hành các repo
 4. Đoạn nào AI tự đề xuất, đoạn nào người quyết? Có luật tiền/quyền/bảo mật nào chưa có người duyệt?
 5. Main Flow/AC mới có đọc được với người không biết code không?
 6. History, ADR (phương án bị loại, Verified in code), open-issues đã cập nhật chưa? Còn `chưa commit` không?
+7. AC có kiểm chứng được bằng công cụ không, hay là ràng buộc ước muốn? Gói bằng chứng nghiệm thu đã đủ chưa?

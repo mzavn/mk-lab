@@ -27,8 +27,14 @@
 ## Thiết kế
 <File/symbol sẽ đổi, migration (sao lưu dữ liệu thật trước), rủi ro, phần AI làm / phần người quyết.>
 
+## Bằng chứng nghiệm thu
+- AC ↔ Test: <danh sách AC mới/sửa và con trỏ test đã chạy xanh>
+- Trạng thái kiểm chứng: <kết quả lệnh test suite, linter, typecheck của project>
+- Rationale & Quyết định: <tóm tắt lý do chọn giải pháp, tham chiếu consultation / ADR nếu có>
+- Tính truy vết: <link UC liên quan, commit code, quy ước AGENTS.md đang áp dụng>
+
 ## Tự soát
-- Ngày: <YYYY-MM-DD> · audit.py: <kết quả> · verify.py: <kết quả>
+- Ngày: <YYYY-MM-DD> · audit.py: <0 required missing, 0 AC non-testable hoặc số lỗi> · verify.py: <kết quả>
 - Đã tự sửa: <mỗi ý một cụm ngắn, hoặc —>
 - Đã hỏi (N câu): <câu hỏi ngắn> → <lựa chọn, ai trả lời>
 - Còn mở: <[OPEN] mới, hoặc —>

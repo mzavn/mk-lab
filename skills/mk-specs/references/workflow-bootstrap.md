@@ -7,8 +7,16 @@
 2. Sửa `specs/mk-specs.yml`: `contexts`, `ids`, `tests.list_command`, `tests.citation_style` (project mới: cân nhắc `name` hoặc `both`), `metrics.since` = ngày áp dụng.
 3. Tạo khung từ `assets/templates/`: `specs/README.md` (`specs-readme.md`), `business-requirements.md`, `decisions.md` (tiêu đề + bảng mục lục rỗng), `changes/README.md` (một đoạn trỏ tới `.claude/skills/mk-specs/assets/templates/proposal.md`), `changes/archive/`, mỗi context một thư mục với `README.md` + `entities.md`.
 4. Thêm lệnh `specs:gen` / `specs:check` (traceability.md §3).
-5. Luật riêng của repo (lệnh DoD, quy định migration/schema, cách xem giao diện, người duyệt) viết vào `AGENTS.md`, **ngoài** khối `mk-specs` (khối đó do `install.sh` quản lý, sửa tay sẽ bị ghi đè). `CLAUDE.md` chỉ giữ `@AGENTS.md` + điều riêng cho Claude nếu có. Luật chung đã nằm trong skill — không chép lại.
-6. Chạy gen.py + verify.py; commit `chore(specs): adopt mk-specs`.
+5. **Thiết lập luật repo theo 3 lớp tài liệu phân biệt** (bài báo Díaz et al. §4.1):
+   - **System spec**: Viết vào `AGENTS.md`, **ngoài** khối `mk-specs` (khối đó do `install.sh` quản lý, sửa tay sẽ bị ghi đè). Chứa quy ước kiến trúc bền vững, lệnh DoD, quy định migration/schema, người duyệt. File này luôn được nạp ở đầu mỗi phiên. Không đưa chi tiết tính năng tạm thời vào đây (tránh phình context). `CLAUDE.md` chỉ giữ `@AGENTS.md` + điều riêng cho Claude nếu có. Luật chung đã nằm trong skill — không chép lại.
+   - **Feature spec**: Các proposal trong `specs/changes/` (vòng đời ngắn propose → apply → archive; không lưu luật toàn cục ở đây).
+   - **Skill**: Thủ tục on-demand nạp khi kích hoạt (`.claude/skills/mk-specs/`).
+   - **Norm encoding (Quy tắc số 3, §5.7)**: Khi reviewer sửa lặp lại cùng một lỗi của agent qua 3 lần → tổng quát hoá thành điều khoản chuẩn mực đưa vào `AGENTS.md` ngoài khối qua PR, kèm lệnh lint/sensor kiểm tra nếu có thể.
+   - **Thang tự chủ phân tầng (Graduated autonomy, §5.10 — tuỳ chọn)**: Nhóm có thể ghi bảng phân loại mức tự chủ vào `AGENTS.md` ngoài khối:
+     * *Vá nhỏ / cập nhật phụ thuộc*: tự động hoàn toàn (bộ test và scanner bảo đảm).
+     * *Tính năng thường*: tự động + bắt buộc tham vấn có cấu trúc khi spec mơ hồ + nộp gói bằng chứng nghiệm thu ở cuối.
+     * *Tiền, quyền, bảo mật, pháp lý, kiến trúc lõi*: bắt buộc người duyệt plan trước khi code + review từng bước.
+6. Chạy gen.py + verify.py (có `tests.list_command`: lần đầu verify.py thoát mã 3 — cho người dùng xem lệnh, họ đồng ý thì chạy lại với `--trust-list-command`; traceability.md §3); commit `chore(specs): adopt mk-specs`.
 
 Rồi chọn nhánh greenfield (§2) hoặc brownfield (§3).
 

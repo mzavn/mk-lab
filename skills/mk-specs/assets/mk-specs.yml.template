@@ -19,7 +19,7 @@ ids:
 decisions_file: decisions.md
 
 tests:
-  list_command: null         # vd "npx vitest list --json" — in JSON [{file, name}]
+  list_command: null         # vd "npx vitest list --json" — in JSON [{file, name}]; chỉ chạy khi bạn đã tin (verify.py --trust-list-command)
   file_pattern: '[^`]+\.(?:test|spec)\.[cm]?[jt]sx?'
   citation_style: pointer    # pointer | name | both
 

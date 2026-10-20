@@ -148,7 +148,10 @@ def parse_yaml(text):
         lines.append((len(s) - len(body), body))
     if not lines:
         return {}
-    value, i = _block(lines, 0, lines[0][0])
+    try:
+        value, i = _block(lines, 0, lines[0][0])
+    except (ValueError, RecursionError) as e:  # bad "\x" escape, huge int, lists nested thousands deep
+        raise ConfigError(f"could not parse config: {str(e)[:120]}")
     if i != len(lines):
         raise ConfigError(f"could not parse line: {lines[i][1]}")
     return value
@@ -233,27 +236,73 @@ TEXT = {
 }
 
 
-def _merge(base, over):
-    if not isinstance(base, dict) or not isinstance(over, dict):
-        return over
-    out = dict(base)
-    for k, v in over.items():
-        out[k] = _merge(base.get(k), v) if k in base else v
-    return out
+def _merge(base, over, key=""):
+    """Defaults overlaid with the config; a value whose type cannot stand in for the default is refused (no traceback)."""
+    if over is None:
+        return base if key in ("ids", "tests", "readme", "metrics", "audit") else None
+    if isinstance(base, dict):
+        if not isinstance(over, dict):
+            raise ConfigError(f"{key or 'config'} must be a mapping (key: value), got: {str(over)[:60]}")
+        out = dict(base)
+        for k, v in over.items():
+            out[k] = _merge(base[k], v, f"{key}.{k}" if key else str(k)) if k in base else v
+        return out
+    if isinstance(base, list) and not isinstance(over, list):
+        raise ConfigError(f"{key} must be a list, got: {str(over)[:60]}")
+    return over
 
 
 # Config regexes run on spec/test text. Heuristic (not a proof) against catastrophic backtracking: refuse a group that
-# contains an open-ended quantifier and is itself repeated open-endedly ((a+)+, (a*)*, (x+){2,}), and very long patterns.
-_Q = r"(?:[+*]|\{\d*,\d*\})"
-_NESTED = re.compile(r"\((?:[^()\\]|\\.)*?" + _Q + r"(?:[^()\\]|\\.)*\)" + _Q)
+# is repeated open-endedly ((…)+, (…)*, (…){2,}) while it, or a group inside it, has an open-ended quantifier or an
+# alternation — (a+)+, (x(a+))*, (a|aa)+, (x(a|b))* — and very long patterns.
+_Q = re.compile(r"[+*]|\{\d*,\d*\}")
 MAX_REGEX = 500
+
+
+def _may_hang(p):
+    stack, i, n = [[False, False]], 0, len(p)  # per open group: [has quantifier inside, has alternation inside]
+    while i < n:
+        c = p[i]
+        if c == "\\":
+            i += 2
+            continue
+        if c == "[":  # character class: nothing inside counts
+            i += 2 if p[i + 1:i + 2] == "^" else 1
+            i += 1 if p[i + 1:i + 2] == "]" else 0
+            while i + 1 < n and p[i + 1] != "]":
+                i += 2 if p[i + 1] == "\\" else 1
+            i += 2
+            continue
+        if c == "(":
+            stack.append([False, False])
+        elif c == ")" and len(stack) > 1:
+            quant, alt = stack.pop()
+            m = _Q.match(p, i + 1)
+            if m and (quant or alt):
+                return True
+            stack[-1][0] |= quant or bool(m)
+            stack[-1][1] |= alt
+            if m:
+                i = m.end()
+                continue
+        elif c == "|":
+            stack[-1][1] = True
+        else:
+            m = _Q.match(p, i)
+            if m:
+                stack[-1][0] = True
+                i = m.end()
+                continue
+        i += 1
+    return False
 
 
 def safe_regex(pattern, key):
     pattern = str(pattern)
-    if len(pattern) > MAX_REGEX or _NESTED.search(pattern):
-        raise ConfigError(f"{key}: regex may hang (repeated group with a quantifier inside, or longer than {MAX_REGEX} chars): "
-                          f"{pattern[:60]} — write it flat, e.g. 'UC-[\\d.]+' instead of 'UC-\\d+(?:\\.\\d+)*'")
+    if len(pattern) > MAX_REGEX or _may_hang(pattern):
+        raise ConfigError(f"{key}: regex may hang (repeated group with a quantifier or '|' inside, or longer than {MAX_REGEX} "
+                          f"chars): {pattern[:60]} — write it flat, e.g. 'UC-[\\d.]+' instead of 'UC-\\d+(?:\\.\\d+)*', "
+                          "'[A-Z-]+' instead of '(U|UC|UC-)+'")
     try:
         re.compile(pattern)
     except re.error as e:
@@ -270,17 +319,25 @@ class Project:
         with open(path, encoding="utf-8") as fh:
             self.cfg = _merge(DEFAULTS, parse_yaml(fh.read()) or {})
         self.specs = self.inside(self.cfg["specs_dir"], self.root, "specs_dir")
+        dec = self.cfg.get("decisions_file")
+        self.decisions = self.inside(dec, self.specs, "decisions_file") if dec else None
         self.lang = self.cfg["language"] if self.cfg["language"] in TEXT else "vi"
         self.t = TEXT[self.lang]
         ids = self.cfg["ids"]
         for k in ("uc", "br", "adr"):
             if ids.get(k):
                 safe_regex(ids[k], f"ids.{k}")
+        if not ids.get("uc"):
+            raise ConfigError("ids.uc is required (e.g. 'UC-\\d{3}')")
         safe_regex(self.cfg["tests"]["file_pattern"], "tests.file_pattern")
-        rcfg = self.cfg.get("readme") or {}
+        rcfg = self.cfg["readme"]
+        if rcfg.get("banner") is not None and not isinstance(rcfg["banner"], dict):
+            raise ConfigError("readme.banner must be a mapping (match, keep) or null")
         if (rcfg.get("banner") or {}).get("match"):
             safe_regex(rcfg["banner"]["match"], "readme.banner.match")
         for spec in rcfg.get("lines") or []:
+            if not isinstance(spec, dict):
+                raise ConfigError(f"readme.lines items must be mappings with `match`, got: {str(spec)[:60]}")
             safe_regex(spec.get("match", ""), "readme.lines.match")
         self.uc_id = ids["uc"]
         self.id_patterns = [ids[k] for k in ("uc", "br", "adr") if ids.get(k)]
@@ -289,18 +346,29 @@ class Project:
 
     def _contexts(self):
         listed = self.cfg.get("contexts")
+        if listed is not None and not isinstance(listed, list):
+            raise ConfigError("contexts must be a list of {id, title}")
         if listed:
-            out = [(c["id"], c.get("title") or c["id"]) if isinstance(c, dict) else (c, c) for c in listed]
+            out = []
+            for c in listed:
+                cid = c.get("id") if isinstance(c, dict) else c
+                if not isinstance(cid, str) or not cid:
+                    raise ConfigError(f"contexts: each item needs an id, got: {str(c)[:60]}")
+                self.inside(cid, self.specs, "contexts[].id")
+                out.append((cid, (c.get("title") if isinstance(c, dict) else None) or cid))
             missing = [c for c, _ in out if not os.path.isdir(os.path.join(self.specs, c))]
             if missing:
                 raise ConfigError(f"context folder(s) missing under {self.cfg['specs_dir']}/: {', '.join(missing)} — "
                                   "create the folder or remove it from `contexts` in specs/mk-specs.yml "
                                   "(old templates listed an example `checkout`)")
             return out
-        pattern = self.cfg.get("contexts_glob") or "*"
+        pattern = str(self.cfg.get("contexts_glob") or "*")
+        self.inside(pattern, self.specs, "contexts_glob")
         out = []
         for d in sorted(glob.glob(os.path.join(self.specs, pattern))):
             rel = os.path.relpath(d, self.specs).replace(os.sep, "/")
+            if not self.is_inside(d):  # a folder linked to somewhere outside the repo is skipped, not read
+                continue
             if os.path.isdir(d) and not rel.startswith("changes") and any(self.uc_file.match(f) for f in os.listdir(d)):
                 out.append((rel, rel))
         return out
@@ -324,36 +392,76 @@ class Project:
                     found.update(heading.findall(read(os.path.join(root, f))))
         return found
 
-    def inside(self, rel, base, key):
-        """Join a config path under base; refuse anything that resolves outside the repo (config is data)."""
-        path = os.path.realpath(os.path.join(base, str(rel)))
+    def is_inside(self, path):
+        """True when path (symlinks resolved) lies in the repo."""
         root = os.path.realpath(self.root)
         try:
-            outside = os.path.isabs(str(rel)) or os.path.commonpath([path, root]) != root
+            return os.path.commonpath([os.path.realpath(path), root]) == root
         except ValueError:  # different drives on Windows
-            outside = True
-        if outside:
-            raise ConfigError(f"{key} points outside the repo: {rel}")
-        return os.path.join(base, str(rel))
+            return False
 
-    def test_list(self, tests_json=None):
-        """[(relative file, full test name)] from a JSON file or tests.list_command; None if unavailable."""
-        if tests_json:
-            with open(tests_json, encoding="utf-8") as fh:
-                data = json.load(fh)
-        else:
-            cmd = self.cfg["tests"].get("list_command")
-            if not cmd:
-                return None
-            sys.stderr.write(f"mk-specs: running tests.list_command: {cmd}\n")  # the one config value that is executed
-            res = subprocess.run(cmd, shell=True, cwd=self.root, capture_output=True, text=True)
-            if res.returncode != 0:
-                sys.stderr.write(res.stderr)
-                raise ConfigError(f"tests.list_command failed ({res.returncode}): {cmd}")
-            out = res.stdout
-            start = out.find("[")
-            data = json.loads(out[start:] if start >= 0 else out)
-        return [(os.path.relpath(t["file"], self.root) if os.path.isabs(t["file"]) else t["file"], t["name"]) for t in data]
+    def inside(self, rel, base, key):
+        """Join a config path under base; refuse anything that resolves outside the repo (config is data)."""
+        path = os.path.join(base, str(rel))
+        if os.path.isabs(str(rel)) or not self.is_inside(path):
+            raise ConfigError(f"{key} points outside the repo: {rel}")
+        return path
+
+    def test_list(self, tests_json=None, trust=False):
+        """[(relative file, full test name)] from a JSON file or tests.list_command; None if unavailable.
+        The command runs only when the user trusts it for this repo (see trust_file); otherwise exit EXIT_UNTRUSTED."""
+        try:
+            if tests_json:
+                with open(tests_json, encoding="utf-8") as fh:
+                    data = json.load(fh)
+            else:
+                cmd = self.cfg["tests"].get("list_command")
+                if not cmd:
+                    return None
+                cmd = str(cmd)
+                self._require_trust(cmd, trust)
+                sys.stderr.write(f"mk-specs: running tests.list_command: {cmd}\n")
+                res = subprocess.run(cmd, shell=True, cwd=self.root, capture_output=True, text=True)
+                if res.returncode != 0:
+                    sys.stderr.write(res.stderr)
+                    raise ConfigError(f"tests.list_command failed ({res.returncode}): {cmd}")
+                out = res.stdout
+                start = out.find("[")
+                data = json.loads(out[start:] if start >= 0 else out)
+            return [(os.path.relpath(t["file"], self.root) if os.path.isabs(t["file"]) else t["file"], t["name"])
+                    for t in data]
+        except ConfigError as e:
+            sys.exit(f"mk-specs: {e}")
+        except (ValueError, TypeError, KeyError, AttributeError) as e:
+            sys.exit(f'mk-specs: test list is not JSON [{{"file": …, "name": …}}]: {str(e)[:120]}')
+
+    def _require_trust(self, cmd, trust):
+        """Return when `<repo real path>\\t<cmd>` is in the user's trusted list (added first with trust=True); else exit."""
+        root, path = os.path.realpath(self.root), trust_file()
+        if not (cmd.isprintable() and root.isprintable()):
+            untrusted(ascii(cmd), path, "It contains control characters (tab, newline, escape…), so it cannot be trusted "
+                                        "— pass --tests <list.json> instead.")
+        if self.is_inside(path):
+            untrusted(cmd, path, f"The trusted-commands list {path} resolves inside this repo, so it is ignored "
+                                 "(set XDG_CONFIG_HOME to a folder outside the repo, or pass --tests <list.json>).")
+        entry = f"{root}\t{cmd}"
+        try:
+            with open(path, encoding="utf-8") as fh:
+                if entry in (line.rstrip("\n") for line in fh):
+                    return
+        except FileNotFoundError:
+            pass
+        except OSError as e:
+            raise ConfigError(f"cannot read {path}: {e}")
+        if not trust:
+            untrusted(cmd, path, None)
+        try:
+            os.makedirs(os.path.dirname(path), mode=0o700, exist_ok=True)
+            with open(path, "a", encoding="utf-8") as fh:
+                fh.write(entry + "\n")
+        except OSError as e:
+            raise ConfigError(f"cannot write {path}: {e} — pass --tests <list.json> instead")
+        sys.stderr.write(f"mk-specs: trusted tests.list_command for {root} (saved in {path})\n")
 
     def commits(self):
         """Subjects of non-merge commits since metrics.since; None when not configured / not a git repo."""
@@ -394,12 +502,46 @@ def read(path):
         return fh.read()
 
 
+def refuse_symlinks(*paths):
+    """Exit before writing anything when one of the files to write is a symlink (a repo could link it anywhere)."""
+    for path in paths:
+        if path and os.path.islink(path):
+            sys.exit(f"mk-specs: {path} is a symlink — refusing to write through it; replace it with a regular file")
+
+
 def write_if_changed(path, text):
+    refuse_symlinks(path)
     if os.path.exists(path) and read(path) == text:
         return False
     with open(path, "w", encoding="utf-8") as fh:
         fh.write(text)
     return True
+
+
+# tests.list_command runs only when the user trusts it: exit code distinct from 1 (= the specs have errors).
+EXIT_UNTRUSTED = 3
+
+
+def trust_file():
+    """The user's trusted list commands, outside every repo: one `<repo real path>\\t<command>` per line.
+    $XDG_CONFIG_HOME/mk-specs/trusted-commands, else ~/.config/…; a relative XDG_CONFIG_HOME is ignored (XDG spec)."""
+    base = os.environ.get("XDG_CONFIG_HOME", "")
+    if not os.path.isabs(base):
+        base = os.path.join(os.path.expanduser("~"), ".config")
+    return os.path.join(base, "mk-specs", "trusted-commands")
+
+
+def untrusted(shown, path, reason):
+    sys.stderr.write(
+        "mk-specs: tests.list_command in specs/mk-specs.yml is not trusted for this repo, so it was NOT run:\n"
+        f"  {shown}\n"
+        + (f"{reason}\n" if reason else
+           "It runs as a shell command with your permissions, together with the repo files it calls (scripts, test config).\n"
+           "Read it. If you trust it, re-run with --trust-list-command (remembered in "
+           f"{path} for this repo path and exactly this command; a changed command asks again).\n"
+           "Or pass a test list instead: --tests <list.json>.\n")
+        + "Agents: never add --trust-list-command yourself — show this command to the user and ask first.\n")
+    sys.exit(EXIT_UNTRUSTED)
 
 
 def load(argv_root=None, config=None):

@@ -40,8 +40,9 @@
 ```bash
 python3 .claude/skills/mk-specs/scripts/gen.py                 # sinh 2 file, cập nhật README, in số đếm + chỉ số
 python3 .claude/skills/mk-specs/scripts/gen.py --verified-on 2026-01-31   # đổi ngày "đã kiểm" ở đầu traceability.md
-python3 .claude/skills/mk-specs/scripts/verify.py              # chạy tests.list_command, kiểm trích dẫn + link; exit 1 nếu lỗi
+python3 .claude/skills/mk-specs/scripts/verify.py              # chạy tests.list_command (nếu đã tin), kiểm trích dẫn + link; exit 1 nếu lỗi
 python3 .claude/skills/mk-specs/scripts/verify.py --tests list.json       # dùng danh sách test có sẵn
+python3 .claude/skills/mk-specs/scripts/verify.py --trust-list-command    # người dùng đã đọc và tin lệnh: ghi nhớ rồi chạy
 python3 .claude/skills/mk-specs/scripts/audit.py               # báo cáo vệ sinh spec, không sửa gì
 python3 .claude/skills/mk-specs/scripts/commit-hash.py [hash] [--dry-run] # thay `chưa commit` trong History/Status
 ```
@@ -50,6 +51,7 @@ Thêm vào `package.json` (hoặc Makefile) để cả người và agent gọi 
 
 - **Tất định**: chạy hai lần ra cùng từng byte. Khi chuyển từ script cũ sang skill, chạy gen.py rồi `git diff --exit-code specs/traceability.md specs/open-issues.md` — phải không có diff trước khi xoá script cũ.
 - `verify.py` kiểm: mỗi tên test được trích có trong danh sách test (`tests.list_command` in JSON `[{"file", "name"}]`, ví dụ `npx vitest list --json`; runner khác: viết lệnh nhỏ in cùng dạng); mọi link tương đối trong `specs/**/*.md` mở được; với `name`/`both` kiểm thẻ UC/AC. Không có danh sách test → chỉ kiểm file test tồn tại. Cảnh báo (không fail) khi còn `chưa commit` trong History.
+- **Lệnh đã tin**: `tests.list_command` chỉ chạy khi dòng `<đường dẫn thật gốc repo><TAB><lệnh>` có trong `~/.config/mk-specs/trusted-commands` (hoặc `$XDG_CONFIG_HOME/mk-specs/…`; file này nằm trong repo thì bị bỏ qua). Chưa có → verify.py/gen.py không chạy lệnh, in nguyên lệnh, thoát mã 3. Người dùng đọc lệnh rồi chạy lại với `--trust-list-command` (một lần mỗi repo/worktree; đổi lệnh hay chuyển thư mục → hỏi lại), hoặc dùng `--tests`. Agent không tự thêm cờ này. CI: ghi `--trust-list-command` vào pipeline (CI vốn chạy mã của repo). Lệnh có ký tự điều khiển (tab, xuống dòng…) không tin được — chỉ dùng `--tests`.
 - Phải ra `unresolved: 0` trước commit merge.
 
 ## 4. Chỉ số (gen.py in ra và ghi vào README)
@@ -75,7 +77,7 @@ Mẫu đầy đủ: `assets/mk-specs.yml.template`. Khoá:
 | `contexts_glob` | `*` | Dùng khi không liệt kê `contexts`: mọi thư mục khớp glob có file UC (trừ `changes`) |
 | `ids.uc` / `ids.br` / `ids.adr` | `UC-\d+` / `BR-\d+` / `ADR-\d+` | Regex ID; file UC tên `<ID>-<slug>.md` |
 | `decisions_file` | `decisions.md` | File ADR (bỏ trống nếu không có) |
-| `tests.list_command` | `null` | Lệnh in danh sách test dạng JSON |
+| `tests.list_command` | `null` | Lệnh in danh sách test dạng JSON; chỉ chạy khi người dùng đã tin (§3 "Lệnh đã tin") |
 | `tests.file_pattern` | `` [^`]+\.(?:test\|spec)\.[cm]?[jt]sx? `` | Regex đường dẫn file test trong backtick |
 | `tests.citation_style` | `pointer` | `pointer` · `name` · `both` |
 | `readme.file` | `README.md` | README của specs (tương đối `specs_dir`) |

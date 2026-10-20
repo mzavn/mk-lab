@@ -30,8 +30,9 @@ CODE = [
     ("status code", re.compile(r"\b[1-5]\d\d `?[a-z]+_[a-z_]+")),
 ]
 BUSINESS = {"## Main Flow", "## Alternative Flows", "## Exceptions", "## Acceptance Criteria", "## Postconditions"}
+THEN_RX = re.compile(r"^\s*-\s*(Then|Thì)\b|\b(Then|Thì)\b\s*[:\s]", re.IGNORECASE)
 
-missing_req, missing_rec, code_lines = [], [], []
+missing_req, missing_rec, code_lines, non_testable = [], [], [], []
 n_uc = 0
 for ctx, _ in P.contexts:
     for f in P.uc_files(ctx):
@@ -60,6 +61,34 @@ for ctx, _ in P.contexts:
                 hits.append((i, kinds, l.strip()))
         if hits:
             code_lines.append((rel, hits))
+        in_ac_sec, cur_ac_title, cur_ac_lines = False, None, []
+        for l in lines:
+            if l.startswith("## "):
+                if in_ac_sec and cur_ac_title:
+                    if not any(THEN_RX.search(cl) for cl in cur_ac_lines):
+                        non_testable.append((rel, cur_ac_title))
+                    cur_ac_title = None
+                in_ac_sec = l.strip() == "## Acceptance Criteria" or l.strip().startswith("## Acceptance Criteria ")
+                continue
+            if not in_ac_sec:
+                continue
+            m = re.match(r"^###\s+(AC-[^\n]+)", l)
+            if m:
+                if cur_ac_title:
+                    if not any(THEN_RX.search(cl) for cl in cur_ac_lines):
+                        non_testable.append((rel, cur_ac_title))
+                header = m.group(1).strip()
+                if "deprecated" in header.lower():
+                    cur_ac_title = None
+                    cur_ac_lines = []
+                else:
+                    cur_ac_title = header
+                    cur_ac_lines = []
+            elif cur_ac_title:
+                cur_ac_lines.append(l)
+        if in_ac_sec and cur_ac_title:
+            if not any(THEN_RX.search(cl) for cl in cur_ac_lines):
+                non_testable.append((rel, cur_ac_title))
 
 print(f"# mk-specs audit — {n_uc} UC\n")
 print(f"## Missing required sections / metadata: {len(missing_req)} UC")
@@ -68,6 +97,11 @@ for rel, items in missing_req:
 print(f"\n## Missing recommended sections / metadata: {len(missing_rec)} UC")
 for rel, items in missing_rec:
     print(f"- {rel}: {', '.join(items)}")
+print(f"\n## Non-testable ACs (missing Then clause): {len(non_testable)} AC")
+if non_testable:
+    print("Rewrite with Given/When/Then or deprecate if obsolete.")
+    for rel, ac in non_testable:
+        print(f"- {rel}: {ac}")
 total = sum(len(h) for _, h in code_lines)
 print(f"\n## Code in business text (Main Flow, flows, exceptions, AC): {total} line(s) in {len(code_lines)} UC")
 print("Move endpoints, symbols, error codes, payloads to `## Traceability` or a `Kỹ thuật:` sub-bullet when the UC is next edited.")

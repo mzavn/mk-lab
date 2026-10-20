@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Verify specs: cited tests exist, relative links resolve, test-name tags point at real UC/AC.
 
-Usage: verify.py [--root DIR] [--config FILE] [--tests FILE.json]
+Usage: verify.py [--root DIR] [--config FILE] [--tests FILE.json] [--trust-list-command]
   --tests  test list JSON ([{"file", "name"}], e.g. `vitest list --json`); default: run tests.list_command.
            Without either, only the cited test files are checked for existence.
-Exit 1 when any citation, link or tag is unresolved. `chưa commit` left in History is a warning.
+  --trust-list-command  the user has read tests.list_command and trusts it for this repo: remember it, then run it.
+           Without it an untrusted command is not run (exit 3). Agents never add it on their own.
+Exit 1 when any citation, link or tag is unresolved; 3 when tests.list_command is not trusted.
+`chưa commit` left in History is a warning.
 """
 import argparse
 import os
@@ -19,12 +22,13 @@ ap = argparse.ArgumentParser()
 ap.add_argument("--root", default=None)
 ap.add_argument("--config", default=None)
 ap.add_argument("--tests", default=None)
+ap.add_argument("--trust-list-command", action="store_true")
 args = ap.parse_args()
 
 P = mkspecs.load(args.root, args.config)
 repo, specs = P.root, P.specs
 style = P.cfg["tests"]["citation_style"]
-test_list = P.test_list(args.tests)
+test_list = P.test_list(args.tests, args.trust_list_command)
 names = None
 if test_list is not None:
     names = {}

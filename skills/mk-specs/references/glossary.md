@@ -12,6 +12,9 @@ Cột tiếng Việt là lời giải thích cho người mới, không phải t
 | **MVP** (Minimum Viable Product) | Bản nhỏ nhất dùng được | Bản đầu chỉ có vài việc cốt lõi để thử với người dùng thật, vd app đặt lịch chỉ có "đặt", "xem lịch", "huỷ" | Chọn "ba việc" quan trọng nhất |
 | **Greenfield / Brownfield** | Dự án mới / code đang chạy | Greenfield viết spec từ ý tưởng; brownfield viết spec từ code + log + người vận hành, kể cả hành vi xấu | Nói cho agent biết repo đã có code chạy thật chưa |
 | **Level** (mức 1–4) | Mức kỹ | 1 PRD · 2 + wireframe · 3 + TDD · 4 SDD đầy đủ; mức sau chỉ thêm phần | Chọn mức; lớn dần thì "nâng lên" (promote) |
+| **Skill** (gọi `/mk:specs`) | Bộ hướng dẫn cho agent | Thư mục `mk-specs` dạy agent làm SDD. Trên Claude Code gọi thẳng bằng `/mk:specs` — kiểu `bộ:tên`: `mk` là tên bộ skill, `specs` là tên skill (`/mk-specs` cũng chạy); agent nào cũng tự đọc khi bạn nói việc liên quan spec | Gõ `/mk:specs` rồi nói việc, hoặc nói thẳng ("viết PRD cho app này") |
+| **System spec / Feature spec** | Đặc tả hệ thống / Đặc tả tính năng | System spec ghi luật bền vững luôn nạp vào context (`AGENTS.md`); Feature spec là đề xuất thay đổi ngắn hạn (`specs/changes/`), xong thì đưa vào archive | Giữ luật chung ở `AGENTS.md`, chi tiết việc ở proposal |
+| **Specification drift** | Trôi dạt đặc tả | Hiện tượng code và spec dần xa rời nhau do sửa code không cập nhật spec hoặc lười kiểm chứng | Chạy `audit.py`, `verify.py`, đưa kiểm spec vào CI |
 
 ## Mức 1–3 (dự án nhỏ, MVP)
 
@@ -44,6 +47,10 @@ Cột tiếng Việt là lời giải thích cho người mới, không phải t
 | **Traceability** | Truy vết | `traceability.md` sinh tự động: UC ↔ AC ↔ test; lỗi production tìm ra spec trong 1 phút | Xem AC nào chưa có test |
 | **Characterization test** | Test chụp hành vi | Test ghi lại code cũ *đang* làm gì (đúng hay sai) trước khi sửa, để biết có đổi hành vi không | Đồng ý trước khi refactor code cũ |
 | **AC Coverage / Spec Coverage / Trace Ratio** | Chỉ số | Tỉ lệ AC có test · UC đang chạy có AC có test · commit mang mã UC | Theo dõi Trace Ratio trước |
+| **Structured consultation** | Tham vấn có cấu trúc | Khuôn hỏi 4 phần khi agent gặp mơ hồ lúc apply: câu hỏi · phương án · điều khoản spec liên quan · hệ quả từng phương án | Trả lời chọn phương án; tiền/quyền thì bạn quyết |
+| **Evidence-backed acceptance** | Nghiệm thu dựa trên bằng chứng | Gói bằng chứng chứng minh hoàn thành thay đổi (AC ↔ test xanh, DoD/CI, rationale, link spec) trong proposal | Thẩm định gói bằng chứng thay vì đọc từng dòng diff code |
+| **Norm encoding** | Mã hoá quy tắc | Quy tắc lặp 3 lần: lỗi sửa lặp lại 3 lần được tổng quát hoá thành điều khoản chuẩn mực đưa vào `AGENTS.md` ngoài khối | Duyệt PR thêm luật mới vào `AGENTS.md` |
+| **Graduated autonomy** | Thang tự chủ phân tầng | Mức tự chủ của agent định rõ theo loại việc (vá nhỏ/deps: tự động; tính năng: tự động + tham vấn; bảo mật/tiền: duyệt plan trước) | Xem và điều chỉnh bảng tự chủ trong `AGENTS.md` |
 
 ## Đánh dấu trong spec
 
@@ -64,4 +71,5 @@ Cột tiếng Việt là lời giải thích cho người mới, không phải t
 | **SemVer** (X.Y.Z) | Số phiên bản | Z tăng: sửa lỗi · Y tăng: thêm tính năng, cập nhật bình thường · X tăng: cập nhật cần bạn làm thêm bước | Gặp X mới thì đọc CHANGELOG trước khi cập nhật |
 | **Release / tag** | Bản phát hành | Một số phiên bản đã chốt, không sửa lại; lỗi thì ra bản sau | Cập nhật bằng `install.sh --update` |
 | **Hook** (Claude Code) | Lưới chặn tự động | Lệnh Claude Code tự chạy trước khi agent sửa file/chạy lệnh; mk-specs dùng để chặn sửa tay file sinh và commit thiếu mã | Bị chặn thì làm theo lý do nó in ra; không phải tắt |
+| **Lệnh đã tin** (trusted command) | Lệnh test bạn đã cho phép | `tests.list_command` trong `specs/mk-specs.yml` là lệnh shell của repo; mk-specs chỉ chạy nó khi bạn đã đồng ý đúng lệnh đó cho repo ở đúng thư mục đó (ghi trong `~/.config/mk-specs/trusted-commands`, xoá dòng để thu hồi). Tin lệnh cũng là tin các file của repo mà lệnh gọi. Chưa đồng ý → kiểm spec dừng với mã 3 và in lệnh | Đọc lệnh; tin thì cho agent chạy lại với `--trust-list-command`, không thì dùng `--tests`; CI: thêm cờ vào pipeline |
 | **CHANGELOG** | Nhật ký thay đổi | `CHANGELOG.md` của skill: mỗi bản có gì mới, viết bằng lời người dùng | Đọc trước khi cập nhật |

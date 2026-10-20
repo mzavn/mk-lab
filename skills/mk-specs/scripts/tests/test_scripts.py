@@ -78,9 +78,14 @@ README = textwrap.dedent("""\
     """)
 
 
-def run(script, root, *args):
+# Scripts in these tests never read or write the real trusted-commands list of the machine.
+XDG = tempfile.mkdtemp(prefix="mk-specs-xdg-")
+
+
+def run(script, root, *args, env=None):
+    env = {**os.environ, "XDG_CONFIG_HOME": XDG, **(env or {})}
     return subprocess.run([sys.executable, os.path.join(SCRIPTS, script), "--root", root, *args],
-                          capture_output=True, text=True)
+                          capture_output=True, text=True, env=env)
 
 
 class YamlSubset(unittest.TestCase):
@@ -187,6 +192,42 @@ class Scripts(unittest.TestCase):
         self.assertIn("- fix: no id", res.stdout)
         self.assertIn("- feat(UC-999): unknown id", res.stdout)
         self.assertEqual(before, self.read("specs/checkout/UC-101-dat-hang.md"))
+
+    def test_audit_reports_non_testable_acs(self):
+        bad_uc = textwrap.dedent("""\
+            # UC-102: Thanh toán
+            - Status: draft
+            - BR: BR-01
+
+            ## History
+            - v1 (2026-01-02, chưa commit): khởi tạo
+
+            ## Main Flow
+            1. Khách trả tiền.
+
+            ## Acceptance Criteria
+
+            ### AC-1: Giao diện thân thiện
+            - Given giao diện mở
+            - When khách xem
+            Hệ thống phải chạy nhanh và đẹp.
+
+            ### AC-2: Cũ bỏ đi (deprecated v1: không dùng)
+            - Given cái cũ
+
+            ### AC-3: Tiếng Việt hợp lệ
+            - Cho giỏ có 1 món
+            - Khi thanh toán
+            - Thì trừ tiền
+            """)
+        with open(os.path.join(self.root, "specs/checkout/UC-102-thanh-toan.md"), "w", encoding="utf-8") as fh:
+            fh.write(bad_uc)
+        res = run("audit.py", self.root)
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertIn("## Non-testable ACs (missing Then clause): 1 AC", res.stdout)
+        self.assertIn("- checkout/UC-102-thanh-toan.md: AC-1: Giao diện thân thiện", res.stdout)
+        self.assertNotIn("AC-2", res.stdout)
+        self.assertNotIn("AC-3", res.stdout)
 
 class AgentFiles(unittest.TestCase):
     def setUp(self):
@@ -363,7 +404,7 @@ def write_tree(root, files):
 
 
 class ConfigSafety(unittest.TestCase):
-    """Repo config is data: paths stay inside the repo; the one executed value is announced."""
+    """Repo config is data: paths stay inside the repo; the one executed value runs only when the user trusts it."""
 
     def setUp(self):
         self.root = tempfile.mkdtemp()
@@ -388,7 +429,9 @@ class ConfigSafety(unittest.TestCase):
 
     def test_regex_that_may_hang_is_refused(self):
         for extra in ("ids:\n  uc: '(UC-\\d+)+$'\n", "tests:\n  file_pattern: '(a*)*b'\n",
-                      "readme:\n  banner:\n    match: '(x+){2,}'\n    keep: 1\n", f"ids:\n  adr: '{'A' * 501}'\n"):
+                      "readme:\n  banner:\n    match: '(x+){2,}'\n    keep: 1\n", f"ids:\n  adr: '{'A' * 501}'\n",
+                      "readme:\n  lines:\n    - match: '^(?P<uc>(a|aa)+)$'\n", "ids:\n  uc: '(U|UC|UC-)+-\\d+'\n",
+                      "ids:\n  uc: 'U(x(a|b))*'\n", "ids:\n  uc: 'U(x(a+))+'\n"):
             self.config(extra)
             res = run("gen.py", self.root)
             self.assertNotEqual(res.returncode, 0, extra)
@@ -416,11 +459,135 @@ class ConfigSafety(unittest.TestCase):
         self.assertIn("Xem [đây](business-requirements.md)", oi)
         self.assertIn("open 2", res.stdout)
 
-    def test_list_command_is_announced_before_running(self):
-        self.config('tests:\n  list_command: "echo []"\n')
-        res = run("verify.py", self.root)
+    def test_untrusted_list_command_is_not_run(self):
+        marker = os.path.join(self.root, "pwned")
+        cmd = f"touch {marker} && echo []"
+        self.config(f'tests:\n  list_command: "{cmd}"\n')
+        res = run("verify.py", self.root, env=self.fresh_trust())
+        self.assertEqual(res.returncode, 3, res.stdout + res.stderr)
+        self.assertFalse(os.path.exists(marker))
+        self.assertIn(cmd, res.stderr)
+        self.assertIn("--trust-list-command", res.stderr)
+
+    def test_trusted_list_command_runs_and_is_remembered(self):
+        marker = os.path.join(self.root, "ran")
+        cmd = f"touch {marker} && echo []"
+        self.config(f'tests:\n  list_command: "{cmd}"\n')
+        env = self.fresh_trust()
+        res = run("verify.py", self.root, "--trust-list-command", env=env)
         self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
-        self.assertIn("tests.list_command: echo []", res.stderr)
+        self.assertIn(f"tests.list_command: {cmd}", res.stderr)
+        self.assertTrue(os.path.exists(marker))
+        os.remove(marker)
+        res = run("verify.py", self.root, env=env)
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+        self.assertTrue(os.path.exists(marker))
+        with open(os.path.join(env["XDG_CONFIG_HOME"], "mk-specs", "trusted-commands"), encoding="utf-8") as fh:
+            self.assertEqual(fh.read(), f"{os.path.realpath(self.root)}\t{cmd}\n")
+
+    def test_changed_command_or_other_repo_must_be_trusted_again(self):
+        marker = os.path.join(self.root, "ran")
+        cmd = f"touch {marker} && echo []"
+        self.config(f'tests:\n  list_command: "{cmd}"\n')
+        env = self.fresh_trust()
+        self.assertEqual(run("verify.py", self.root, "--trust-list-command", env=env).returncode, 0)
+        os.remove(marker)
+        self.config(f'tests:\n  list_command: "{cmd} "\n')
+        res = run("verify.py", self.root, env=env)
+        self.assertEqual(res.returncode, 3, res.stdout + res.stderr)
+        self.assertFalse(os.path.exists(marker))
+        other = tempfile.mkdtemp()
+        write_tree(other, {"specs/mk-specs.yml": f'version: 1\ntests:\n  list_command: "{cmd}"\n'})
+        res = run("verify.py", other, env=env)
+        self.assertEqual(res.returncode, 3, res.stdout + res.stderr)
+        self.assertFalse(os.path.exists(marker))
+
+    def test_trust_list_inside_repo_or_relative_xdg_is_ignored(self):
+        marker = os.path.join(self.root, "pwned")
+        cmd = f"touch {marker} && echo []"
+        self.config(f'tests:\n  list_command: "{cmd}"\n')
+        planted = os.path.join(self.root, ".cfg")  # e.g. XDG_CONFIG_HOME set by the repo's own agent settings
+        write_tree(planted, {"mk-specs/trusted-commands": f"{os.path.realpath(self.root)}\t{cmd}\n"})
+        for flags in ((), ("--trust-list-command",)):
+            res = run("verify.py", self.root, *flags, env={"XDG_CONFIG_HOME": planted, "HOME": tempfile.mkdtemp()})
+            self.assertEqual(res.returncode, 3, res.stdout + res.stderr)
+            self.assertIn("inside this repo", res.stderr)
+            self.assertFalse(os.path.exists(marker))
+        home = tempfile.mkdtemp()
+        res = run("verify.py", self.root, "--trust-list-command", env={"XDG_CONFIG_HOME": "relative/cfg", "HOME": home})
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+        self.assertTrue(os.path.isfile(os.path.join(home, ".config", "mk-specs", "trusted-commands")))
+
+    def test_command_with_control_characters_cannot_be_trusted(self):
+        marker = os.path.join(self.root, "pwned")
+        self.config(f'tests:\n  list_command: "echo [] \\r touch {marker}"\n')
+        env = self.fresh_trust()
+        res = run("verify.py", self.root, "--trust-list-command", env=env)
+        self.assertEqual(res.returncode, 3, res.stdout + res.stderr)
+        self.assertIn("control characters", res.stderr)
+        self.assertIn("\\r", res.stderr)
+        self.assertFalse(os.path.exists(marker))
+        self.assertFalse(os.path.exists(os.path.join(env["XDG_CONFIG_HOME"], "mk-specs", "trusted-commands")))
+
+    def test_gen_name_style_does_not_run_untrusted_command(self):
+        marker = os.path.join(self.root, "pwned")
+        self.config(f'tests:\n  list_command: "touch {marker} && echo []"\n  citation_style: name\n')
+        res = run("gen.py", self.root, env=self.fresh_trust())
+        self.assertEqual(res.returncode, 3, res.stdout + res.stderr)
+        self.assertFalse(os.path.exists(marker))
+        self.assertFalse(os.path.exists(os.path.join(self.root, "specs", "traceability.md")))
+
+    def test_decisions_and_context_paths_outside_repo_are_refused(self):
+        outside = tempfile.mkdtemp()
+        secret = os.path.join(outside, "notes.md")
+        write_tree(outside, {"notes.md": "- [OPEN] bí mật\n", "UC-001-x.md": "# UC-001: x\n- [OPEN] bí mật\n"})
+        rel = os.path.relpath(outside, os.path.join(self.root, "specs"))
+        for extra in (f"decisions_file: '{secret}'\n", f"decisions_file: '{rel}/notes.md'\n",
+                      f"contexts:\n  - id: '{rel}'\n", f"contexts_glob: '{rel}'\n",
+                      "ids:\n  uc: 'UC-\\d{3}'\ncontexts_glob: '../../*'\n"):
+            self.config(extra)
+            res = run("gen.py", self.root)
+            self.assertNotEqual(res.returncode, 0, extra)
+            self.assertIn("outside the repo", res.stdout + res.stderr, extra)
+            oi = os.path.join(self.root, "specs", "open-issues.md")
+            self.assertFalse(os.path.exists(oi) and "bí mật" in mkspecs.read(oi), extra)
+
+    def test_generated_file_symlink_is_not_written_through(self):
+        target = os.path.join(tempfile.mkdtemp(), "victim.md")
+        write_tree(os.path.dirname(target), {"victim.md": "giữ nguyên\n"})
+        os.symlink(target, os.path.join(self.root, "specs", "traceability.md"))
+        self.config("")
+        res = run("gen.py", self.root)
+        self.assertNotEqual(res.returncode, 0)
+        self.assertIn("symlink", res.stdout + res.stderr)
+        self.assertEqual(mkspecs.read(target), "giữ nguyên\n")
+
+    def test_commit_hash_does_not_write_through_symlink(self):
+        target = os.path.join(tempfile.mkdtemp(), "victim.md")
+        write_tree(os.path.dirname(target), {"victim.md": "- v1 (2026-01-01, chưa commit): x\n"})
+        os.symlink(target, os.path.join(self.root, "specs", "x.md"))
+        self.config("")
+        res = run("commit-hash.py", self.root, "abc1234")
+        self.assertNotEqual(res.returncode, 0)
+        self.assertIn("symlink", res.stdout + res.stderr)
+        self.assertEqual(mkspecs.read(target), "- v1 (2026-01-01, chưa commit): x\n")
+
+    def test_wrong_types_give_one_line_error(self):
+        for extra in ("ids: 5\n", "tests: [a]\n", 'a: "\\x"\n', "a: " + "9" * 5000 + "\n", "a: " + "[" * 2000 + "]" * 2000 + "\n",
+                      "readme:\n  banner: 3\n", "contexts: 5\n", "metrics:\n  exempt_scopes: specs\n",
+                      "readme:\n  lines: [x]\n"):
+            self.config(extra)
+            res = run("gen.py", self.root)
+            self.assertEqual(res.returncode, 1, extra[:40])
+            self.assertTrue(res.stderr.startswith("mk-specs:"), res.stderr[-300:])
+            self.assertNotIn("Traceback", res.stderr)
+        write_tree(self.root, {"specs/mk-specs.yml": "- a\n"})
+        res = run("gen.py", self.root)
+        self.assertEqual(res.returncode, 1)
+        self.assertNotIn("Traceback", res.stderr)
+
+    def fresh_trust(self):
+        return {"XDG_CONFIG_HOME": tempfile.mkdtemp(), "HOME": tempfile.mkdtemp()}
 
 
 class TemplateConfig(unittest.TestCase):
@@ -443,6 +610,27 @@ class TemplateConfig(unittest.TestCase):
         res = run("gen.py", self.root)
         self.assertNotEqual(res.returncode, 0)
         self.assertIn("context folder(s) missing", res.stdout + res.stderr)
+
+
+class SkillFrontmatter(unittest.TestCase):
+    def setUp(self):
+        self.skill_dir = os.path.dirname(SCRIPTS)
+        with open(os.path.join(self.skill_dir, "SKILL.md"), encoding="utf-8") as fh:
+            front = fh.read().split("\n---\n", 1)[0]
+        self.name = re.search(r"^name: (.*)$", front, re.M).group(1).strip()
+        self.description = re.search(r"^description: '(.*)'$", front, re.M).group(1).replace("''", "'")
+
+    def test_name_is_mk_colon_specs_in_folder_mk_specs(self):
+        self.assertEqual(self.name, "mk:specs")
+        self.assertRegex(self.name, r"^[a-z0-9-]+:[a-z0-9-]+$")
+        self.assertEqual(os.path.basename(self.skill_dir), "mk-specs")
+        for trigger in ("mk:specs", '"viết PRD"', '"đề xuất thay đổi"', '"PRD là gì"'):
+            self.assertIn(trigger, self.description)
+
+    def test_description_fits_limit_and_keeps_vietnamese_triggers(self):
+        self.assertLessEqual(len(self.description), 1024)
+        for trigger in ('"viết PRD"', '"chân dung người dùng"', '"soát spec"', '"thuật ngữ"'):
+            self.assertIn(trigger, self.description)
 
 
 class Hook(unittest.TestCase):

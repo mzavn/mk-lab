@@ -1,223 +1,270 @@
 # mk-lab
 
-Bộ skill **lập trình** cho AI coding agent (Claude Code, omp và các agent đọc thư mục skill chuẩn). Hiện có một skill: **`mk-specs`** — Spec-Driven Development (SDD); các skill lập trình khác sẽ thêm vào đây, cài riêng từng cái bằng `--skill <tên>`.
+Bộ skill **kỹ thuật & lập trình** cho AI coding agent (Claude Code, omp, Codex và các agent hỗ trợ chuẩn Agent Skills). 
 
-> Cài trước v2.0.0 (máy có thư mục `~/.mk-skills` — tên cũ của repo)? Làm các bước "Cần làm khi cập nhật" của bản v2.0.0 trong [CHANGELOG.md](CHANGELOG.md).
+Trọng tâm hiện tại là **`mk-specs`** — phương pháp luận và bộ công cụ **Spec-Driven Development (SDD)** được thiết kế chuyên biệt cho kỷ nguyên **Agentic Software Engineering (SE 3.0)**.
+
+> **Cài đặt trước v2.0.0?** (máy có thư mục `~/.mk-skills` — tên cũ của repo): Xem các bước *"Cần làm khi cập nhật"* của bản v2.0.0 trong [CHANGELOG.md](CHANGELOG.md).
+
+Bộ skill content & review đi kèm là **[mk-studio](https://github.com/mzavn/mk-studio)** (`/mk:star`, `/mk:exec-review`).
 
 *English summary at the end.*
 
-## mk-specs là gì
+---
 
-`mk-specs` dạy agent làm việc theo spec: người chốt *ý định* trong thư mục `specs/` (Business Requirement, Use Case, Entity, Acceptance Criteria, ADR), AI viết test và code theo spec; khi có gì sai thì sửa spec trước rồi mới sửa code.
+## mk-specs là gì?
 
-Skill có **bốn mức trên cùng một khung** — chọn kỹ tới đâu tuỳ dự án, mức sau chỉ thêm phần vào mức trước:
+`mk-specs` chuyển đổi cách làm việc với AI coding agent: **con người chốt ý định bằng đặc tả (spec) trong thư mục `specs/`, AI viết test và code theo spec; khi có sai lệch, sửa spec trước rồi mới sửa code.**
 
-| Mức | Agent phỏng vấn rồi viết | Hợp khi |
+```
+          [ Ý định con người ]
+                   │
+                   ▼
+       [ specs/ (Hợp đồng gốc) ] ── (Nguồn sự thật tối cao)
+         │                   │
+         ▼                   ▼
+[ Automated Tests ] ◄───► [ Source Code ]
+  (Given-When-Then)       (AI sinh & refactor)
+```
+
+### Cách gọi lệnh
+- **Claude Code:** Gõ `/mk:specs` rồi nêu yêu cầu (vd: `/mk:specs viết PRD cho tính năng thanh toán`). Thư mục cài đặt vẫn là `mk-specs`, gõ `/mk-specs` vẫn chạy bình thường.
+- **Agent khác (omp, Codex…):** Nói bằng lời tự nhiên (vd: *"Khởi tạo SDD cho repo này"*, *"Đề xuất thay đổi: thêm cổng thanh toán QR"*). Agent tự nhận diện quy trình qua `AGENTS.md`.
+- **Lưu ý quyền:** Tiền tố `mk:` là quy ước định danh riêng của bộ skill này, **không** phải plugin Claude Code tên `mk`. Nếu bạn cấu hình `permissions.allow` hoặc `permissions.deny` trong `settings.json`, hãy khai báo cả hai: `Skill(mk:specs)` và `Skill(mk-specs)`.
+
+---
+
+## Nền tảng phương pháp luận: Vì sao cần SDD?
+
+Trong kỷ nguyên Agentic SE, khi AI có thể sinh hàng nghìn dòng code trong vài phút, **vấn đề của kỹ thuật phần mềm không còn là tốc độ viết code, mà là khả năng thẩm định, duy trì tính nhất quán và kiểm soát trôi dạt kiến trúc.** 
+
+Theo nghiên cứu học thuật của **Díaz et al. (arXiv:2609.00252, 2026)**, "vibe coding" (lập trình hoàn toàn qua chat tự do) tạo ra nghịch lý năng suất: tăng tốc cá nhân nhưng làm nghẽn năng lực review của nhóm, mất khả năng truy vết và tích tụ nợ kỹ thuật.
+
+`mk-specs` giải quyết bài toán này qua 4 cam kết cốt lõi:
+1. **Mọi thay đổi có chủ đích bắt đầu từ spec:** Spec là bản hợp đồng nghiệm thu duy nhất trước khi viết code.
+2. **Spec được quản lý phiên bản cùng với code:** Cùng nằm trong Git, tuân thủ cùng kỷ luật review, audit và rollback.
+3. **Mọi artifact đều có nguồn gốc và truy vết (Traceability):** Code, test, tài liệu đều liên kết chặt chẽ về Use Case và Acceptance Criteria tương ứng.
+4. **Spec là nguồn sự thật tối cao:** Khi code và spec mâu thuẫn, sửa spec trước hoặc sinh lại code, tuyệt đối không sửa ngầm vào code.
+
+---
+
+## 3 lớp tài liệu phân định rõ
+
+Để tránh làm phình cửa sổ ngữ cảnh (context window) của AI và chống trôi dạt kiến trúc, `mk-specs` phân định ranh giới rõ ràng giữa 3 tầng tài liệu:
+
+| Tầng tài liệu | Vị trí lưu trữ | Vòng đời & Bản chất | Trách nhiệm |
+|---|---|---|---|
+| **System Spec** | `AGENTS.md`, `CLAUDE.md` | **Luật chuẩn mực bền vững, nạp thường trực.** Định nghĩa kiến trúc, quy ước coding, cổng bảo mật và ranh giới bất biến của toàn dự án. | Tech Lead, Architect |
+| **Feature Spec** | `specs/changes/`, `specs/<context>/` | **Đặc tả theo task, có vòng đời.** Mô tả thay đổi cụ thể, acceptance criteria và được lưu trữ (`archive/`) khi hoàn tất. | Developer, PM, Agent |
+| **Procedural Skill** | `.claude/skills/mk-specs/` | **Thủ tục thực hiện, nạp theo nhu cầu (`on-demand`).** Hướng dẫn agent cách làm từng mode mà không làm bẩn context khi không cần tới. | Bộ công cụ `mk-specs` |
+
+---
+
+## 4 mức độ đặc tả linh hoạt trên cùng 1 khung
+
+Không phải dự án nào cũng cần bộ spec đồ sộ. `mk-specs` cung cấp 4 mức độ kỹ lưỡng tăng dần trên cùng một khung cấu trúc. Mức sau kế thừa nguyên vẹn mức trước:
+
+```
+[Mức 1: PRD] ──► [+ Wireframe] ──► [+ TDD] ──► [Mức 4: SDD Đầy đủ]
+ (Story ID)      (HTML độc lập)   (Tech spec)  (BR/UC/AC/ADR + Traceability)
+```
+
+| Mức | Đầu ra chính | Đặc điểm & Thời điểm áp dụng |
 |---|---|---|
-| 1 · PRD | `specs/PRD.md`: story có mã, "Done khi", thứ tự làm | thử ý tưởng, MVP vài ngày |
-| 2 · + wireframe | + `specs/wireframe.html` màn chính | có giao diện người dùng thấy |
-| 3 · + TDD | + `specs/TDD.md`: stack, dữ liệu, API, quyết định | có CSDL, đăng nhập, tích hợp ngoài |
-| 4 · SDD đầy đủ | BR/UC/AC/ADR, change folder, traceability | > 2 người, luật tiền/pháp lý, sống > 6 tháng |
+| **1 · PRD** | `specs/PRD.md` | Story có mã vĩnh viễn (`BOOK-01`), tiêu chí "Done khi", thứ tự thực hiện. Phù hợp làm MVP, thử nghiệm ý tưởng trong vài ngày. |
+| **2 · + Wireframe** | + `specs/wireframe.html` | Thêm giao diện HTML tĩnh màn hình chính, tự đứng được, mở trực tiếp trên trình duyệt để chốt luồng trải nghiệm người dùng trước khi code. |
+| **3 · + TDD** | + `specs/TDD.md` | Thêm thiết kế kỹ thuật: kiến trúc cơ sở dữ liệu, sơ đồ bảng, API contract, các quyết định công nghệ quan trọng. |
+| **4 · SDD đầy đủ** | `specs/` (BR, UC, AC, ADR, Traceability) | Đầy đủ Use Case, Acceptance Criteria kiểm thử được, Architectural Decision Records (ADR), thư mục đề xuất thay đổi (`changes/`), sinh ma trận truy vết tự động. Dành cho dự án dài hạn (> 6 tháng), nhóm > 2 người, hoặc có ràng buộc pháp lý/dòng tiền. |
 
-Mức 1–3 dừng trước khi code: các file đã tự soát chéo, PRD có sẵn hướng dẫn cho người code, nên bước sau chỉ cần "lập kế hoạch từ specs rồi code". Dự án lớn lên thì mode `promote` dựng BR/UC/AC từ PRD, giữ mã story và đối chiếu với code đang chạy. Khung sáu phần (vì sao · cái gì · trông thế nào · làm thế nào · chia việc · quản trị) là phần chung của ISO/IEC/IEEE 29148, GitHub Spec Kit, Kiro, BMAD.
+*Nâng cấp mượt mà:* Dự án bắt đầu ở mức 1–3 có thể dùng lệnh `promote` để tự động nâng cấp lên mức 4 khi quy mô mở rộng mà không làm gãy mã story hay cấu trúc đã có.
 
-Skill gồm:
+---
 
-- **Quy trình** cho từng việc: PRD/wireframe/TDD cho dự án nhỏ, nâng lên SDD đầy đủ, khởi tạo specs (dự án mới hoặc codebase đang chạy), đề xuất thay đổi, tự soát spec vừa viết, thực hiện, hợp nhất, viết commit, kiểm tra, rà soát.
-- **Chân dung người dùng (personas)**: agent hỏi người dùng chính theo khung 7 ô rồi suy ra story, nền tảng, giao diện từ đó — spec sát người dùng thật hơn là để AI tự đoán.
-- **Thuật ngữ cho người mới**: [`glossary.md`](skills/mk-specs/references/glossary.md) giải thích SDD, PRD, story, AC, UC, ADR… bằng tiếng Việt, kèm "gặp nó thì bạn làm gì"; hỏi agent "PRD là gì?" là được trả lời theo bảng. Tên chuẩn ngành giữ tiếng Anh.
-- **Mẫu** PRD, TDD, UC, BR, ADR, proposal, entity, README cho `specs/`.
-- **Chặn tự động trên Claude Code (hook)**: sau khi gọi skill, Claude Code tự chặn sửa tay file sinh (`traceability.md`, `open-issues.md`) và commit thiếu mã UC/story; im lặng ở repo không dùng mk-specs. Claude Code nạp **bản cài chung** khi có cả bản chung và bản project, nên giữ bản chung cập nhật (`install.sh --update --global`).
-- **Scripts** (Python chuẩn, không cần cài thêm gì): sinh `traceability.md` (UC ↔ AC ↔ test) và `open-issues.md` (mọi `[DIVERGENCE]`/`[OPEN]`), kiểm mọi tên test được trích có thật và mọi link mở được, tính chỉ số AC Coverage / Spec Coverage / Trace Ratio, báo cáo vệ sinh spec.
-- **Cổng cứng**: không AC thì không code; luật tiền / quyền truy cập / bảo mật do người quyết, AI chỉ đề xuất; spec không nói thì không đoán; không tự duyệt; commit spec trước code và mọi commit mang ID UC/BR/ADR.
-- **Kỷ luật viết spec** (theo [Karpathy guidelines](https://github.com/multica-ai/andrej-karpathy-skills)): yêu cầu mơ hồ thì hỏi lại trước khi viết; chỉ viết UC/AC được yêu cầu, không thêm thứ "phòng khi"; chỉ sửa đúng chỗ thay đổi cần.
+## 8 cơ chế Methodological Harness
 
-## Vì sao SDD
+Hệ thống cung cấp khung kỷ luật phương pháp luận (Methodological Harness) để quản trị hành vi của agent ở quy mô nhóm:
 
-Khi AI viết phần lớn code, điều gì không được viết ra thì với AI coi như không tồn tại — nó lấp chỗ trống bằng xác suất. Spec rõ giúp AI đi nhanh *đúng hướng*; AC gắn test cho phép AI viết lại code mà vẫn biết hành vi có vỡ không; lịch sử quyết định nằm trong git chứ không nằm trong trí nhớ của ai. Xem `skills/mk-specs/references/principles.md`, kể cả phần "khi nào **không** nên dùng".
+1. **Context Engineering:** Xây dựng môi trường thông tin chuẩn hóa qua `specs/` và `AGENTS.md`, biến tri thức dự án thành tài sản có phiên bản thay vì cấu hình cá nhân tản mát.
+2. **Persistent Shared Knowledge:** Lưu trữ quyết định và căn nguyên (ADR), lịch sử thay đổi (`## History`), truy xuất lười (lazy retrieval) để các phiên làm việc sau kế thừa trọn vẹn quyết định của phiên trước.
+3. **Executable Specifications:** Mọi Acceptance Criteria viết theo cấu trúc Given–When–Then kiểm thử được. Châm ngôn: *"Ràng buộc mà không công cụ nào kiểm được là mong muốn chứ không phải ràng buộc"*. Script `audit.py` tự động cảnh báo AC thiếu mệnh đề `Then`.
+4. **Norm Encoding (Quy tắc lặp 3 lần):** Khi một lỗi hoặc quy ước phải sửa thủ công tới lần thứ 3 trong quá trình review, nó phải được chuẩn hóa thành điều khoản trong `AGENTS.md` (ngoài khối mk-specs) qua pull request, kèm bộ kiểm tra tự động (linter/test).
+5. **Structured Consultation (Tham vấn có cấu trúc):** Khi agent gặp điểm mơ hồ trong lúc thực hiện (`apply`), agent **không tự suy đoán**. Agent phát hành *Consultation Request Pack* gồm 4 phần: (1) Câu hỏi · (2) Các phương án · (3) Điều khoản spec liên quan · (4) Hệ quả. Phán quyết của con người được ghi nhận vào spec hoặc ADR.
+6. **Evidence-backed Acceptance (Nghiệm thu dựa trên bằng chứng):** Đơn vị hoàn thành không chỉ là "code chạy được", mà là **Gói bằng chứng** trong proposal: đối chiếu từng AC ↔ test đã chạy, kết quả DoD, lý do lựa chọn giải pháp và link quy ước đang hiệu lực.
+7. **Graduated Autonomy (Thang tự chủ phân tầng):** Phân chia rõ mức độ tự chủ theo loại công việc: sửa lỗi nhỏ/cập nhật phụ thuộc chạy tự động; tính năng mới chạy tự động kèm tham vấn khi mơ hồ; logic dòng tiền/bảo mật/quyền hạn bắt buộc phải có plan được duyệt và kiểm tra từng bước.
+8. **Drift Prevention (Phòng chống trôi dạt):** Giám sát liên tục sự sai lệch giữa tài liệu và mã nguồn qua các công cụ kiểm toán tự động (`audit.py`, `verify.py`, `open-issues.md`).
 
-## Yêu cầu
+---
 
-- `bash` (macOS hoặc Linux), `python3` ≥ 3.8, `git`.
-- Một coding agent bất kỳ. Agent có hỗ trợ skill (Claude Code, omp, Codex…) tự kích hoạt skill; agent khác đọc `AGENTS.md` và được trỏ tới `SKILL.md` (markdown thường).
+## 10 Modes làm việc linh hoạt
 
-## Cài đặt
+Agent tự động chọn mode xử lý dựa trên câu lệnh tự nhiên của bạn:
 
-Hướng dẫn ngắn từng bước (đưa cho agent tự cài được): [INSTALL.md](INSTALL.md).
+| Mode | Mục đích | Lệnh mẫu bằng lời tự nhiên |
+|---|---|---|
+| `prd` | Phỏng vấn & lập PRD (mức 1–3), wireframe, TDD cho dự án nhỏ | *"Viết PRD cho ứng dụng đặt lịch khám bệnh, mức 2."* |
+| `promote` | Nâng cấp PRD lên cấu trúc SDD đầy đủ (mức 4) | *"Dự án đã mở rộng, nâng PRD này lên specs đầy đủ."* |
+| `init` | Khởi tạo cấu trúc `specs/` cho dự án mới hoặc codebase đang chạy | *"Khởi tạo SDD cho repo này theo mk-specs (dự án brownfield)."* |
+| `change` | Soạn đề xuất thay đổi trong `specs/changes/` kèm tự soát | *"Đề xuất thay đổi: thêm cơ chế xác thực 2 lớp qua email."* |
+| `review` | Rà soát chéo độc lập spec/proposal, tìm mâu thuẫn và lỗ hổng | *"Soát lại proposal 261020-auth-2fa trước khi gửi duyệt."* |
+| `apply` | Lập trình theo spec đã duyệt: viết test theo AC (đỏ -> xanh) rồi viết code | *"Thực hiện proposal 261020-auth-2fa đã được duyệt."* |
+| `merge` | Hợp nhất thay đổi vào UC/ADR chính thức, lưu trữ proposal | *"Hợp nhất change 261020-auth-2fa vào hệ thống specs."* |
+| `check` | Kiểm tra tính nhất quán giữa spec và test suite (`gen` + `verify`) | *"Kiểm tra xem toàn bộ spec và test có khớp nhau không."* |
+| `commit` | Soạn commit message chuẩn Conventional Commits gắn mã UC/story | *"Viết commit message cho các thay đổi đang stage."* |
+| `audit` | Quét vệ sinh toàn diện spec: mục thiếu, AC thiếu Then, commit thiếu ID | *"Rà soát chất lượng specs và mức độ tuân thủ quy trình SDD."* |
 
-Nhanh nhất — không cần tự clone (script clone vào `~/.mk-lab`, đổi bằng biến `MK_LAB_HOME`):
+---
+
+## Cài đặt nhanh
+
+Xem hướng dẫn chi tiết tại [INSTALL.md](INSTALL.md).
+
+### 1. Cài đặt toàn hệ thống (Global)
+Cách nhanh nhất — tự động tải và cài đặt vào `~/.claude/skills` và `~/.agents/skills`:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/mzavn/mk-lab/main/install.sh | bash -s -- --global
 ```
 
-Hoặc clone tay:
+Hoặc qua Git:
+```bash
+git clone https://github.com/mzavn/mk-lab.git ~/.mk-lab
+bash ~/.mk-lab/install.sh --global
+```
+
+### 2. Cài đặt vào một dự án (Project-level)
+Khuyên dùng cho các dự án áp dụng SDD mức 4:
 
 ```bash
-git clone https://github.com/mzavn/mk-lab.git
-cd mk-lab
-
-./install.sh --global                      # ~/.claude/skills/mk-specs và ~/.agents/skills/mk-specs
-./install.sh --project ~/code/my-shop      # cài vào một project
-./install.sh --global --project ~/code/my-shop   # cả hai
-./install.sh --global --skill <tên>        # một skill khác trong skills/ (mặc định --skill mk-specs)
+cd ~/code/my-project
+bash ~/.mk-lab/install.sh --project .
 ```
 
-Đang đứng trong project:
-
-```bash
-cd ~/code/my-shop
-bash ~/.mk-lab/install.sh --project .   # hoặc đường dẫn tới nơi đã clone mk-lab
-```
-
-`--project` làm gì (chạy lại bao nhiêu lần cũng được — **thiếu thì thêm, có rồi thì giữ hoặc cập nhật**):
-
-| File | Lần đầu | Lần sau |
-|---|---|---|
-| `.claude/skills/mk-specs/` | chép skill | thay bằng bản mới (từ chối và liệt kê file nếu có sửa tay, trừ `--force`) |
-| `specs/mk-specs.yml` | tạo từ mẫu | giữ nguyên |
-| `AGENTS.md` | tạo, kèm khối `<!-- mk-specs:start … end -->` | chỉ thay phần trong khối khi khối đổi; phần còn lại của file không bị đụng |
-| `CLAUDE.md` | tạo với dòng `@AGENTS.md` (hoặc thêm dòng đó lên đầu file có sẵn) | giữ nguyên |
-| `GEMINI.md` | chỉ khi file đã có: thêm một dòng "Đọc và làm theo `AGENTS.md`" | giữ nguyên |
-| `.agents/skills/mk-specs/` | chỉ với `--agents-dir` (agent đọc `.agents/skills`, vd Codex) | thay bằng bản mới (tự cập nhật khi thư mục đã có, không cần nhắc lại cờ) |
-
-Không muốn đụng file hướng dẫn agent: thêm `--no-agent-files`.
-
-`--skill <tên>` khác `mk-specs` chỉ chép thư mục skill (`.claude/skills/<tên>`, `.agents/skills/<tên>` với `--agents-dir`), không tạo cấu hình hay đụng `AGENTS.md`/`CLAUDE.md`. Thư mục cùng tên mà không do `install.sh` tạo thì bị từ chối, trừ `--force`.
-
-### Dùng với nhiều agent
-
-`AGENTS.md` là [định dạng mở](https://agents.md) mà phần lớn agent đọc (Codex, Cursor, Copilot, Windsurf, Aider, omp…; Gemini CLI/Antigravity khi cấu hình hoặc qua `GEMINI.md`). Claude Code đọc `CLAUDE.md` nên cần dòng `@AGENTS.md`. Khối `mk-specs` trong `AGENTS.md` ghi các cổng cứng và trỏ tới `.claude/skills/mk-specs/SKILL.md`, nên agent không hỗ trợ skill vẫn làm đúng quy trình. Luật riêng của repo viết trong `AGENTS.md`, ngoài khối.
-
-- Luôn **chép**, không symlink — bản trong project được commit cùng repo, nên mọi người (và CI) chạy cùng một phiên bản scripts.
-- Script in phiên bản cũ → mới sau mỗi lần cài.
-
-Khi project dùng `npm`, thêm vào `package.json`:
-
-```json
-"specs:gen": "python3 .claude/skills/mk-specs/scripts/gen.py",
-"specs:check": "python3 .claude/skills/mk-specs/scripts/verify.py"
-```
-
-## Cập nhật
-
-Skill phát hành theo bản (`vX.Y.Z`, xem [CHANGELOG.md](CHANGELOG.md)); `--update` chỉ nhận bản đã phát hành. Một lệnh:
-
-```bash
-bash ~/.mk-lab/install.sh --update                          # bản cài chung: mọi skill đã cài bằng install.sh
-bash ~/.mk-lab/install.sh --update --global --project .     # đứng trong project: cả hai
-bash ~/.mk-lab/install.sh --check                           # chỉ xem có bản mới không
-```
-
-**Nhắc tự động:** mỗi phiên agent chạy `scripts/check-update.py` một lần — chỉ đọc danh sách tag trên GitHub, không tải, không gửi gì — có bản mới thì nhắc một dòng kèm lệnh, bạn đồng ý mới chạy. Tắt: đặt biến môi trường `MK_LAB_NO_UPDATE_CHECK=1`. Bản tăng số X luôn ghi trong CHANGELOG bước bạn cần làm thêm.
-
-Clone ở chỗ khác thì thay `~/.mk-lab` bằng đường dẫn đó (đường dẫn được ghi trong `~/.claude/skills/mk-specs/.mk-specs-source`). Chạy lại bao nhiêu lần cũng được: file đã xoá ở bản mới bị bỏ, `specs/mk-specs.yml` và phần ngoài khối `mk-specs` của `AGENTS.md` giữ nguyên. Bản trong project chỉ bị từ chối khi có file khác với bản `install.sh` đã chép (sửa tay, kể cả đã commit): script liệt kê file đó; luật riêng chuyển sang `AGENTS.md` ngoài khối, rồi chạy lại với `--force`.
-
-Rồi trong project: chạy `specs:gen` — `traceability.md`/`open-issues.md` phải không đổi nếu spec không đổi — và commit `.claude/skills/mk-specs` (`chore(specs): update mk-specs to vX.Y.Z`).
-
-## Gỡ cài đặt
-
-```bash
-./install.sh --uninstall --global
-./install.sh --uninstall --project ~/code/my-shop   # bỏ khối mk-specs trong AGENTS.md; giữ specs/, specs/mk-specs.yml và dòng @AGENTS.md
-./install.sh --uninstall --global --skill <tên>     # chỉ gỡ skill đó
-```
-
-## Cấu hình `specs/mk-specs.yml`
-
-Ví dụ cho một cửa hàng online:
-
-```yaml
-version: 1
-language: vi
-specs_dir: specs
-contexts:
-  - id: catalog
-    title: "Danh mục (catalog)"
-  - id: checkout
-    title: "Đặt hàng (checkout)"
-ids:
-  uc: 'UC-\d{3}'
-  br: 'BR-\d+'
-  adr: 'ADR-\d+'
-decisions_file: decisions.md
-tests:
-  list_command: "npx vitest list --json"   # in JSON [{file, name}]
-  citation_style: pointer                  # pointer | name | both
-readme:
-  banner:
-    match: '^> (Cập nhật|Hợp nhất) '
-    keep: 5
-  lines:
-    - match: '^(?P<uc>\d+) UC · (?P<ac>\d+) AC · (?P<tested>\d+) AC có test'
-metrics:
-  since: "2026-01-31"                      # ngày áp dụng, mốc đo Trace Ratio
-  exempt_scopes: [specs, deps]
-```
-
-Đủ các khoá và mặc định: `skills/mk-specs/references/traceability.md` §5; mẫu có chú thích: `skills/mk-specs/assets/mk-specs.yml.template`. File dùng **YAML rút gọn** (map, list, chuỗi có/không nháy, số, true/false/null, `[a, b]`, chú thích) để scripts không cần PyYAML.
-
-## Các mode
-
-Gọi bằng lời thường; agent tự chọn mode.
-
-| Mode | Làm gì | Ví dụ câu lệnh |
-|---|---|---|
-| `prd` | Dự án nhỏ/MVP: hỏi chọn mức 1–3, phỏng vấn, viết `PRD.md` (+ `wireframe.html`, `TDD.md`), tự soát chéo, dừng trước khi code | "Viết PRD cho app đặt lịch cắt tóc, mức 2." |
-| `promote` | Nâng PRD lên SDD đầy đủ: BR/UC/AC/ADR từ PRD, giữ mã story, đối chiếu code | "Dự án lớn rồi, nâng PRD lên specs đầy đủ." |
-| `init` | Dựng `specs/` SDD đầy đủ cho dự án mới (BR → UC → AC) hoặc codebase đang chạy (5 bước brownfield) | "Khởi tạo SDD cho repo này theo mk-specs, đây là codebase đang chạy." |
-| `change` | Viết proposal trong `specs/changes/<yyMMdd>-<slug>/`, tự soát, review hai phía | "Đề xuất thay đổi: mã QR thanh toán hết hạn sau 15 phút thay vì 5." |
-| `review` | Tự soát spec/PRD/proposal vừa viết (tự chạy sau `prd`/`change`/`init`): tìm mâu thuẫn — kể cả giữa PRD, wireframe, TDD — thiếu sót, phần thừa, chỗ đoán ý; tự sửa lỗi của mình, hỏi người dùng điểm cần quyết, ghi vào `## Tự soát` | "Soát lại proposal 260131-qr-het-han trước khi gửi duyệt." |
-| `apply` | Test theo AC (đỏ → xanh) rồi code theo proposal đã duyệt | "Làm proposal 260131-qr-het-han đã duyệt." |
-| `merge` | Hợp nhất vào UC/ADR, History có hash, archive, sinh lại file | "Hợp nhất change 260131-qr-het-han vào specs." |
-| `check` | Chạy gen + verify, giải thích lỗi và chỉ số | "Kiểm spec và test có khớp nhau không." |
-| `commit` | Viết commit `<type>(UC-xxx): …` (mức 1–3: `<type>(<mã story>): …`) từ diff đang stage | "Viết commit message cho thay đổi đang stage." |
-| `audit` | Báo cáo mục thiếu, chữ kỹ thuật trong flow/AC, commit thiếu ID | "Rà soát chất lượng specs và quy trình SDD." |
-
-## Cấu trúc repo
-
-```
-mk-lab/
-├── install.sh
-├── INSTALL.md
-├── CHANGELOG.md
-├── LICENSE
-├── README.md
-├── tests/                       test cho install.sh (không chép vào skill)
-└── skills/mk-specs/
-    ├── SKILL.md                 điểm vào: chọn mode, cổng cứng, scripts
-    ├── references/              principles, artifacts, workflow-prd, workflow-change, workflow-bootstrap, review, traceability, anti-patterns, glossary
-    ├── assets/                  mk-specs.yml.template, templates/ (PRD, TDD, UC, BR, ADR, proposal, entities, README)
-    └── scripts/                 gen.py, verify.py, audit.py, commit-hash.py, check-update.py, hook.py, mkspecs.py, tests/
-```
-
-## Đóng góp
-
-- Issue/PR bằng tiếng Việt hoặc tiếng Anh đều được, gửi vào nhánh `dev` (`main` chỉ chứa bản đã phát hành). Commit theo Conventional Commits; loại commit quyết định số phiên bản (CHANGELOG.md) — đổi chữ trong `skills/` mà người dùng thấy khác là `feat`/`fix`, không phải `docs`.
-- Sửa scripts: giữ thư viện chuẩn, đầu ra tất định; chạy `python3 -m unittest discover -s skills/mk-specs/scripts/tests` (và `skills/<skill>/scripts/tests` của skill khác nếu có) và `python3 -m unittest discover -s tests` (installer).
-- Sửa skill: `SKILL.md` và mỗi reference dưới 300 dòng, không lặp nội dung giữa chúng; ví dụ dùng dữ liệu giả, không đưa thông tin riêng của dự án nào vào. Khái niệm mới người dùng thấy → thêm dòng vào `glossary.md`.
-- Ghi thay đổi vào mục `## Chưa phát hành` của CHANGELOG.md bằng lời người dùng (khi repo có nhiều skill: chia nhóm `### <skill>`); số phiên bản (chung cho cả repo) và tag do người bảo trì đặt khi phát hành.
-
-## Ghi công
-
-Cảm ơn anh **Huy ([huynt.dev](https://huynt.dev))** với ebook *Spec Driven Development* — phương pháp trong `mk-specs` dựa trên ebook này (skill diễn giải lại, có ghi số trang để tra).
-
-Phần "Kỷ luật khi viết spec" rút từ [andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) (MIT).
-
-Phần `mk-specs` thêm vào (đánh dấu ✚ trong references): đánh dấu `[DIVERGENCE]`/`[OPEN]` và luật trọng tài giữa specs/docs/plans, ma trận truy vết sinh tự động và kiểm bằng máy, ADR có phương án bị loại và "Verified in code", History mang hash commit, giới hạn README — rút ra từ việc vận hành SDD trên các dự án thật.
-
-## Giấy phép
-
-MIT — xem [LICENSE](LICENSE).
+*Lệnh trên sẽ:*
+- Sao chép bộ công cụ vào `.claude/skills/mk-specs` (và `.agents/skills` nếu có `--agents-dir`).
+- Tạo file cấu hình `specs/mk-specs.yml` từ mẫu chuẩn nếu chưa có.
+- Thêm khối định hướng `<!-- mk-specs:start ... end -->` vào `AGENTS.md` và gắn `@AGENTS.md` vào `CLAUDE.md`.
 
 ---
 
-## English
+## Bảo mật & Ranh giới tin cậy (v2.0.0)
 
-**mk-lab** (formerly **mk-skills**; installs from before v2.0.0 live in `~/.mk-skills` — see "Cần làm khi cập nhật" under v2.0.0 in `CHANGELOG.md`) is a set of programming skills for AI coding agents; pick one with `install.sh --skill <name>` (default `mk-specs`).
+`mk-specs` được gia cố toàn diện chống các kỹ thuật tấn công qua Agentic workflows:
 
-**mk-specs** is an agent skill for Spec-Driven Development at four levels of rigour on one structure: (1) an interviewed PRD with permanent story IDs, testable "done when" criteria and a build order; (2) plus a single-file HTML wireframe of the main screen; (3) plus a technical design (TDD); (4) full SDD with business requirements, use cases, entities, acceptance criteria and ADRs. Levels 1–3 stop before coding with cross-checked files ready for planning; `promote` lifts a PRD into full specs, keeping story IDs and checking against running code. The six-part structure (why · what · look · how · work breakdown · governance) is what ISO/IEC/IEEE 29148, GitHub Spec Kit, Kiro and BMAD share. It ships workflows (prd, promote, init, change, review, apply, merge, check, commit, audit), templates, and stdlib-only Python scripts that generate a UC ↔ AC ↔ test traceability matrix and an open-issues list, verify every cited test exists and every relative link resolves, and report AC Coverage, Spec Coverage and Trace Ratio. After writing a spec, PRD or proposal the agent self-reviews it (`review`): it fixes its own mistakes, asks the user about genuine decision points, and records the result. Spec-writing discipline (ask before assuming, nothing speculative, surgical edits) follows the Karpathy guidelines.
+- **Kiểm soát lệnh test (`--trust-list-command`):** `tests.list_command` trong `specs/mk-specs.yml` là lệnh shell thực thi trên máy bạn. Script `verify.py`/`gen.py` **tuyệt đối không tự động chạy lệnh này trên repo lạ**. Lần đầu tiên gặp repo (hoặc khi lệnh bị sửa qua PR), script thoát mã 3 và yêu cầu bạn xác nhận bằng cờ `--trust-list-command`. Danh sách tin cậy được lưu trữ ngoài repo tại `~/.config/mk-specs/trusted-commands`.
+- **Ranh giới an toàn cho Repo chưa tin:** Khi mở PR lạ hoặc repo chưa rõ nguồn gốc, **không bao giờ chạy scripts do chính repo đó cung cấp**. Hãy dùng bản cài chung toàn hệ thống để thẩm định:
+  ```bash
+  python3 ~/.claude/skills/mk-specs/scripts/verify.py --root .
+  ```
+- **Toàn vẹn phát hành:** Lệnh `--update` và đường dẫn cài đặt `curl` chỉ đưa checkout về **tag phát hành chính thức (`vX.Y.Z`)**, ngăn chặn việc thực thi các commit chưa gắn tag trên nhánh `main`.
+- **Chống Path Traversal & Symlink:** Mọi đường dẫn cấu hình bắt buộc nằm trong repo; scripts từ chối đọc hoặc ghi đè xuyên qua symlink.
+- **Phòng vệ ReDoS:** Bộ phân tích YAML rút gọn tích hợp cơ chế phát hiện các biểu thức chính quy nguy hiểm có nguy cơ gây treo CPU.
+- **Claude Code Hook (`hook.py`):** Tự động bảo vệ các file ma trận sinh ra (`traceability.md`, `open-issues.md`) không bị sửa tay và chặn các commit thiếu mã định danh Use Case / Story.
 
-Install with `./install.sh --global` (copies to `~/.claude/skills` and `~/.agents/skills`) and/or `./install.sh --project <repo>` (from inside a repo: `--project .`; idempotent — copies to `<repo>/.claude/skills`, creates `specs/mk-specs.yml` if missing, maintains a marked mk-specs block in `AGENTS.md` (the cross-agent standard) and adds `@AGENTS.md` to `CLAUDE.md`, so agents without skill support still follow the workflow; `--agents-dir` also copies to `.agents/skills`). Requirements: bash, python3 ≥ 3.8, git. Skill text is Vietnamese with industry-standard English terms; `references/glossary.md` explains each term for newcomers. PRDs and BRs capture personas with a fixed 7-field frame that stories are derived from. Releases follow SemVer (tags `vX.Y.Z`, `CHANGELOG.md`); `main` only carries released versions, `--update` installs the latest release, and the agent checks once per session for a newer tag (read-only `git ls-remote`, opt out with `MK_LAB_NO_UPDATE_CHECK=1`).
+---
 
-Credits: thanks to Huy (huynt.dev) for the ebook *Spec Driven Development*, which the method follows; spec-writing discipline adapted from [andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) (MIT). License: MIT.
+## Cấu hình `specs/mk-specs.yml`
+
+File cấu hình đặt tại `specs/mk-specs.yml`, sử dụng định dạng **YAML rút gọn** (không cần cài thêm PyYAML):
+
+```yaml
+version: 1
+language: vi                 # vi | en — ngôn ngữ chữ sinh ra trong bảng
+specs_dir: specs            # thư mục chứa toàn bộ đặc tả
+contexts:
+  - id: catalog
+    title: "Danh mục sản phẩm (catalog)"
+  - id: checkout
+    title: "Đặt hàng & Thanh toán (checkout)"
+ids:
+  uc: 'UC-\d{3}'             # mẫu mã Use Case
+  br: 'BR-\d+'              # mẫu mã Business Requirement
+  adr: 'ADR-\d+'            # mẫu mã Quyết định Kiến trúc
+decisions_file: decisions.md # file ghi nhận ADR
+tests:
+  list_command: "npx vitest list --json"   # lệnh liệt kê test (chỉ chạy khi đã tin)
+  citation_style: pointer                  # pointer | name | both
+metrics:
+  since: "2026-01-31"                      # ngày bắt đầu tính Trace Ratio
+  exempt_scopes: [specs, deps, release]    # các scope commit không bắt buộc mã UC
+```
+
+Thêm vào `package.json` để chạy thuận tiện:
+```json
+"scripts": {
+  "specs:gen": "python3 .claude/skills/mk-specs/scripts/gen.py",
+  "specs:check": "python3 .claude/skills/mk-specs/scripts/verify.py"
+}
+```
+
+---
+
+## Hỗ trợ đa Agent qua AGENTS.md
+
+`AGENTS.md` là [chuẩn mở](https://agents.md) được hỗ trợ bởi hầu hết các AI coding agent hiện nay (Codex, Cursor, Copilot, Windsurf, Aider, omp…).
+
+Khối `mk-specs` trong `AGENTS.md` chứa đầy đủ các cổng cứng và nguyên tắc tối thượng. Nhờ đó, **ngay cả những agent không có tính năng skill riêng vẫn tự động tuân thủ nghiêm ngặt quy trình SDD** khi đọc file này. Quy ước riêng của dự án được viết ở phần ngoài khối và có hiệu lực bổ sung hoặc thu hẹp quyền.
+
+---
+
+## Cập nhật & Gỡ cài đặt
+
+### Cập nhật
+```bash
+bash ~/.mk-lab/install.sh --update                        # cập nhật bản cài chung toàn máy
+bash ~/.mk-lab/install.sh --update --global --project .   # cập nhật cả bản máy và bản dự án
+bash ~/.mk-lab/install.sh --check                         # kiểm tra xem có bản mới hay không
+```
+
+### Gỡ cài đặt
+```bash
+./install.sh --uninstall --global                         # gỡ bản toàn máy
+./install.sh --uninstall --project ~/code/my-project      # gỡ khỏi dự án (giữ lại specs/ và AGENTS.md)
+```
+
+---
+
+## Cấu trúc repository
+
+```
+mk-lab/
+├── install.sh                       # Bộ cài đặt chuẩn POSIX (bash 3.2+)
+├── INSTALL.md                       # Sổ tay hướng dẫn cài đặt chi tiết
+├── CHANGELOG.md                     # Lịch sử phiên bản SemVer
+├── LICENSE                          # Giấy phép nguồn mở MIT
+├── README.md
+├── tests/                           # Bộ kiểm thử cho installer
+└── skills/mk-specs/
+    ├── SKILL.md                     # Điểm điều phối chính: chọn mode, cổng cứng, scripts
+    ├── references/                  # Phương pháp luận: principles, workflow, review, glossary...
+    ├── assets/                      # Mẫu template: PRD, TDD, UC, BR, ADR, proposal, entities...
+    └── scripts/                     # gen.py, verify.py, audit.py, hook.py, mkspecs.py...
+```
+
+---
+
+## Ghi công
+
+- Phương pháp luận SDD kế thừa và mở rộng từ tác phẩm *Spec Driven Development* của anh **Huy ([huynt.dev](https://huynt.dev))**.
+- Nền tảng lý thuyết học thuật về SDD cho Agentic SE dựa trên công trình nghiên cứu của **Jessica Díaz, Joaquín Gayoso, Andrea Cimminio, Jorge Pérez (Universidad Politécnica de Madrid)** — *"Spec-Driven Development for Agentic Software Engineering: Harnessing Human–Agent Teamwork"* ([arXiv:2609.00252](https://arxiv.org/html/2609.00252v1), 2026).
+- Kỷ luật tinh gọn đặc tả và phòng chống suy diễn lấy cảm hứng từ nguyên tắc kỹ thuật của **Andrej Karpathy** (MIT).
+- Các đóng góp thực chiến độc quyền của `mk-specs` (đánh dấu ✚ trong references): Phân định 3 tầng tài liệu, ma trận truy vết tự động hóa, quy tắc DIVERGENCE, quy trình Consultation Request Pack và Command Security Allowlist.
+
+---
+
+## Giấy phép
+
+Phát hành theo giấy phép nguồn mở [MIT License](LICENSE).
+
+---
+
+## English Summary
+
+**mk-lab** is an engineering skill suite for AI coding agents. Its flagship skill, **`mk-specs`**, provides an industrial-grade **Spec-Driven Development (SDD)** discipline engineered for **Agentic Software Engineering (SE 3.0)**.
+
+- **Grounding & Lineage:** Synthesizes academic foundations from Díaz et al. (*Spec-Driven Development for Agentic Software Engineering: Harnessing Human–Agent Teamwork*, arXiv:2609.00252, 2026), practitioner methodology from Huy (huynt.dev), and prompt discipline from Andrej Karpathy.
+- **Three-Tier Architecture:** Separates durable, always-active project norms (*System Specs* in `AGENTS.md`) from scoped, ephemeral changes (*Feature Specs* in `specs/changes/`) and on-demand capabilities (*Procedural Skills* in `.claude/skills/`).
+- **Four Scalable Tiers:** (1) PRD with durable story IDs and testable criteria; (2) + standalone HTML wireframes; (3) + Technical Design Documents (TDD); (4) Full enterprise SDD (BR, UC, AC, ADR, and automated traceability).
+- **Eight Methodological Harness Mechanisms:** Context engineering, persistent transactive memory (ADRs & History), executable specifications (Given-When-Then), 3-strike norm encoding, structured 4-part consultation requests, evidence-backed acceptance packs, graduated autonomy levels, and automated drift auditing (`audit.py`).
+- **Enterprise Security (v2.0.0):** Untrusted command gating via `--trust-list-command` (persisted in `~/.config/mk-specs/trusted-commands`), release tag verification for updates, path traversal guards, ReDoS mitigation, and Claude Code automated enforcement hooks (`hook.py`).
+
+Invoke via `/mk:specs` or natural language. Install globally with `curl -fsSL https://raw.githubusercontent.com/mzavn/mk-lab/main/install.sh | bash -s -- --global`. Licensed under MIT.

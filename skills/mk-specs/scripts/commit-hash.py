@@ -30,7 +30,7 @@ if not re.fullmatch(r"[0-9a-f]{7,40}", h):
 
 PLACEHOLDER = re.compile(r"(?<!`)chưa commit(?!`)")
 LINE = re.compile(r"^- (v\d+ \(|Status:)")
-changed = 0
+changed, writes = 0, []
 for root, _, files in os.walk(P.specs):
     for f in sorted(files):
         if not f.endswith(".md"):
@@ -43,7 +43,11 @@ for root, _, files in os.walk(P.specs):
                 lines[i] = PLACEHOLDER.sub(f"commit `{h}`", l)
                 hits += 1
                 print(f"{os.path.relpath(path, P.root)}:{i + 1}")
-        if hits and not args.dry_run:
-            mkspecs.write_if_changed(path, "\n".join(lines))
+        if hits:
+            writes.append((path, "\n".join(lines)))
         changed += hits
+if not args.dry_run:
+    mkspecs.refuse_symlinks(*(p for p, _ in writes))  # before writing any file
+    for path, text in writes:
+        mkspecs.write_if_changed(path, text)
 print(f"{'would replace' if args.dry_run else 'replaced'} {changed} placeholder(s) with commit `{h}`")

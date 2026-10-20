@@ -21,7 +21,7 @@ Agent đọc lại spec **mình vừa viết** trước khi đưa người duy�
 Chỉ khi repo có `specs/mk-specs.yml` (mức 4, hoặc mức 1–3 đã cài vào project):
 
 ```bash
-python3 .claude/skills/mk-specs/scripts/audit.py     # mục thiếu, chữ kỹ thuật trong flow/AC
+python3 .claude/skills/mk-specs/scripts/audit.py     # mục thiếu, AC không dạng kiểm được (thiếu Then), chữ kỹ thuật trong flow/AC
 python3 .claude/skills/mk-specs/scripts/verify.py    # link, thẻ UC/AC, test được trích
 ```
 
@@ -37,7 +37,7 @@ Chỉ xét dòng thuộc đối tượng đang soát; lỗi cũ ở file khác g
 | **Mâu thuẫn** | AC nào chọi AC khác (cùng Given, Then khác)? AC trái Out of Scope của BR, ADR đang `accepted`, bất biến trong `entities.md`, UC khác? Con số có khớp giữa Vì sao, AC, entity không? `ADDED AC-n` có trùng ID đã có? `MODIFIED`/`DEPRECATED` có trỏ tới AC có thật? |
 | **Thiếu sót** | Thiếu Actor/Trigger? Biên đã rõ chưa (đúng 15 phút thì sao)? Hệ quả phủ định ("KHÔNG tạo đơn") khi cần? Exception đã có quyết định xử lý? Dữ liệu cũ khi đổi luật? Mục open-issues nào thay đổi này đóng được mà chưa ghi `Đóng`? Luật tiền/quyền/bảo mật/dữ liệu cá nhân/pháp lý nào chưa có người quyết? |
 | **Thừa** | UC/AC/entity/ADR nào không ai yêu cầu? Cấu hình hoá, "để sau này mở rộng", exception cho tình huống không xảy ra được? Đoạn nào cắt đi người duyệt vẫn hiểu đủ? Proposal có quá một màn hình đọc? |
-| **Kiểm được** | Given có dữ liệu cụ thể? Then đo được, không chứa "nhanh", "hợp lý", "thân thiện", "v.v."? Flow/AC đọc được với người không biết code? |
+| **Kiểm được** | Given có dữ liệu cụ thể? Then đo được, không chứa "nhanh", "hợp lý", "thân thiện", "v.v."? Flow/AC đọc được với người không biết code? Ràng buộc không công cụ nào kiểm được là mong muốn chứ không phải ràng buộc (§5.5)? |
 
 Xong các AC, đọc lại một lượt từ góc người duyệt nghiệp vụ: "ký vào đây thì mình đang đồng ý điều gì?" — câu trả lời phải trùng ý người yêu cầu.
 
@@ -67,7 +67,7 @@ Bỏ AC thừa do chính mình thêm là "tự sửa"; bỏ thứ người dùng
 ## 5. Hỏi người dùng
 
 - Chỉ hỏi điểm quyết định thật — câu trả lời làm đổi AC, flow, entity hoặc phạm vi. Không hỏi điều repo, spec, code trả lời được; không bày lựa chọn giả.
-- Mỗi câu: bối cảnh một dòng (trích chỗ trong spec), 2–4 phương án cụ thể kèm hệ quả, đánh dấu phương án đề xuất và lý do. Agent có sẵn công cụ hỏi người dùng thì có thể dùng (tối đa 4 câu một lượt); không có thì liệt kê đánh số trong chat như ví dụ dưới rồi dừng chờ — cả hai cách đều đủ.
+- Mỗi câu theo khuôn **Structured Consultation** (§5.8): bối cảnh & câu hỏi ngắn gọn (trích đoạn spec liên quan hoặc Cổng cứng dính líu), 2–4 phương án cụ thể, đánh dấu phương án đề xuất kèm lý do, và hệ quả cụ thể từng phương án. Agent có sẵn công cụ hỏi người dùng thì có thể dùng (tối đa 4 câu một lượt); không có thì liệt kê đánh số trong chat như ví dụ dưới rồi dừng chờ — cả hai cách đều đủ.
 - Mặc định 3–8 câu; spec đơn giản thì ít hơn, kể cả 0. Mức 1–3 vừa phỏng vấn xong: chỉ hỏi phát hiện mới, thường 0–3 câu. Ưu tiên câu làm đổi nhiều AC nhất.
 - Tiền, quyền truy cập, bảo mật, dữ liệu cá nhân, pháp lý: được đề xuất nhưng **không** tự áp phương án đề xuất khi người dùng chưa chọn (cổng cứng 2).
 
@@ -88,7 +88,7 @@ Câu hỏi: Proposal ghi mã QR hết hạn sau 15 phút. Đơn đã quét mã n
 
 ```markdown
 ## Tự soát
-- Ngày: YYYY-MM-DD · audit.py: <kết quả> · verify.py: <kết quả>   (mức 1–3 không config: "script: không chạy (mức 1–3)")
+- Ngày: YYYY-MM-DD · audit.py: <0 required missing, 0 AC non-testable hoặc số lỗi> · verify.py: <kết quả>   (mức 1–3 không config: "script: không chạy (mức 1–3)")
 - Đã tự sửa: <mỗi ý một cụm ngắn, hoặc —>
 - Đã hỏi (N câu): <câu hỏi ngắn> → <lựa chọn, ai trả lời | chưa trả lời (Ox)>
 - Còn mở: <[OPEN] mới, hoặc —>

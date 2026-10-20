@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Regenerate <specs>/traceability.md and <specs>/open-issues.md, refresh README counters, print metrics.
 
-Usage: gen.py [--root DIR] [--config FILE] [--verified-on YYYY-MM-DD] [--tests FILE.json]
+Usage: gen.py [--root DIR] [--config FILE] [--verified-on YYYY-MM-DD] [--tests FILE.json] [--trust-list-command]
   --root         project root (default: cwd); config defaults to <root>/specs/mk-specs.yml
   --verified-on  date written in the traceability header (default: keep the date already there, else today)
   --tests        test list JSON (only needed for tests.citation_style = name; else tests.list_command runs)
+  --trust-list-command  as in verify.py: the user trusts tests.list_command for this repo (untrusted → exit 3)
 Output is deterministic: running twice on the same tree yields identical bytes.
 """
 import argparse
@@ -23,12 +24,20 @@ ap.add_argument("--root", default=None)
 ap.add_argument("--config", default=None)
 ap.add_argument("--verified-on", default=None)
 ap.add_argument("--tests", default=None)
+ap.add_argument("--trust-list-command", action="store_true")
 args = ap.parse_args()
 
 P = mkspecs.load(args.root, args.config)
 specs, t = P.specs, P.t
 read = mkspecs.read
 LINK = re.compile(r"\]\(([^)#\s]+)")
+rcfg = P.cfg["readme"]
+try:
+    readme_path = P.inside(rcfg["file"], specs, "readme.file") if rcfg.get("file") else None
+except mkspecs.ConfigError as e:
+    sys.exit(f"mk-specs: {e}")
+trace_path, oi_path = os.path.join(specs, "traceability.md"), os.path.join(specs, "open-issues.md")
+mkspecs.refuse_symlinks(trace_path, oi_path, readme_path)  # before writing any of them
 
 
 def relink(text, file_dir):
@@ -50,7 +59,7 @@ def meta(lines, key):
 # Tests found by name (`UC-xxx / AC-n` inside the test name) for citation_style = name.
 by_name = {}
 if P.cfg["tests"]["citation_style"] == "name":
-    tl = P.test_list(args.tests)
+    tl = P.test_list(args.tests, args.trust_list_command)
     if tl is None:
         sys.exit("mk-specs: citation_style = name needs tests.list_command or --tests")
     tag = re.compile(rf"({P.uc_id})\s*/\s*(AC-\d+[a-z]?)\b")
@@ -113,7 +122,6 @@ for ctx, title in P.contexts:
     for i, v in enumerate((n_uc, n_ac, n_ok, n_no)):
         tot[i] += v
 
-trace_path = os.path.join(specs, "traceability.md")
 verified = args.verified_on
 if not verified and os.path.exists(trace_path):
     old = re.search(r"\((\d{4}-\d{2}-\d{2})\)\.\n", read(trace_path)[:1000])
@@ -168,8 +176,7 @@ if br_blocks:
     total[1] += o
     sections.insert(0, f"## {t['br_section']} — {d} divergence, {o} open\n\n" + "\n".join(br_blocks))
 
-dec_name = P.cfg.get("decisions_file")
-dec_path = os.path.join(specs, dec_name) if dec_name else None
+dec_name, dec_path = P.cfg.get("decisions_file"), P.decisions
 if dec_path and os.path.exists(dec_path):
     items = issues(dec_path, ".")
     d = sum(1 for l in items if l.startswith("- [DIVERGENCE]"))
@@ -179,7 +186,7 @@ if dec_path and os.path.exists(dec_path):
     sections.append(f"## {t['adr_section']} — {d} divergence, {o} open\n\n### [{dec_name}]({dec_name})\n" + "\n".join(items) + "\n")
 
 oi = t["oi_head"].format(specs=P.cfg["specs_dir"]) + "\n".join(sections)
-mkspecs.write_if_changed(os.path.join(specs, "open-issues.md"), oi)
+mkspecs.write_if_changed(oi_path, oi)
 
 # ── metrics ──
 known = P.known_ids()
@@ -214,11 +221,6 @@ M = {
 }
 
 # ── README: drop old banner lines, refresh counter lines ──
-rcfg = P.cfg["readme"]
-try:
-    readme_path = P.inside(rcfg["file"], specs, "readme.file") if rcfg.get("file") else None
-except mkspecs.ConfigError as e:
-    sys.exit(f"mk-specs: {e}")
 notes = []
 if readme_path and os.path.exists(readme_path):
     lines = read(readme_path).split("\n")

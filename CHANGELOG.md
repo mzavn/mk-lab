@@ -12,7 +12,17 @@ Cập nhật: `bash ~/.mk-lab/install.sh --update`. Agent cũng tự nhắc khi 
 
 Dự kiến: v2.0.0
 
-**Cần làm khi cập nhật** (máy đã cài trước bản này — có thư mục `~/.mk-skills`)
+**Cần làm khi cập nhật — mọi máy**
+
+1. **Lệnh test trong cấu hình phải được bạn cho phép một lần.** Repo nào có `tests.list_command` trong `specs/mk-specs.yml`: lần đầu kiểm spec sau khi cập nhật, `verify.py` (và `gen.py` khi `citation_style: name`) **không chạy** lệnh đó mà in nó ra và dừng (mã 3). Đọc lệnh; tin thì chạy lại một lần với `--trust-list-command` (agent sẽ hỏi bạn, không tự làm):
+   `python3 .claude/skills/mk-specs/scripts/verify.py --trust-list-command`
+   Máy nhớ lệnh đó cho đúng repo đó (`~/.config/mk-specs/trusted-commands`). Lệnh đổi (vd qua PR), repo ở thư mục khác hay worktree khác → hỏi lại. Không dùng `list_command` thì bỏ qua.
+2. **CI:** pipeline nào chạy `verify.py` (hoặc `gen.py` khi `citation_style: name`, hay `npm run specs:check`) trên repo có `tests.list_command` sẽ **đỏ** tới khi bạn thêm `--trust-list-command` vào lệnh đó, vd `python3 .claude/skills/mk-specs/scripts/verify.py --trust-list-command` hoặc `npm run specs:check -- --trust-list-command`. Thêm cờ **trong cùng commit** cập nhật `.claude/skills/mk-specs` lên bản này — bản scripts cũ không biết cờ và báo `unrecognized arguments`. Hoặc truyền danh sách test có sẵn: `--tests list.json`.
+3. **Bản cài chung không do `install.sh` tạo.** Nếu `~/.claude/skills/mk-specs` hoặc `~/.agents/skills/mk-specs` có sẵn mà không có file `.mk-specs-manifest` lẫn `.mk-specs-source` (vd chép tay, hoặc cài bằng công cụ khác), `install.sh --global`/`--update` giờ báo `was not installed by install.sh` và không đụng vào. Kiểm đó đúng là mk-specs của bạn rồi chạy **một lần** với `--force`: `bash ~/.mk-lab/install.sh --update --force` (lần sau chạy như thường). Cài bằng `install.sh` hay dòng curl thì không gặp.
+4. Mỗi repo đã cài mk-specs: khối mk-specs trong `AGENTS.md` có chữ mới (luật riêng của repo không nới được cổng cứng; gặp mã 3 thì hỏi bạn) — `--update --project .` ghi lại khối, commit cùng `.claude/skills/mk-specs`.
+5. Đã đặt quyền `Skill(mk-specs)` trong `permissions.allow` hoặc `permissions.deny`: thêm `Skill(mk:specs)` cạnh nó (rule cũ không khớp tên gọi mới — deny cũ sẽ không còn chặn).
+
+**Cần làm khi cập nhật — thêm cho máy đã cài trước bản này có thư mục `~/.mk-skills`**
 
 Thư mục clone và biến môi trường đổi theo tên mới của repo: `~/.mk-skills` → `~/.mk-lab`, `MK_SKILLS_…` → `MK_LAB_…`. Tên cũ không còn tác dụng. Làm một lần, theo thứ tự:
 
@@ -27,10 +37,23 @@ Tự clone repo bằng tay (không ở `~/.mk-skills`) và không đặt biến 
 **Mới**
 
 - `install.sh` cài được nhiều skill: thêm `--skill <tên>` (mặc định `mk-specs`, lệnh cũ chạy như trước). `--update` giờ cập nhật mọi skill đã cài bằng `install.sh`. Thư mục skill cùng tên mà không do `install.sh` tạo thì bị từ chối thay vì bị ghi đè.
+- Tên gọi mới theo kiểu `bộ:tên`: trên Claude Code gõ **`/mk:specs`** (menu `/` hiện tên này). `mk:` là quy ước đặt tên của bộ skill này, không phải plugin Claude Code. Quen gõ `/mk-specs` thì vẫn chạy — nên chuyển dần sang `/mk:specs`. Thư mục cài, cấu hình và lệnh cài giữ nguyên `mk-specs`. Cập nhật cả bản cài chung lẫn bản trong project: nếu chỉ cập nhật bản project thì `/mk-specs` vẫn chạy bản chung cũ, còn `/mk:specs` chạy bản project. Quyền `Skill(…)`: xem bước 5 ở trên.
 
+- **Hấp thu nền tảng phương pháp luận từ bài báo SDD (Díaz et al., arXiv:2609.00252, 2026):**
+  - **Tham vấn có cấu trúc (Structured consultation):** Khi agent đang code (`mode apply`) mà gặp câu hỏi nghiệp vụ hoặc tiền lệ mâu thuẫn, agent dừng lại và hỏi theo khuôn 4 phần chuẩn mực (bối cảnh & câu hỏi · các phương án · điều khoản spec liên quan · hệ quả từng phương án); nếu dính tiền/quyền/bảo mật thì bắt buộc dừng chờ bạn chọn.
+  - **Gói bằng chứng nghiệm thu (Evidence-backed acceptance):** Mẫu proposal có thêm mục `## Bằng chứng nghiệm thu` (AC ↔ test xanh, trạng thái DoD/CI, rationale giải pháp, link truy vết) để reviewer thẩm định nhanh mà không phải đọc mò diff; lưu ở archive không làm phình Use Case chính.
+  - **Phân định 3 lớp tài liệu khi khởi tạo (`mode init`):** Hướng dẫn rõ ranh giới giữa System spec (luật bền vững nạp thường trực trong `AGENTS.md`), Feature spec (đặc tả theo việc trong `changes/`), và Skill (thủ tục on-demand) để tránh phình context và chống trôi dạt đặc tả.
+  - **Mã hoá quy tắc (Norm encoding):** Quy tắc lặp 3 lần — khi lỗi của agent bị sửa lặp lại 3 lần thì tổng quát hoá thành điều khoản chuẩn mực đưa vào `AGENTS.md` ngoài khối, kèm linter/sensor nếu có thể.
+  - **Thang tự chủ phân tầng (Graduated autonomy):** Cung cấp mẫu phân loại mức tự chủ của agent theo loại việc (vá nhỏ/deps → tự động; tính năng → tự động + tham vấn; tiền/quyền/bảo mật → duyệt plan trước).
+  - **`audit.py` phát hiện AC không dạng kiểm được:** Báo cáo các AC thiếu mệnh đề `Then` (hoặc `Thì`), nhắc nhở nguyên tắc "ràng buộc không công cụ nào kiểm được là mong muốn chứ không phải ràng buộc".
 **Sửa**
 
 - Repo đổi tên thành **mk-lab** (`github.com/mzavn/mk-lab`, bộ skill lập trình). Lệnh cài, nhắc bản mới và link CHANGELOG giờ trỏ tên mới; địa chỉ cũ trên GitHub tự chuyển sang tên mới.
+- **An toàn khi mở repo lạ:** lệnh test khai trong cấu hình của repo không còn tự chạy — chỉ chạy khi bạn đã cho phép đúng lệnh đó (xem "Cần làm" bước 1). Agent được dặn không tự cho phép thay bạn.
+- `--update` và dòng cài `curl` chỉ lấy **bản đã phát hành** (tag `vX.Y.Z` mới nhất), không bao giờ chạy mã chưa phát hành; checkout đang ở bản chưa phát hành (vd nhánh `dev` của người đóng góp) thì `--update` từ chối kèm hướng dẫn. Dòng curl bị đứt mạng giữa chừng không chạy gì.
+- Luật riêng trong `AGENTS.md`/`CLAUDE.md` của repo chỉ bổ sung hoặc thu hẹp quy trình; dòng đòi nới cổng cứng (vd "agent tự duyệt") bị agent bỏ qua và báo lại.
+- Gỡ khỏi project kiểm cả bản `.agents/skills/mk-specs`: có sửa tay thì từ chối như bản `.claude`.
+- Cấu hình của repo không đọc được file ngoài repo qua `decisions_file`, `contexts`, `contexts_glob`; công cụ sinh file không ghi xuyên qua symlink (file trong `specs/` là symlink → báo lỗi, không ghi gì); mẫu tìm kiếm có dạng lặp-luân-phiên dễ treo (vd `(a|aa)+`) bị từ chối; cấu hình sai kiểu báo một dòng thay vì lỗi dài.
 
 ## v1.5.1 — 14/10/2026
 

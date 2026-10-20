@@ -1,6 +1,6 @@
 # Nguyên tắc SDD trong mk-specs
 
-Nguồn: ebook *Spec Driven Development* của anh Huy (huynt.dev) — tổng hợp từ AI Unified Process (Simon Martinelli), GitHub Spec Kit, OpenSpec, DDD, Hexagonal. Phần dưới là diễn giải, có ghi trang sách (tr.) để tra lại. mk-specs giữ thêm vài cơ chế của các repo đã chạy thật (đánh dấu ✚).
+Nguồn: ebook *Spec Driven Development* của anh Huy (huynt.dev) và bài báo nghiên cứu *Spec-Driven Development for Agentic Software Engineering: Harnessing Human–Agent Teamwork* (Jessica Díaz, Joaquín Gayoso, Andrea Cimminio, Jorge Pérez — arXiv:2609.00252v1 [cs.SE], 2026, https://arxiv.org/html/2609.00252v1). Phần dưới là tổng hợp và diễn giải, có ghi trang sách (tr.) hoặc mục bài báo (§) để tra lại. mk-specs giữ thêm các cơ chế vận hành thực tế (đánh dấu ✚).
 
 ## 1. Triết lý
 
@@ -10,6 +10,8 @@ Nguồn: ebook *Spec Driven Development* của anh Huy (huynt.dev) — tổng h�
 - Spec không cần hoàn hảo ngày đầu, chỉ cần đủ rõ để bắt đầu rồi lớn dần qua demo, test, bug (tr.9). Spec tốt là spec chịu được việc học thêm (tr.17).
 - Không phải waterfall: spec là Markdown trong git, review như code, bản đầu 1–2 trang, sai thì sửa (tr.10–11).
 - Lời AI giải thích "vì sao code thế này" chỉ là dựng lại từ code, không phải ý định ban đầu (tr.6).
+- Ràng buộc không có công cụ nào kiểm được là một mong muốn chứ không phải ràng buộc (§5.5). Mọi ràng buộc phải đo được hoặc quy về Given/When/Then có test.
+- Trôi dạt đặc tả (specification drift, §8.2) xảy ra khi code và spec dần xa rời nhau do sửa code không cập nhật spec; phòng ngừa bằng audit định kỳ và kiểm tra tự động trong CI.
 
 ## 2. Sáu nguyên tắc và câu hỏi kiểm
 
@@ -31,6 +33,7 @@ Team mới thường đạt 2/6; đủ 6/6 mới gọi là trưởng thành, l�
 - Khi AI đang làm mà gặp câu hỏi nghiệp vụ spec chưa nói: **không đoán**. Ghi `[OPEN]` hoặc đề xuất sửa spec, hỏi chủ sản phẩm, rồi mới làm tiếp (tr.39, 54).
 - Review luôn hỏi "rule này đến từ spec nào?"; không trả lời được thì không merge (tr.25).
 - Ghi lại AI đã làm gì trong commit body hoặc proposal ("AI usage") để biết nguồn gốc quyết định khi debug (tr.59, 75).
+- **Thang tự chủ phân tầng** (Graduated autonomy, §5.10): mức tự chủ của agent được định rõ theo loại việc trong `AGENTS.md` (vá phụ thuộc/lỗi nhỏ: tự động hoàn toàn; tính năng thường: tự động + tham vấn khi mơ hồ; tiền/quyền/bảo mật: duyệt plan trước + review từng bước). Người chuyển từ viết từng dòng code sang điều phối (orchestration, §6.2), định chuẩn và thẩm định bằng chứng.
 
 ## 4. Nguồn sự thật và trọng tài ✚
 
@@ -42,6 +45,14 @@ Team mới thường đạt 2/6; đủ 6/6 mới gọi là trưởng thành, l�
 | `plans/`, báo cáo | Lịch sử | Không sửa cho khớp |
 
 Code lệch spec chỉ có hai khả năng: bug, hoặc spec chưa cập nhật. Không có trường hợp thứ ba.
+
+### Ba lớp tài liệu phân biệt (§4.1) ✚
+
+1. **System specification (Đặc tả hệ thống)**: Mô tả thế giới bền vững của dự án (kiến trúc, quy ước, mô hình thực thể, luật chuẩn mực). Luôn được nạp vào context của mọi phiên agent qua `AGENTS.md` / `CLAUDE.md`.
+2. **Feature specification (Đặc tả tính năng)**: Mô tả thay đổi cụ thể đang làm (`specs/changes/`), có vòng đời ngắn (propose → apply → archive). Xong việc thì lưu trữ vĩnh viễn ở archive.
+3. **Skill (Thủ tục theo nhu cầu)**: Hướng dẫn quy trình thực hiện ("làm X như thế nào", vd `SKILL.md`), chỉ nạp on-demand khi kích hoạt, không nạp thường trực để tránh ô nhiễm context window.
+
+Trộn lẫn 3 lớp là lỗi phổ biến: đưa chi tiết tính năng tạm thời vào system spec gây phình context và cứng nhắc; ngược lại đưa luật toàn cục vào proposal khiến các phiên agent sau trôi dạt kiến trúc.
 
 ## 5. Khi nào dùng, khi nào không
 

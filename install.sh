@@ -7,19 +7,24 @@
 #                       (other skills: only the skill folder — no config, no agent files)
 #   --agents-dir      → with --project: also copy to <dir>/.agents/skills/mk-specs (kept up to date once present)
 #   --no-agent-files  → with --project: don't touch AGENTS.md / CLAUDE.md / GEMINI.md
-#   --update          → first pull the latest release (fast-forward `main`), then install; alone = --update --global.
+#   --update          → first move the checkout to the newest release (tag vX.Y.Z, fast-forward only), then install;
+#                       alone = --update --global. Refuses a checkout past that release (unreleased commits).
 #                       Without --skill: refreshes every skill install.sh put there (mk-specs if none yet)
 #   --check           → only tell whether a newer release exists (reads tags, changes nothing; not with --skill)
 #   --force           → overwrite a project copy that has local edits, or a skill folder install.sh did not create
+#                       (no .mk-specs-manifest; for global mk-specs a folder with .mk-specs-source is replaced anyway)
 #   --uninstall       → remove instead of install (with --global and/or --project; config and import lines are kept)
 # Flags combine: install.sh --update --global --project .
 # Without a clone: curl -fsSL https://raw.githubusercontent.com/mzavn/mk-lab/main/install.sh | bash -s -- --global
-#   (clones to $MK_LAB_HOME, default ~/.mk-lab, then runs from there)
+#   (clones the newest release tag to $MK_LAB_HOME, default ~/.mk-lab, then runs from there)
 set -euo pipefail
-
-DEFAULT_SKILL=mk-specs
 # Piped (`curl … | bash`) → BASH_SOURCE is empty: never trust the current directory, always bootstrap from the clone.
+# Read here, at top level: inside a function some bash versions report the shell's own name for a piped script.
 SELF="${BASH_SOURCE[0]:-}"
+
+# Everything below is one function, called on the last line: a `curl | bash` cut short runs nothing.
+main() {
+DEFAULT_SKILL=mk-specs
 ROOT=""
 if [ -n "$SELF" ] && [ -f "$SELF" ]; then ROOT="$(cd "$(dirname "$SELF")" && pwd)"; fi
 MANIFEST=.mk-specs-manifest
@@ -36,7 +41,24 @@ skill_list() {
 }
 die_skill() { die "$* (skills: $(skill_list))"; }
 
-# Piped from curl (no checkout around the script): clone or refresh $MK_LAB_HOME and run the installer from there.
+# Newest release tag vX.Y.Z (by version, not by text) among the tag names on stdin; empty when there is none.
+newest_tag() { grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -t. -k1.2,1n -k2,2n -k3,3n | tail -n 1 || true; }
+
+# Move checkout $1 to the newest release tag of its remote, fast-forward only: code that has no release tag is never
+# pulled in to run. $2 = the way out when the checkout cannot get there (own commits, or already past that release).
+to_release() {
+  local dir="$1" other="$2" tag
+  git -C "$dir" fetch -q --tags || die "cannot fetch release tags into $dir"
+  tag="$(git -C "$dir" tag -l 'v*' | newest_tag)"
+  [ -n "$tag" ] || die "no release tag (vX.Y.Z) in $dir"
+  git -C "$dir" merge --ff-only -q "$tag^{commit}" ||
+    die "cannot fast-forward $dir to $tag (local commits or edits?); resolve them, or $other"
+  [ "$(git -C "$dir" rev-parse HEAD)" = "$(git -C "$dir" rev-parse "$tag^{commit}")" ] ||
+    die "$dir is past the newest release $tag (commits not released) — --update installs releases only; $other"
+  RELEASE="$tag"
+}
+
+# Piped from curl (no checkout around the script): clone or refresh $MK_LAB_HOME at the newest release, run from there.
 if [ -z "$ROOT" ] || [ ! -f "$ROOT/skills/$DEFAULT_SKILL/SKILL.md" ]; then
   case " ${ARGS[*]-} " in *" --check "*)
     die "--check runs from a local copy: python3 ~/.claude/skills/mk-specs/scripts/check-update.py (nothing is downloaded)";;
@@ -44,9 +66,14 @@ if [ -z "$ROOT" ] || [ ! -f "$ROOT/skills/$DEFAULT_SKILL/SKILL.md" ]; then
   command -v git >/dev/null || die "git is required"
   home="${MK_LAB_HOME:-$HOME/.mk-lab}"
   if [ -d "$home/.git" ]; then
-    git -C "$home" pull --ff-only -q || die "cannot fast-forward $home; fix or delete it, then re-run"
+    to_release "$home" "delete $home (installer-managed) and re-run this line"
   else
-    git clone -q --depth 1 "$REPO_URL" "$home" || die "cannot clone $REPO_URL"
+    tag="$(git ls-remote --tags --refs -- "$REPO_URL" 'v*' | sed 's|.*refs/tags/||' | newest_tag)" ||
+      die "cannot read the release tags of $REPO_URL"
+    [ -n "$tag" ] || die "no release tag (vX.Y.Z) at $REPO_URL"
+    { git init -q "$home" && git -C "$home" remote add origin "$REPO_URL" &&
+      git -C "$home" fetch -q --depth 1 origin "+refs/tags/$tag:refs/tags/$tag" &&
+      git -C "$home" -c advice.detachedHead=false checkout -q "$tag^{commit}"; } || die "cannot clone $REPO_URL ($tag)"
   fi
   MK_LAB_UPDATED=1 exec bash "$home/install.sh" ${ARGS[@]+"${ARGS[@]}"}
 fi
@@ -88,9 +115,8 @@ if [ "$UPDATE" = 1 ]; then
     git -C "$ROOT" rev-parse --git-dir >/dev/null 2>&1 ||
       die "--update needs a git checkout of mk-lab ($ROOT is not one); reinstall with the curl line in --help"
     before="$(git -C "$ROOT" rev-parse --short HEAD)"
-    git -C "$ROOT" pull --ff-only -q ||
-      die "cannot fast-forward $ROOT (local commits or edits?); resolve them, then re-run"
-    echo "mk-lab: $before → $(git -C "$ROOT" rev-parse --short HEAD)"
+    to_release "$ROOT" "install this checkout as it is: drop --update (e.g. install.sh --global --project .)"
+    echo "mk-lab: $before → $(git -C "$ROOT" rev-parse --short HEAD) ($RELEASE)"
     MK_LAB_UPDATED=1 exec bash "$ROOT/install.sh" "${ARGS[@]}"  # the installer itself may have changed
   fi
 fi
@@ -111,13 +137,16 @@ no_symlink() {
   if [ -L "$1" ]; then die "$1 is a symlink — replace it with a real folder (install.sh never writes or deletes through symlinks)"; fi
 }
 
-# Skills other than mk-specs never replace or remove a folder install.sh did not create (no manifest), unless --force.
-# Every destination of one place is checked before any of them is written or removed.
+# A skill folder install.sh did not create (no manifest) is never replaced or removed, unless --force. Global mk-specs
+# also accepts its own older copies (.mk-specs-source); a project mk-specs copy is guarded by has_local_edits instead,
+# which also covers hand installs (UC-105). Every destination of one place is checked before any is written or removed.
 refuse_foreign() {
-  local d
-  [ "$SKILL" != "$DEFAULT_SKILL" ] && [ "$FORCE" != 1 ] || return 0
+  local scope="$1" d
+  shift
+  [ "$FORCE" != 1 ] || return 0
+  [ "$SKILL" != "$DEFAULT_SKILL" ] || [ "$scope" = global ] || return 0
   for d in "$@"; do
-    if [ -e "$d" ] && [ ! -f "$d/$MANIFEST" ]; then
+    if [ -e "$d" ] && [ ! -f "$d/$MANIFEST" ] && { [ "$SKILL" != "$DEFAULT_SKILL" ] || [ ! -f "$d/$SOURCE_FILE" ]; }; then
       die "$d was not installed by install.sh (no $MANIFEST) — it may belong to another tool; move it away or re-run with --force"
     fi
   done
@@ -184,7 +213,7 @@ skills_at() {
 do_global() {
   local base dest old
   for dest in "$HOME/.claude/skills/$SKILL" "$HOME/.agents/skills/$SKILL"; do no_symlink "$dest"; done
-  refuse_foreign "$HOME/.claude/skills/$SKILL" "$HOME/.agents/skills/$SKILL"
+  refuse_foreign global "$HOME/.claude/skills/$SKILL" "$HOME/.agents/skills/$SKILL"
   for base in "$HOME/.claude/skills" "$HOME/.agents/skills"; do
     dest="$base/$SKILL"
     if [ "$UNINSTALL" = 1 ]; then
@@ -206,9 +235,10 @@ do_project() {
     for p in "$proj/specs" "$proj/specs/mk-specs.yml"; do no_symlink "$p"; done
     kept=" (kept specs/mk-specs.yml)"
   fi
-  refuse_foreign "$dest" "$agents"
+  refuse_foreign project "$dest" "$agents"
   if [ "$UNINSTALL" = 1 ]; then
     if [ "$FORCE" != 1 ] && has_local_edits "$proj" "$dest"; then refuse_edits "$dest"; fi
+    if [ "$FORCE" != 1 ] && has_local_edits "$proj" "$agents"; then refuse_edits "$agents"; fi
     if [ -e "$dest" ]; then rm -rf "$dest" && echo "removed $dest$kept"; else echo "not installed: $dest"; fi
     if [ -d "$agents" ]; then rm -rf "$agents" && echo "removed $agents"; fi
     if [ "$SKILL" = "$DEFAULT_SKILL" ] && [ "$AGENT_FILES" = 1 ]; then python3 "$SRC/scripts/agent-files.py" "$proj" --uninstall; fi
@@ -258,3 +288,6 @@ while [ "$i" -lt ${#PLACES[@]} ]; do
   if [ -z "${PLACES[$i]}" ]; then do_global; else do_project "${PLACES[$i]}"; fi
   i=$((i + 1))
 done
+}
+
+main "$@"

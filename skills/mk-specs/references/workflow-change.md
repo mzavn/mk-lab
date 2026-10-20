@@ -24,7 +24,7 @@ change ──► tự soát ──► review hai phía ──► commit 1 (propo
 ## 2. Review hai phía
 
 - **Nghiệp vụ** — chủ sản phẩm (hoặc người chịu hậu quả) đọc Vì sao + Thay đổi spec: đúng rule không, thiếu case "đương nhiên" nào không (tr.28–29, 53). Ghi tên + ngày + kênh vào `Người duyệt nghiệp vụ`.
-- **Kỹ thuật** — một reviewer khác người viết: người, hoặc một phiên agent riêng (subagent, hoặc phiên chat mới) chỉ được giao proposal + code hiện có và các câu hỏi sau: khả thi không, đúng context không, AC test được không, exception thiếu không, migration an toàn không, có rule nào lẻn vào code mà spec không nói không. Ghi kết luận vào `## Review kỹ thuật` và tên + ngày vào `Người duyệt kỹ thuật`. Sửa proposal theo nhận xét trước khi code. Chưa có ai review được → ghi `chờ`, Status `reviewing`, dừng.
+- **Kỹ thuật** — một reviewer khác người viết: người, hoặc một phiên agent riêng (subagent, hoặc phiên chat mới) chỉ được giao proposal + code hiện có và các câu hỏi sau: khả thi không, đúng context không, AC test được không, exception thiếu không, migration an toàn không, có rule nào lẻn vào code mà spec không nói không. Khi xong việc thẩm định gói bằng chứng (`## Bằng chứng nghiệm thu`). Ghi kết luận vào `## Review kỹ thuật` và tên + ngày vào `Người duyệt kỹ thuật`. Sửa proposal theo nhận xét trước khi code. Chưa có ai review được → ghi `chờ`, Status `reviewing`, dừng.
 - **Không ai tự duyệt**: agent viết proposal không đồng thời là reviewer kỹ thuật của nó; người yêu cầu không thay được bước review kỹ thuật (tr.42, 55).
 - **Tiền, quyền truy cập, bảo mật**: AI chỉ nêu phương án + hệ quả; chủ sản phẩm chọn. Chưa chọn → Status `reviewing`, dừng.
 - Chủ sản phẩm nói "cứ làm" (đã giao việc rõ): vẫn viết proposal và vẫn có review kỹ thuật, nhưng không cần chờ duyệt nghiệp vụ lần nữa — ghi `Người duyệt nghiệp vụ: <tên>, <ngày> (giao việc trực tiếp)`. Luật tiền/quyền/bảo mật mới phát sinh trong lúc làm vẫn phải hỏi.
@@ -37,16 +37,21 @@ change ──► tự soát ──► review hai phía ──► commit 1 (propo
 1. Chỉ làm khi proposal `approved` (hoặc giao việc trực tiếp như trên) và commit 1 đã có.
 2. Viết test cho từng AC mới/sửa **trước**, chạy thấy đỏ. Test kiểm hành vi, không mock lõi nghiệp vụ; test đầu tiên của một mẫu mới để người review kỹ (tr.27–28, 59). Bug tái hiện được → test đỏ trước, xanh sau.
 3. Code tối thiểu cho các AC. Không thêm rule spec không nói.
-4. Gặp câu hỏi nghiệp vụ spec chưa trả lời → **dừng, không đoán**: sửa proposal (thêm AC/exception hoặc `[OPEN]`), hỏi chủ sản phẩm nếu là tiền/quyền/bảo mật, rồi làm tiếp (tr.39).
+4. Gặp câu hỏi nghiệp vụ hoặc tiền lệ mâu thuẫn mà spec chưa nói rõ → **dừng, không đoán**: tham vấn theo khuôn **Structured Consultation** (§5.8) gồm 4 phần:
+   - *Bối cảnh & câu hỏi ngắn gọn*.
+   - *Các phương án cân nhắc*.
+   - *Điều khoản spec liên quan* (trích dẫn ID/AC đang làm, hoặc mục tiêu BR / Cổng cứng liên quan nếu chưa có điều khoản trực tiếp).
+   - *Hệ quả cụ thể từng phương án*.
+   Dính Cổng cứng 2 (tiền, quyền, bảo mật, pháp lý): agent chỉ đề xuất, bắt buộc dừng chờ chủ sản phẩm quyết. Chốt câu trả lời vào proposal / ADR ngay trong phiên, không đoán.
 5. Test đỏ vì spec mơ hồ → về spec trước: chủ sản phẩm quyết → sửa AC → sửa test → sửa code (tr.39–40).
 6. Ghi đường dẫn test vào dòng `- Tests:` của AC trong proposal (hoặc trực tiếp khi merge).
-7. Chạy DoD của project (lệnh test/typecheck/build trong CLAUDE.md hoặc tương đương).
+7. Chạy DoD của project (lệnh test/typecheck/build trong CLAUDE.md hoặc tương đương). Điền mục `## Bằng chứng nghiệm thu` vào proposal: AC ↔ test xanh, trạng thái DoD/CI, rationale tóm tắt giải pháp (tham chiếu consultation/ADR nếu có), link truy vết.
 
 **Commit 2** — test + code: `feat(UC-xxx): …` / `fix(UC-xxx): …` / `refactor(UC-xxx): …`. Không gộp file spec chính vào commit này (proposal cập nhật giữa chừng thì được).
 
 ## 4. Hợp nhất (mode `merge`)
 
-1. Chép delta vào UC chính: AC mới/sửa (kèm `- Tests:`), flow, exceptions, entity. Chữ mới theo ngôn ngữ nghiệp vụ; chi tiết kỹ thuật vào `## Traceability`.
+1. Chép delta vào UC chính: AC mới/sửa (kèm `- Tests:`), flow, exceptions, entity. Chữ mới theo ngôn ngữ nghiệp vụ; chi tiết kỹ thuật vào `## Traceability`. Toàn bộ gói `## Bằng chứng nghiệm thu` lưu vĩnh viễn trong proposal ở `specs/changes/archive/`, UC chỉ nhận dòng History mang hash commit code kèm link mở proposal, không chép nội dung gói bằng chứng vào UC (tránh phình UC).
 2. Thêm dòng History mỗi UC bị đụng: `- vN (YYYY-MM-DD, commit \`<hash commit 2>\`): <đổi gì> (change [<slug>](../changes/archive/<slug>/proposal.md))`. Nếu đã ghi `chưa commit` thì chạy `python3 .claude/skills/mk-specs/scripts/commit-hash.py <hash>`.
 3. ADR: chép vào `decisions.md` với ID kế tiếp (dòng mục lục + mục riêng), điền Verified in code; UC thêm vào dòng `- Decisions:`.
 4. Đóng `[OPEN]`/`[DIVERGENCE]` đã giải quyết (xoá dòng, ghi vào History "đóng [OPEN] …").
@@ -54,6 +59,7 @@ change ──► tự soát ──► review hai phía ──► commit 1 (propo
 6. `specs/README.md`: thêm một dòng banner "Hợp nhất change …" (gen.py tự giữ 5 dòng mới nhất); bảng chỉ mục UC nếu có UC mới/đổi tên/status.
 7. Chạy `gen.py` rồi `verify.py` (xem traceability.md). Phải ra 0 unresolved.
 
+8. **Norm encoding (§5.7)**: nếu trong quá trình apply/review có lỗi của agent bị sửa lặp lại qua 3 lần → đề xuất tạo một PR đưa điều khoản chuẩn mực vào `AGENTS.md` ngoài khối, kèm linter/sensor nếu kiểm tra được bằng máy.
 **Commit 3** — `docs(UC-xxx): merge <slug>`.
 
 ## 5. Commit message
