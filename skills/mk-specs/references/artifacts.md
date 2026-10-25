@@ -8,12 +8,13 @@ Mẫu nằm ở `assets/templates/` (chép rồi điền, không viết lại t�
 specs/
 ├── mk-specs.yml               cấu hình skill (bắt buộc)
 ├── README.md                  cửa vào: nguồn sự thật, 4 tầng, context, chỉ mục UC, dòng đếm + chỉ số, hàng đợi quyết định
-├── business-requirements.md   BR (hoặc business-requirements/BR-XX-<slug>.md, mỗi BR một file)
+├── business-requirements/     BR theo thư mục: README.md + BR-XX-<slug>.md (hoặc file đơn business-requirements.md)
+├── entities/                  Entity Model: README.md + <tên-nhóm>.md (hoặc entities.md)
+├── use-cases/                 Use Cases: mỗi context một thư mục con <context>/ chứa UC-XXX-<slug>.md + README.md
+│   └── <context>/
+│       ├── README.md          ngôn ngữ chung, danh sách UC, [OPEN] chung của context
+│       └── UC-XXX-<slug>.md   mỗi use case một file
 ├── decisions.md               ADR: mục lục + từng ADR
-├── <context>/
-│   ├── README.md              ngôn ngữ chung, danh sách UC, [OPEN] chung của context
-│   ├── entities.md            Entity Model
-│   └── UC-XXX-<slug>.md       mỗi use case một file
 ├── changes/
 │   ├── README.md              trỏ tới mẫu proposal của skill
 │   ├── <yyMMdd>-<slug>/proposal.md   đề xuất đang bàn
@@ -22,8 +23,11 @@ specs/
 └── open-issues.md             SINH TỰ ĐỘNG — mọi [DIVERGENCE]/[OPEN]
 ```
 
-Biến thể theo sách (`specs/use-cases/<context>/…`, tr.55–57) dùng được: đặt `contexts_glob: "use-cases/*"` hoặc liệt kê `contexts` với `id: use-cases/checkout`. Cấu trúc code không bắt buộc soi chiếu UC; khi code tổ chức theo lớp, map qua cột "Code chính" ở README và mục `## Traceability` của UC.
+Mặc định là **Biến thể 1 (Layer-first theo sách, tr. 55–57)**: phân tầng rõ `business-requirements/`, `entities/`, `use-cases/<context>/`. Tự động nhận diện qua `contexts_glob: "use-cases/*"` (hoặc để trống `contexts` khi có thư mục `use-cases/`).
 
+**Biến thể 2 (DDD-first / Bounded Context ở gốc)**: `specs/<context>/` chứa cả `entities.md` và file UC. Dùng được bằng cách đặt `contexts_glob: "*"` hoặc liệt kê `contexts` trong `mk-specs.yml`.
+
+**Thư mục mẫu `_templates/`**: nếu dự án có thư mục `specs/_templates/` (theo sách cũ để copy mẫu tay), các script tự động bỏ qua, không tính là context, không kiểm tra link/test placeholder. Cấu trúc code không bắt buộc soi chiếu UC; khi code tổ chức theo lớp, map qua cột "Code chính" ở README và mục `## Traceability` của UC.
 Mẫu tương ứng: `specs-readme.md`, `business-requirement.md`, `adr.md`, `context-readme.md`, `entities.md`, `use-case.md`, `proposal.md`.
 
 ## 2. ID và trạng thái

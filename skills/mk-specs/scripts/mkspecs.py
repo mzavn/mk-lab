@@ -14,6 +14,8 @@ import sys
 
 CONFIG_REL = os.path.join("specs", "mk-specs.yml")
 
+IGNORED_SPECS_DIRS = {"changes", "_templates", "templates"}
+
 
 class ConfigError(Exception):
     pass
@@ -210,6 +212,7 @@ TEXT = {
         ),
         "adr_section": "Quyết định (ADR)",
         "br_section": "Yêu cầu nghiệp vụ (BR)",
+        "entity_section": "Thực thể (Entity)",
         "decimal": ",",
         "since_word": "từ",
     },
@@ -231,6 +234,7 @@ TEXT = {
         "adr_section": "Decisions (ADR)",
         "br_section": "Business requirements (BR)",
         "decimal": ".",
+        "entity_section": "Entities",
         "since_word": "since",
     },
 }
@@ -362,15 +366,31 @@ class Project:
                                   "create the folder or remove it from `contexts` in specs/mk-specs.yml "
                                   "(old templates listed an example `checkout`)")
             return out
-        pattern = str(self.cfg.get("contexts_glob") or "*")
-        self.inside(pattern, self.specs, "contexts_glob")
+        if self.cfg.get("contexts_glob"):
+            patterns = [str(self.cfg["contexts_glob"])]
+        elif os.path.isdir(os.path.join(self.specs, "use-cases")):
+            patterns = ["use-cases/*", "use-cases"]
+        else:
+            patterns = ["*"]
         out = []
-        for d in sorted(glob.glob(os.path.join(self.specs, pattern))):
-            rel = os.path.relpath(d, self.specs).replace(os.sep, "/")
-            if not self.is_inside(d):  # a folder linked to somewhere outside the repo is skipped, not read
-                continue
-            if os.path.isdir(d) and not rel.startswith("changes") and any(self.uc_file.match(f) for f in os.listdir(d)):
-                out.append((rel, rel))
+        seen = set()
+        for pattern in patterns:
+            self.inside(pattern, self.specs, "contexts_glob")
+            for d in sorted(glob.glob(os.path.join(self.specs, pattern))):
+                rel = os.path.relpath(d, self.specs).replace(os.sep, "/")
+                if not self.is_inside(d):  # a folder linked to somewhere outside the repo is skipped, not read
+                    continue
+                first = rel.split("/", 1)[0]
+                if first in IGNORED_SPECS_DIRS:
+                    continue
+                if os.path.isdir(d) and rel not in seen and any(self.uc_file.match(f) for f in os.listdir(d)):
+                    seen.add(rel)
+                    out.append((rel, rel))
+        if "use-cases" not in seen and os.path.isdir(os.path.join(self.specs, "use-cases")):
+            d = os.path.join(self.specs, "use-cases")
+            if any(self.uc_file.match(f) for f in os.listdir(d)):
+                seen.add("use-cases")
+                out.append(("use-cases", "use-cases"))
         return out
 
     def uc_files(self, ctx):
@@ -383,7 +403,7 @@ class Project:
         found = set()
         heading = re.compile(r"^#{1,6} (" + "|".join(f"(?:{p})" for p in self.id_patterns) + r")\b", re.M)
         for root, dirs, files in os.walk(self.specs):
-            dirs[:] = [d for d in dirs if os.path.relpath(os.path.join(root, d), self.specs) != "changes"]
+            dirs[:] = [d for d in dirs if os.path.relpath(os.path.join(root, d), self.specs).split(os.sep)[0] not in IGNORED_SPECS_DIRS]
             for f in files:
                 m = self.uc_file.match(f)
                 if m:

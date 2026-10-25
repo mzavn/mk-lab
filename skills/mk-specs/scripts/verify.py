@@ -54,7 +54,8 @@ def find(file, cited):
 
 
 bad_tests, n_cites, acs = [], 0, set()
-for root, _, files in os.walk(specs):
+for root, dirs, files in os.walk(specs):
+    dirs[:] = [d for d in dirs if os.path.relpath(os.path.join(root, d), specs).split(os.sep)[0] not in ("_templates", "templates")]
     for f in files:
         um = P.uc_file.match(f)
         if not um:
@@ -103,7 +104,8 @@ if style in ("name", "both") and test_list is not None:
 LINK = re.compile(r"\]\(([^)\s]+)\)")
 bad_links, n_links = [], 0
 pending = []
-for root, _, files in os.walk(specs):
+for root, dirs, files in os.walk(specs):
+    dirs[:] = [d for d in dirs if os.path.relpath(os.path.join(root, d), specs).split(os.sep)[0] not in ("_templates", "templates")]
     for f in files:
         if not f.endswith(".md"):
             continue

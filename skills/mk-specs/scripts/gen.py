@@ -176,6 +176,24 @@ if br_blocks:
     total[1] += o
     sections.insert(0, f"## {t['br_section']} — {d} divergence, {o} open\n\n" + "\n".join(br_blocks))
 
+ent_files = (["entities.md"] if os.path.isfile(os.path.join(specs, "entities.md")) else []) + \
+    sorted(f"entities/{f}" for f in (os.listdir(os.path.join(specs, "entities"))
+                                     if os.path.isdir(os.path.join(specs, "entities")) else [])
+           if f.endswith(".md"))
+ent_blocks, ed, eo = [], 0, 0
+for rel in ent_files:
+    items = [l for l in issues(os.path.join(specs, rel), os.path.dirname(rel) or ".")
+             if not re.search(r"<[^<>]+>", l)]
+    if items:
+        ed += sum(1 for l in items if l.startswith("- [DIVERGENCE]"))
+        eo += sum(1 for l in items if l.startswith("- [OPEN]"))
+        ent_blocks.append(f"### [{rel}]({rel})\n" + "\n".join(items) + "\n")
+if ent_blocks:
+    total[0] += ed
+    total[1] += eo
+    idx = 1 if br_blocks else 0
+    sections.insert(idx, f"## {t.get('entity_section', 'Thực thể (Entity)')} — {ed} divergence, {eo} open\n\n" + "\n".join(ent_blocks))
+
 dec_name, dec_path = P.cfg.get("decisions_file"), P.decisions
 if dec_path and os.path.exists(dec_path):
     items = issues(dec_path, ".")

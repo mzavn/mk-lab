@@ -612,6 +612,78 @@ class TemplateConfig(unittest.TestCase):
         self.assertIn("context folder(s) missing", res.stdout + res.stderr)
 
 
+class Variant1Structure(unittest.TestCase):
+    """Biến thể 1 (Layer-first / book layout): use-cases/, business-requirements/, entities/, _templates/."""
+
+    def setUp(self):
+        self.root = tempfile.mkdtemp()
+
+    def test_default_discovers_variant_1_use_cases_and_ignores_templates(self):
+        files = {
+            "specs/mk-specs.yml": "version: 1\nlanguage: vi\nspecs_dir: specs\n",
+            "specs/README.md": "# Specs\n",
+            "specs/decisions.md": "# Quyết định\n## ADR-01: QR\n- Status: accepted\n",
+            "specs/business-requirements/BR-01-order.md": "# BR\n## BR-01: Đặt hàng\n- Goal: Bán hàng\n",
+            "specs/entities/order.md": "# Entity Order\n- [OPEN] Cần xác nhận: Hạn thanh toán 15 hay 30 phút?\n",
+            "specs/use-cases/shortlinks/UC-101-tao-link.md": (
+                "# UC-101: Tạo link\n- Status: implemented\n- BR: BR-01\n\n## History\n- v1 (2026-10-25): khởi tạo\n\n"
+                "## Main Flow\n1. Người dùng tạo link\n\n## Acceptance Criteria\n### AC-1: Tạo thành công\n"
+                "- Given URL hợp lệ\n- When bấm tạo\n- Then trả về mã rút gọn\n- Tests: ⚠ Chưa có test\n"
+            ),
+            "specs/_templates/proposal.md": (
+                "# Proposal Template\n- Link placeholder: [<slug>](../changes/archive/<slug>/proposal.md)\n"
+                "# UC-999: Fake Template Heading\n- Status: draft\n"
+            ),
+        }
+        write_tree(self.root, files)
+        # gen.py
+        res_gen = run("gen.py", self.root)
+        self.assertEqual(res_gen.returncode, 0, f"gen.py failed: {res_gen.stdout}{res_gen.stderr}")
+        with open(os.path.join(self.root, "specs/traceability.md"), encoding="utf-8") as fh:
+            self.assertIn("use-cases/shortlinks", fh.read())
+        with open(os.path.join(self.root, "specs/open-issues.md"), encoding="utf-8") as fh:
+            oi = fh.read()
+        self.assertIn("Thực thể (Entity)", oi)
+        self.assertIn("Hạn thanh toán 15 hay 30 phút?", oi)
+        # verify.py: must ignore _templates link and exit 0
+        res_ver = run("verify.py", self.root)
+        self.assertEqual(res_ver.returncode, 0, f"verify.py failed: {res_ver.stdout}{res_ver.stderr}")
+        self.assertNotIn("unresolved: 1", res_ver.stdout)
+        # known_ids: UC-999 in _templates must NOT be a known ID
+        P = mkspecs.load(self.root)
+        self.assertNotIn("UC-999", P.known_ids())
+        self.assertIn("UC-101", P.known_ids())
+        self.assertIn("BR-01", P.known_ids())
+        self.assertIn("ADR-01", P.known_ids())
+
+    def test_variant_1_flat_use_cases_folder(self):
+        files = {
+            "specs/mk-specs.yml": "version: 1\nlanguage: vi\nspecs_dir: specs\n",
+            "specs/use-cases/UC-101-flat.md": (
+                "# UC-101: Flat\n- Status: implemented\n- BR: BR-01\n\n## History\n- v1 (2026-10-25): khởi tạo\n\n"
+                "## Main Flow\n1. Bước 1\n\n## Acceptance Criteria\n### AC-1: AC 1\n"
+                "- Given a\n- When b\n- Then c\n- Tests: ⚠ Chưa có test\n"
+            ),
+        }
+        write_tree(self.root, files)
+        P = mkspecs.load(self.root)
+        ctx_ids = [c for c, _ in P.contexts]
+        self.assertIn("use-cases", ctx_ids)
+
+    def test_fallback_to_variant_2_when_no_use_cases_folder(self):
+        files = {
+            "specs/mk-specs.yml": "version: 1\nlanguage: vi\nspecs_dir: specs\n",
+            "specs/checkout/UC-101-order.md": (
+                "# UC-101: Order\n- Status: implemented\n- BR: BR-01\n\n## History\n- v1 (2026-10-25): khởi tạo\n\n"
+                "## Main Flow\n1. Bước 1\n\n## Acceptance Criteria\n### AC-1: AC 1\n"
+                "- Given a\n- When b\n- Then c\n- Tests: ⚠ Chưa có test\n"
+            ),
+        }
+        write_tree(self.root, files)
+        P = mkspecs.load(self.root)
+        ctx_ids = [c for c, _ in P.contexts]
+        self.assertIn("checkout", ctx_ids)
+
 class SkillFrontmatter(unittest.TestCase):
     def setUp(self):
         self.skill_dir = os.path.dirname(SCRIPTS)

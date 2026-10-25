@@ -20,9 +20,9 @@ Code lệch spec = bug **hoặc** spec chưa cập nhật. Trước khi merge, t
 
 | Tầng | Trả lời | Ở đâu |
 |---|---|---|
-| Business Requirement | Vì sao làm? | [business-requirements.md](business-requirements.md) — BR-01…BR-01 |
-| Use Case | Ai làm gì? | `specs/<context>/UC-XXX-*.md` |
-| Entity Model | Nói về những khái niệm nào? | `specs/<context>/entities.md` |
+| Business Requirement | Vì sao làm? | [business-requirements/](business-requirements/) (hoặc [business-requirements.md](business-requirements.md)) — BR-01…BR-01 |
+| Use Case | Ai làm gì? | `specs/use-cases/<context>/UC-XXX-*.md` (hoặc `specs/<context>/...` nếu Biến thể 2) |
+| Entity Model | Nói về những khái niệm nào? | `specs/entities/` (hoặc `specs/entities.md`, `specs/<context>/entities.md`) |
 | Acceptance Criteria | Biết đúng bằng cách nào? | `## Acceptance Criteria` trong từng UC |
 
 Quyết định: [decisions.md](decisions.md) — ADR-01…ADR-01.
@@ -31,7 +31,7 @@ Quyết định: [decisions.md](decisions.md) — ADR-01…ADR-01.
 
 | Context | Thư mục | UC | Code chính |
 |---|---|---|---|
-| <tên> | [<id>/](<id>/README.md) | UC-101… | `src/...` |
+| <tên> | [use-cases/<id>/](use-cases/<id>/README.md) | UC-101… | `src/...` |
 
 ID vĩnh viễn: không đánh số lại, không dùng lại. AC bỏ thì ghi `(deprecated vN: lý do)`, không xoá.
 
