@@ -8,6 +8,15 @@ Mỗi bản có số dạng `X.Y.Z`:
 
 Cập nhật: `bash ~/.mk-lab/install.sh --update`. Agent cũng tự nhắc khi có bản mới.
 
+## Chưa phát hành
+
+Dự kiến: v2.2.0
+
+**Mới**
+
+- **Tuỳ chọn cấu hình `layout`**: cho phép chọn trực tiếp giữa `layout: layers` (Biến thể 1 — Layer-first, mặc định theo sách SDD) hoặc `layout: contexts` (Biến thể 2 — Bounded Context ở gốc) trong `specs/mk-specs.yml` mà không cần cấu hình glob phức tạp.
+- **Chuẩn hoá câu hỏi lựa chọn khi `init`**: khi khởi tạo đặc tả SDD mức 4 (`/mk:specs` mode `init`), agent hướng dẫn và đưa ra lựa chọn có cấu trúc giữa Biến thể 1 và Biến thể 2 nếu chưa được yêu cầu cụ thể.
+
 ## v2.1.0 — 25/10/2026
 
 **Mới**
