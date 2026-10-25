@@ -4,10 +4,15 @@
 
 1. Cài skill vào project: `bash <mk-lab>/install.sh --project <repo>` (`<mk-lab>` = nơi clone repo mk-lab, mặc định `~/.mk-lab`; đứng trong repo: `--project .`; chạy lại bao nhiêu lần cũng được — thiếu thì thêm, có rồi thì giữ hoặc cập nhật). Lệnh chép skill vào `<repo>/.claude/skills/mk-specs`, tạo `<repo>/specs/mk-specs.yml` từ mẫu nếu chưa có, ghi khối `mk-specs` vào `AGENTS.md` (file chung mọi agent đọc), thêm `@AGENTS.md` vào `CLAUDE.md`, và một dòng trỏ `AGENTS.md` vào `GEMINI.md` nếu file đó có. Agent đọc `.agents/skills` (vd Codex) → thêm `--agents-dir`.
    Không có `install.sh` (chỉ có thư mục skill, `<skill>` = thư mục chứa `SKILL.md`), làm tay: chép `<skill>` vào `<repo>/.claude/skills/mk-specs` (bỏ file `.mk-specs-source` nếu có — nó ghi đường dẫn của máy khác); chép `assets/mk-specs.yml.template` thành `specs/mk-specs.yml` nếu chưa có; chạy `python3 .claude/skills/mk-specs/scripts/agent-files.py .`; **commit** thư mục vừa chép. Khác `install.sh` ở chỗ không có manifest: lần chạy `install.sh --project` sau đó dựa vào git để biết bản chép có bị sửa tay không — chưa commit, có file lạ (vd `.DS_Store` chưa ignore) hoặc project không phải git repo thì nó từ chối; khi đó dùng `--force`.
-2. Sửa `specs/mk-specs.yml`: chọn `layout: layers` (Biến thể 1 — mặc định theo sách) hoặc `layout: contexts` (Biến thể 2 — Bounded Context); `contexts`, `ids`, `tests.list_command`, `tests.citation_style` (project mới: cân nhắc `name` hoặc `both`), `metrics.since` = ngày áp dụng.
-3. Tạo khung từ `assets/templates/`:
-   - **Cách 1 (Biến thể 1 — Layer-first, mặc định theo sách, tr. 55–57)**: `specs/README.md` (`specs-readme.md`), `business-requirements/` (`business-requirement.md` hoặc file `business-requirements.md`), `decisions.md` (tiêu đề + bảng mục lục rỗng), `entities/` (`entities.md`), `use-cases/` (mỗi context một thư mục con `use-cases/<context>/` với `context-readme.md` + file UC), `changes/README.md` (một đoạn trỏ tới proposal template), `changes/archive/`.
-   - **Cách 2 (Biến thể 2 — Bounded Context ở gốc)**: đặt context trực tiếp dưới `specs/<context>/` với `entities.md` và đặt `layout: contexts` trong `specs/mk-specs.yml`.
+2. Sửa `specs/mk-specs.yml`: `layout: layers` (đã bật sẵn theo Biến thể 1); `contexts`, `ids`, `tests.list_command`, `tests.citation_style` (project mới: cân nhắc `name` hoặc `both`), `metrics.since` = ngày áp dụng.
+3. Tạo khung từ `assets/templates/`: Tạo ngay theo **Biến thể 1 (Layer-first — mặc định chuẩn cho các dự án vibe coding & SDD, tr. 55–57)** mà không cần hỏi lại người dùng:
+   - `specs/README.md` (`specs-readme.md`)
+   - `specs/business-requirements/` (`business-requirement.md` hoặc file `business-requirements.md`)
+   - `specs/entities/` (`entities.md`)
+   - `specs/use-cases/`: mỗi context một thư mục con `use-cases/<context>/` với `context-readme.md` + file UC
+   - `specs/decisions.md` (tiêu đề + bảng mục lục rỗng)
+   - `specs/changes/` (`README.md` trỏ tới proposal template, `archive/`)
+   *Ghi chú*: Chỉ khi người dùng chủ động yêu cầu cấu trúc Bounded Context ở gốc thì mới chuyển sang Biến thể 2 (`layout: contexts`). Mặc định luôn ưu tiên Biến thể 1 để tối ưu tốc độ và sự tiện lợi cho người dùng.
 4. Thêm lệnh `specs:gen` / `specs:check` (traceability.md §3).
 5. **Thiết lập luật repo theo 3 lớp tài liệu phân biệt** (bài báo Díaz et al. §4.1):
    - **System spec**: Viết vào `AGENTS.md`, **ngoài** khối `mk-specs` (khối đó do `install.sh` quản lý, sửa tay sẽ bị ghi đè). Chứa quy ước kiến trúc bền vững, lệnh DoD, quy định migration/schema, người duyệt. File này luôn được nạp ở đầu mỗi phiên. Không đưa chi tiết tính năng tạm thời vào đây (tránh phình context). `CLAUDE.md` chỉ giữ `@AGENTS.md` + điều riêng cho Claude nếu có. Luật chung đã nằm trong skill — không chép lại.

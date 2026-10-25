@@ -49,7 +49,7 @@ Mức sau chỉ thêm phần vào mức trước; mã story giữ nguyên khi l�
 |---|---|---|---|
 | `prd` | dự án nhỏ/MVP: muốn PRD, wireframe, TDD; hoặc làm tiếp mức kế | `references/workflow-prd.md` §1–5 | `specs/PRD.md` (+ `wireframe.html`, `TDD.md` theo mức) đã tự soát; dừng trước khi code |
 | `promote` | nâng PRD mức 1–3 lên SDD đầy đủ | `references/workflow-prd.md` §6, `references/workflow-bootstrap.md` §1 | BR/UC/AC/ADR dựng từ PRD và đối chiếu code; PRD `promoted` |
-| `init` | bắt đầu SDD đầy đủ cho repo mới hoặc repo đang chạy | `references/workflow-bootstrap.md`, `references/artifacts.md` | `specs/` khung (chọn `layout: layers` [mặc định] hoặc `contexts`), config, khối mk-specs trong `AGENTS.md` + `@AGENTS.md` trong `CLAUDE.md`, BR/UC đầu tiên hoặc baseline brownfield, đã tự soát |
+| `init` | bắt đầu SDD đầy đủ cho repo mới hoặc repo đang chạy | `references/workflow-bootstrap.md`, `references/artifacts.md` | `specs/` khung Biến thể 1 (`layout: layers`, mặc định chuẩn vibe coding), config, khối mk-specs trong `AGENTS.md` + `@AGENTS.md` trong `CLAUDE.md`, BR/UC đầu tiên hoặc baseline brownfield, đã tự soát |
 | `change` | muốn tính năng mới, đổi luật, đổi API/giao diện | `references/workflow-change.md` §1–2, `references/artifacts.md` | `specs/changes/<yyMMdd>-<slug>/proposal.md` đã tự soát và review hai phía; commit 1 |
 | `review` | vừa viết xong spec/PRD/proposal (tự chạy), hoặc người dùng nhờ soát lại | `references/review.md` | lỗi của agent đã tự sửa, mâu thuẫn giữa các file đã soát, câu hỏi cho người dùng đã trả lời hoặc thành `[OPEN]`, mục `## Tự soát` |
 | `apply` | yêu cầu làm theo proposal đã duyệt | `references/workflow-change.md` §3 | test theo AC (đỏ → xanh), code; commit 2 |

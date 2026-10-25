@@ -23,9 +23,9 @@ specs/
 └── open-issues.md             SINH TỰ ĐỘNG — mọi [DIVERGENCE]/[OPEN]
 ```
 
-Mặc định là **Biến thể 1 (Layer-first theo sách, tr. 55–57)**: phân tầng rõ `business-requirements/`, `entities/`, `use-cases/<context>/`. Tự động nhận diện qua `contexts_glob: "use-cases/*"` (hoặc để trống `contexts` khi có thư mục `use-cases/`).
+Mặc định ưu tiên cao nhất là **Biến thể 1 (Layer-first theo sách SDD, tr. 55–57)**: phân tầng rõ `business-requirements/`, `entities/`, `use-cases/<context>/`. Đây là cấu trúc chuẩn và hiệu quả nhất cho các dự án vibe coding cùng AI agent (AI dễ dàng quét đúng tầng thông tin, tránh lẫn lộn giữa thực thể và use case). Đã được kích hoạt sẵn qua `layout: layers`.
 
-**Biến thể 2 (DDD-first / Bounded Context ở gốc)**: `specs/<context>/` chứa cả `entities.md` và file UC. Dùng được bằng cách đặt `layout: contexts`, hoặc `contexts_glob: "*"` hoặc liệt kê `contexts` trong `mk-specs.yml`.
+**Biến thể 2 (DDD-first / Bounded Context ở gốc)**: `specs/<context>/` chứa cả `entities.md` và file UC. Chỉ dùng khi người dùng chủ động yêu cầu (đặt `layout: contexts`, hoặc `contexts_glob: "*"` hoặc liệt kê `contexts` trong `mk-specs.yml`).
 
 **Thư mục mẫu `_templates/`**: nếu dự án có thư mục `specs/_templates/` (theo sách cũ để copy mẫu tay), các script tự động bỏ qua, không tính là context, không kiểm tra link/test placeholder. Cấu trúc code không bắt buộc soi chiếu UC; khi code tổ chức theo lớp, map qua cột "Code chính" ở README và mục `## Traceability` của UC.
 Mẫu tương ứng: `specs-readme.md`, `business-requirement.md`, `adr.md`, `context-readme.md`, `entities.md`, `use-case.md`, `proposal.md`.
