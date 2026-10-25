@@ -8,6 +8,14 @@ Mỗi bản có số dạng `X.Y.Z`:
 
 Cập nhật: `bash ~/.mk-lab/install.sh --update`. Agent cũng tự nhắc khi có bản mới.
 
+## Chưa phát hành
+
+Dự kiến: v2.3.0
+
+**Mới**
+
+- **Ưu tiên tuyệt đối Biến thể 1 cho vibe coding**: template `mk-specs.yml.template` kích hoạt sẵn `layout: layers`. Khi khởi tạo đặc tả SDD (`/mk:specs` mode `init`), agent tạo thẳng cấu trúc Biến thể 1 (`specs/business-requirements/`, `specs/entities/`, `specs/use-cases/`) mà không dừng lại hỏi thừa, tối ưu tốc độ và sự tiện dụng cho các dự án lập trình cùng AI; Biến thể 2 chỉ dùng khi người dùng yêu cầu rõ ràng.
+
 ## v2.2.0 — 25/10/2026
 
 **Mới**
