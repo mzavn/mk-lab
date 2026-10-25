@@ -8,6 +8,17 @@ Mỗi bản có số dạng `X.Y.Z`:
 
 Cập nhật: `bash ~/.mk-lab/install.sh --update`. Agent cũng tự nhắc khi có bản mới.
 
+## Chưa phát hành
+
+Dự kiến: v2.1.0
+
+**Mới**
+
+- **Cấu trúc Biến thể 1 là mặc định**: khi khởi tạo đặc tả SDD mức 4 (`/mk:specs` mode `init`), cấu trúc được tạo mặc định theo Biến thể 1 (Layer-first theo sách SDD của anh Huy: `business-requirements/`, `entities/`, `use-cases/<context>/`, `changes/`, `README.md`).
+- **Tự động nhận diện cấu trúc**: script tự động nhận diện cả Biến thể 1 (`use-cases/*` và `use-cases`) lẫn Biến thể 2 (`*` khi context nằm trực tiếp dưới `specs/`), đảm bảo tương thích ngược 100%.
+- **Bỏ qua thư mục `_templates/`**: nếu dự án có thư mục mẫu `specs/_templates/` hoặc `specs/templates/`, scripts tự động bỏ qua, không tính là context và không báo lỗi liên kết giả định.
+- **Gom câu hỏi mở từ Thực thể**: `gen.py` tự động gom các dòng `[OPEN]` và `[DIVERGENCE]` từ `specs/entities/` và `specs/entities.md` vào `open-issues.md`.
+
 ## v2.0.0 — 20/10/2026
 
 **Cần làm khi cập nhật — mọi máy**
