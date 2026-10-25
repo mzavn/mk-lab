@@ -5,12 +5,17 @@ version: 1
 language: vi                 # vi | en — chữ trong file sinh ra
 specs_dir: specs
 
+# Bố cục thư mục specs/ (layout) — chọn 1 trong 2 cách:
+#   - layers:   Biến thể 1 (Layer-first — mặc định theo sách SDD): use-cases/, entities/, business-requirements/
+#   - contexts: Biến thể 2 (Domain/Bounded Context): mỗi context ở gốc specs/ chứa cả entities.md và UC
+# Bỏ trống cả layout, contexts và contexts_glob = tự động nhận diện: Biến thể 1 nếu có thư mục use-cases/; ngược lại Biến thể 2.
+# layout: layers
+
 # Context theo thứ tự hiện trong file sinh ra; mỗi id là một thư mục trong specs/.
-# Bỏ trống cả contexts và contexts_glob = tự động nhận diện: Biến thể 1 (use-cases/* và use-cases) nếu có thư mục use-cases/; ngược lại Biến thể 2 (*).
 # contexts:
 #   - id: use-cases/checkout
 #     title: "Đặt hàng (checkout)"
-# contexts_glob: "use-cases/*"   # Biến thể 1 mặc định; Biến thể 2 (context ở gốc specs/): "*"
+# contexts_glob: "use-cases/*"   # tuỳ biến glob nếu cần
 
 ids:
   uc: 'UC-\d{3}'

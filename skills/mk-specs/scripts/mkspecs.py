@@ -165,6 +165,7 @@ DEFAULTS = {
     "version": 1,
     "language": "vi",
     "specs_dir": "specs",
+    "layout": None,            # "layers" (Biến thể 1) | "contexts" (Biến thể 2)
     "contexts": None,          # [{id, title}] in output order
     "contexts_glob": None,     # e.g. "*" or "use-cases/*" when contexts is not listed
     "ids": {"uc": r"UC-\d+", "br": r"BR-\d+", "adr": r"ADR-\d+"},
@@ -346,7 +347,19 @@ class Project:
         self.uc_id = ids["uc"]
         self.id_patterns = [ids[k] for k in ("uc", "br", "adr") if ids.get(k)]
         self.uc_file = re.compile(rf"({self.uc_id})-.*\.md$")
+        self.layout = self._validate_layout()
         self.contexts = self._contexts()
+
+    def _validate_layout(self):
+        raw = self.cfg.get("layout")
+        if raw is None:
+            return None
+        val = str(raw).strip().lower()
+        if val in ("layers", "bien-the-1", "1"):
+            return "layers"
+        if val in ("contexts", "bien-the-2", "2"):
+            return "contexts"
+        raise ConfigError(f"layout must be 'layers' (Biến thể 1) or 'contexts' (Biến thể 2), got: {str(raw)[:40]}")
 
     def _contexts(self):
         listed = self.cfg.get("contexts")
@@ -366,7 +379,11 @@ class Project:
                                   "create the folder or remove it from `contexts` in specs/mk-specs.yml "
                                   "(old templates listed an example `checkout`)")
             return out
-        if self.cfg.get("contexts_glob"):
+        if self.layout == "contexts":
+            patterns = ["*"]
+        elif self.layout == "layers":
+            patterns = ["use-cases/*", "use-cases"]
+        elif self.cfg.get("contexts_glob"):
             patterns = [str(self.cfg["contexts_glob"])]
         elif os.path.isdir(os.path.join(self.specs, "use-cases")):
             patterns = ["use-cases/*", "use-cases"]

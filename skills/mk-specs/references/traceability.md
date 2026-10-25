@@ -73,6 +73,7 @@ Mẫu đầy đủ: `assets/mk-specs.yml.template`. Khoá:
 | `version` | `1` | Phiên bản định dạng cấu hình |
 | `language` | `vi` | `vi`/`en`: chữ trong file sinh, dấu thập phân |
 | `specs_dir` | `specs` | Thư mục spec, tương đối với gốc repo |
+| `layout` | `null` | Bố cục thư mục: `layers` (Biến thể 1 — mặc định) · `contexts` (Biến thể 2) |
 | `contexts` | — | Danh sách `{id, title}` theo thứ tự xuất; `id` là đường dẫn trong `specs_dir` |
 | `contexts_glob` | `*` | Dùng khi không liệt kê `contexts`: mọi thư mục khớp glob có file UC (trừ `changes`) |
 | `ids.uc` / `ids.br` / `ids.adr` | `UC-\d+` / `BR-\d+` / `ADR-\d+` | Regex ID; file UC tên `<ID>-<slug>.md` |

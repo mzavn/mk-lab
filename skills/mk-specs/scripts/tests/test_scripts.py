@@ -684,6 +684,69 @@ class Variant1Structure(unittest.TestCase):
         ctx_ids = [c for c, _ in P.contexts]
         self.assertIn("checkout", ctx_ids)
 
+
+class ConfigLayout(unittest.TestCase):
+    """Cấu hình layout: layers (Biến thể 1) | contexts (Biến thể 2)."""
+
+    def setUp(self):
+        self.root = tempfile.mkdtemp()
+
+    def test_layout_contexts_overrides_use_cases_folder(self):
+        files = {
+            "specs/mk-specs.yml": "version: 1\nlanguage: vi\nspecs_dir: specs\nlayout: contexts\n",
+            "specs/checkout/UC-101-order.md": (
+                "# UC-101: Order\n- Status: implemented\n- BR: BR-01\n\n## Main Flow\n1. Bước 1\n\n## Acceptance Criteria\n### AC-1: A\n- Given a\n- When b\n- Then c\n- Tests: ⚠ Chưa có test\n"
+            ),
+            "specs/use-cases/shortlinks/UC-102-link.md": (
+                "# UC-102: Link\n- Status: implemented\n- BR: BR-01\n\n## Main Flow\n1. Bước 1\n\n## Acceptance Criteria\n### AC-1: B\n- Given a\n- When b\n- Then c\n- Tests: ⚠ Chưa có test\n"
+            ),
+        }
+        write_tree(self.root, files)
+        P = mkspecs.load(self.root)
+        ctx_ids = [c for c, _ in P.contexts]
+        self.assertIn("checkout", ctx_ids)
+        self.assertNotIn("use-cases/shortlinks", ctx_ids)
+
+    def test_layout_layers_forces_variant_1(self):
+        files = {
+            "specs/mk-specs.yml": "version: 1\nlanguage: vi\nspecs_dir: specs\nlayout: layers\n",
+            "specs/checkout/UC-101-order.md": (
+                "# UC-101: Order\n- Status: implemented\n- BR: BR-01\n\n## Main Flow\n1. Bước 1\n\n## Acceptance Criteria\n### AC-1: A\n- Given a\n- When b\n- Then c\n- Tests: ⚠ Chưa có test\n"
+            ),
+            "specs/use-cases/shortlinks/UC-102-link.md": (
+                "# UC-102: Link\n- Status: implemented\n- BR: BR-01\n\n## Main Flow\n1. Bước 1\n\n## Acceptance Criteria\n### AC-1: B\n- Given a\n- When b\n- Then c\n- Tests: ⚠ Chưa có test\n"
+            ),
+        }
+        write_tree(self.root, files)
+        P = mkspecs.load(self.root)
+        ctx_ids = [c for c, _ in P.contexts]
+        self.assertIn("use-cases/shortlinks", ctx_ids)
+        self.assertNotIn("checkout", ctx_ids)
+
+    def test_invalid_layout_raises_config_error(self):
+        for bad in ("invalid_choice", "false", "0"):
+            files = {
+                "specs/mk-specs.yml": f"version: 1\nlanguage: vi\nspecs_dir: specs\nlayout: {bad}\n",
+            }
+            write_tree(self.root, files)
+            with self.assertRaises(mkspecs.ConfigError) as ctx:
+                mkspecs.Project(self.root)
+            self.assertIn("layout must be 'layers'", str(ctx.exception))
+            res = run("gen.py", self.root)
+            self.assertNotEqual(res.returncode, 0)
+            self.assertIn("layout must be 'layers'", res.stdout + res.stderr)
+            self.assertNotIn("Traceback", res.stdout + res.stderr)
+
+    def test_invalid_layout_rejected_even_when_contexts_listed(self):
+        files = {
+            "specs/mk-specs.yml": "version: 1\nlanguage: vi\nspecs_dir: specs\nlayout: bad_layout\ncontexts:\n  - id: checkout\n",
+            "specs/checkout/UC-101.md": "# UC-101\n",
+        }
+        write_tree(self.root, files)
+        with self.assertRaises(mkspecs.ConfigError) as ctx:
+            mkspecs.Project(self.root)
+        self.assertIn("layout must be 'layers'", str(ctx.exception))
+
 class SkillFrontmatter(unittest.TestCase):
     def setUp(self):
         self.skill_dir = os.path.dirname(SCRIPTS)
