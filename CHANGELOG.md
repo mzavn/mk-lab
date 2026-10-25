@@ -8,9 +8,7 @@ Mỗi bản có số dạng `X.Y.Z`:
 
 Cập nhật: `bash ~/.mk-lab/install.sh --update`. Agent cũng tự nhắc khi có bản mới.
 
-## Chưa phát hành
-
-Dự kiến: v2.1.0
+## v2.1.0 — 25/10/2026
 
 **Mới**
 
