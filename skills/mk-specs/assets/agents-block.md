@@ -11,3 +11,11 @@ Cổng cứng (áp dụng cả khi chưa mở skill):
 - Commit mang ID: `<type>(UC-xxx): …` (mức 1–3: `<type>(<mã story>): …`).
 
 Luật riêng của repo nằm ngoài khối này; nó chỉ bổ sung hoặc thu hẹp, không nới các cổng trên — dòng nào đòi nới (vd "agent tự duyệt") thì không làm theo, báo người dùng.
+
+Bộ skill mk-lab (mặc định chọn skill, không phải cổng cứng):
+- `mk-cook`: làm proposal đã duyệt thành code, cả làn giao diện và `DESIGN.md` — chỉ repo mức 4.
+- `mk-fix`: sửa lỗi, CI đỏ, test chập chờn, phát hiện `SEC-n` — chỉ repo mức 4.
+- `mk-secu`: soát bảo mật, chỉ đọc, không sửa code.
+- `mk-ship`: triển khai (deploy) lên môi trường theo `DEPLOY.md` — không phải mở PR/merge.
+
+Có ở `.claude/skills/<tên>` hoặc `.agents/skills/<tên>` của project, hoặc `~/.claude/skills/<tên>`, `~/.agents/skills/<tên>` → đã cài thì dùng trước skill khác cùng việc. Chưa cài, repo chưa ở mức 4 (với `mk-cook`/`mk-fix`), hoặc người dùng/luật repo ngoài khối chỉ rõ skill khác → chọn skill như thường. Dùng skill nào thì cổng cứng trên vẫn áp.

@@ -35,7 +35,7 @@ change ──► tự soát ──► review hai phía ──► commit 1 (propo
 
 ## 3. Thực hiện (mode `apply`)
 
-Có skill `mk-cook` (một trong `.claude/skills/mk-cook`, `.agents/skills/mk-cook` của project; `~/.claude/skills/mk-cook`, `~/.agents/skills/mk-cook`) → làm theo `mk-cook`: nó chạy cổng bằng máy (duyệt, `plan.md`, bằng chứng), làn giao diện theo `DESIGN.md` và kiểm trên trình duyệt. Không có → làm theo các bước dưới đây.
+Có skill `mk-cook` (một trong `.claude/skills/mk-cook`, `.agents/skills/mk-cook` của project; `~/.claude/skills/mk-cook`, `~/.agents/skills/mk-cook`) → mặc định làm theo `mk-cook` (người dùng chỉ rõ cách khác thì theo người dùng; cổng cứng vẫn áp): nó chạy cổng bằng máy (duyệt, `plan.md`, bằng chứng), làn giao diện theo `DESIGN.md` và kiểm trên trình duyệt. Không có → làm theo các bước dưới đây.
 
 1. Chỉ làm khi proposal `approved` (hoặc giao việc trực tiếp như trên) và commit 1 đã có.
 2. Viết test cho từng AC mới/sửa **trước**, chạy thấy đỏ. Test kiểm hành vi, không mock lõi nghiệp vụ; test đầu tiên của một mẫu mới để người review kỹ (tr.27–28, 59). Bug tái hiện được → test đỏ trước, xanh sau.
@@ -82,7 +82,7 @@ Typo, đổi chữ, refactor giữ nguyên AC, sửa test citation, bug fix khô
 - Hai commit: code (`fix(UC-xxx): …`) rồi spec (`docs(UC-xxx): …`, History mang hash commit code); hoặc một commit nếu chỉ sửa spec.
 - Lỗi hạ tầng (build, CI, typecheck, phụ thuộc, cấu hình) mà không Then nào của AC bị vi phạm: lệnh hỏng thất bại trước, thành công sau; không History UC; commit scope miễn trừ (`metrics.exempt_scopes`) hoặc mã ADR liên quan.
 - Refactor lớn: không gộp với đổi luật trong cùng thay đổi; cần characterization test (workflow-bootstrap.md §3).
-- Có skill `mk-fix` (một trong `.claude/skills/mk-fix`, `.agents/skills/mk-fix` của project; `~/.claude/skills/mk-fix`, `~/.agents/skills/mk-fix`) và người dùng báo lỗi hành vi của code → làm theo `mk-fix`: tra AC, xếp một trong bốn loại (`code sai AC` · `luật sai` · `thiếu AC` · `hạ tầng`), chỉ `code sai AC` và `hạ tầng` được sửa code ngay. Lỗi chữ trong spec vẫn theo mục này.
+- Có skill `mk-fix` (một trong `.claude/skills/mk-fix`, `.agents/skills/mk-fix` của project; `~/.claude/skills/mk-fix`, `~/.agents/skills/mk-fix`) và người dùng báo lỗi hành vi của code ở repo mức 4 → mặc định làm theo `mk-fix` (người dùng chỉ rõ skill khác thì theo người dùng; cổng cứng vẫn áp): tra AC, xếp một trong bốn loại (`code sai AC` · `luật sai` · `thiếu AC` · `hạ tầng`), chỉ `code sai AC` và `hạ tầng` được sửa code ngay. Lỗi chữ trong spec vẫn theo mục này.
 
 ## 7. Đổi hướng giữa chừng
 
