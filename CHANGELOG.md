@@ -8,6 +8,47 @@ Mỗi bản có số dạng `X.Y.Z`:
 
 Cập nhật: `bash ~/.mk-lab/install.sh --update`. Agent cũng tự nhắc khi có bản mới.
 
+## Chưa phát hành
+
+Dự kiến: v2.4.0
+
+### mk-cook
+
+**Mới**
+
+- **Skill mới `mk-cook`** (`/mk:cook`): làm một đề xuất thay đổi (proposal) đã duyệt thành code. Trước khi code, công cụ `gate.py` kiểm proposal đã duyệt và đủ người duyệt, AC viết đọc được; thay đổi lớn phải có kế hoạch `plan.md`. Agent viết test cho từng AC trước, code, chạy kiểm của dự án, rồi ghi bằng chứng vào proposal — `gate.py --done` kiểm bằng chứng đủ từng AC trước khi báo xong. Cài: `bash ~/.mk-lab/install.sh --global --skill mk-cook`.
+- **Làn giao diện**: màn hình dựng theo `DESIGN.md` ở gốc repo (màu, chữ, khoảng cách, component kèm trạng thái) + wireframe + AC, rồi xem tận mắt trên trình duyệt (điện thoại 375px và máy tính). Không có công cụ trình duyệt thì agent đưa bạn danh sách tự xem.
+- **Tạo `DESIGN.md`** theo 3 cách: đo từ một trang bạn thích (không chép chữ, logo, ảnh), trích từ code đang có, hoặc từ mô tả của bạn.
+- **Xây ngược spec từ UI**: đã dựng giao diện trước thì agent viết proposal nháp (đối tượng, ca sử dụng, AC) để bạn duyệt.
+
+### mk-fix
+
+**Mới**
+
+- **Skill mới `mk-fix`** (`/mk:fix`): sửa lỗi bám spec. Agent làm lỗi hiện lại trước (lệnh, log CI, hoặc kịch bản tay), tra xem AC nào nói về hành vi đó bằng `ac.py`, rồi xếp loại: code làm sai AC → viết test đỏ theo AC, tìm nguyên nhân gốc, sửa; AC không như ý hoặc chưa có AC → viết đề xuất (proposal) nháp cho bạn duyệt, không sửa lén; lỗi build/CI/phụ thuộc → sửa thẳng. Sửa hỏng 3 lần thì dừng và hỏi; không nới test cho xanh; lỗi chỉ hỏng trên CI và test chập chờn có cách kiểm riêng. Cài: `bash ~/.mk-lab/install.sh --global --skill mk-fix`.
+
+### mk-secu
+
+**Mới**
+
+- **Skill mới `mk-secu`** (`/mk:secu`): soát bảo mật chỉ đọc. Hỏi một câu ("route này có lộ dữ liệu người khác không?") hoặc nhờ soát cả phần thay đổi/nhánh/repo. Mỗi lỗ hổng phải có đủ bằng chứng (ai tấn công, bằng cách nào, chặn lẽ ra ở đâu, mất gì) và qua một lượt kiểm cố bác bỏ; "nên làm" không bị báo như lỗ hổng. Báo cáo ở `specs/security/` (agent nhắc nếu repo công khai), `secu.py check` chặn báo cáo lộ khoá bí mật. Thiếu luật bảo mật → đề xuất AC; code sai luật → nhờ `mk-fix` sửa. Không sửa code, không chạy code của dự án. Cài: `bash ~/.mk-lab/install.sh --global --skill mk-secu`.
+
+### mk-ship
+
+**Mới**
+
+- **Skill mới `mk-ship`** (`/mk:ship`): đưa code đã commit lên môi trường, Cloudflare Workers trước (Pages và nền tảng khác qua lệnh ghi trong `DEPLOY.md`). Chưa có `DEPLOY.md` thì agent dò dự án và viết cùng bạn. Trước khi triển khai, `ship.py check` chặn: còn thay đổi chưa commit, sai nhánh, spec chưa hợp nhất hoặc lỗ hổng mức cao chưa sửa (production; lỗ hổng nghiêm trọng chặn cả môi trường thử), cấu hình wrangler thiếu khoá, khoá bí mật để trong `vars`, file `.dev.vars`/`.env` nằm trong git. Production luôn hỏi bạn trước. Sau triển khai, `ship.py smoke` kiểm các trang trong `DEPLOY.md`; hỏng ở production thì agent đề xuất quay lui đúng phiên bản và nhờ `mk-fix` tìm nguyên nhân. Agent không xin token qua chat, không xoá tài nguyên, không đổi DNS. Cài: `bash ~/.mk-lab/install.sh --global --skill mk-ship`.
+
+### mk-specs
+
+**Mới**
+
+- **Báo lỗi khi đã cài `mk-fix`** → agent chuyển sang `mk-fix`; lỗi build/CI không đụng AC có đường tắt rõ (không cần thư mục change).
+- **Kế hoạch cho thay đổi lớn**: proposal có dòng `- Quy mô:`; thêm/sửa hơn 5 AC (hoặc ghi `lớn`) thì kèm `plan.md` cùng thư mục — các phase, mỗi phase nêu AC nó làm. Mẫu mới `plan.md`.
+- **Có `mk-cook` thì bước làm code (mode `apply`) chuyển sang `mk-cook`**; không cài thì vẫn làm như cũ.
+- Bảng thuật ngữ thêm `plan.md`, `DESIGN.md`, `mk:cook`, `mk:fix`, loại lỗi, phiếu sửa lỗi, `mk:secu`, phát hiện, kết luận/mức, độ tin nguồn, `mk:ship`, `DEPLOY.md`, môi trường, smoke, rollback.
+- Sửa `DESIGN.md` hoặc `DEPLOY.md` đi đường tắt (không cần thư mục change).
+
 ## v2.3.0 — 25/10/2026
 
 **Mới**

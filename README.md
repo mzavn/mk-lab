@@ -2,7 +2,17 @@
 
 Bộ skill **kỹ thuật & lập trình** cho AI coding agent (Claude Code, omp, Codex và các agent hỗ trợ chuẩn Agent Skills). 
 
-Trọng tâm hiện tại là **`mk-specs`** — phương pháp luận và bộ công cụ **Spec-Driven Development (SDD)** được thiết kế chuyên biệt cho kỷ nguyên **Agentic Software Engineering (SE 3.0)**.
+Năm skill, dùng nối tiếp nhau — spec trước, rồi code, sửa lỗi, soát bảo mật và triển khai đều bám vào spec:
+
+| Skill | Gọi | Làm gì |
+|---|---|---|
+| **`mk-specs`** | `/mk:specs` | **Spec-Driven Development (SDD)**: PRD, BR/UC/AC/ADR, đề xuất thay đổi, truy vết spec ↔ test |
+| **`mk-cook`** | `/mk:cook` | Làm proposal đã duyệt thành code: cổng bằng máy, test trước theo AC, làn giao diện theo `DESIGN.md`, kiểm trên trình duyệt, bằng chứng nghiệm thu; xây ngược spec từ UI có sẵn |
+| **`mk-fix`** | `/mk:fix` | Sửa lỗi theo spec: tái hiện trước, tra AC, xếp loại (code sai AC · luật sai · thiếu AC · hạ tầng) rồi mới sửa; lỗi chưa có AC thành đề xuất, không sửa lén; CI đỏ, test chập chờn |
+| **`mk-secu`** | `/mk:secu` | Soát bảo mật **chỉ đọc**: mỗi phát hiện có đủ bằng chứng và lượt kiểm riêng; thiếu luật bảo mật thành AC đề xuất, code sai luật chuyển `mk-fix` |
+| **`mk-ship`** | `/mk:ship` | Triển khai code đã commit, **Cloudflare Workers trước** (Pages và nền tảng khác qua `DEPLOY.md`): cổng trước triển khai nối spec và báo cáo bảo mật, production cần bạn xác nhận, kiểm sau triển khai, quay lui khi hỏng |
+
+Cả bộ được thiết kế cho kỷ nguyên **Agentic Software Engineering (SE 3.0)**.
 
 > **Cài đặt trước v2.0.0?** (máy có thư mục `~/.mk-skills` — tên cũ của repo): Xem các bước *"Cần làm khi cập nhật"* của bản v2.0.0 trong [CHANGELOG.md](CHANGELOG.md).
 
@@ -144,6 +154,63 @@ bash ~/.mk-lab/install.sh --project .
 - Tạo file cấu hình `specs/mk-specs.yml` từ mẫu chuẩn nếu chưa có.
 - Thêm khối định hướng `<!-- mk-specs:start ... end -->` vào `AGENTS.md` và gắn `@AGENTS.md` vào `CLAUDE.md`.
 
+
+### 3. Thêm `mk-cook`, `mk-fix`, `mk-secu`, `mk-ship`
+Cài cạnh `mk-specs` (chung cho máy, hoặc thay `--global` bằng `--project .`):
+
+```bash
+bash ~/.mk-lab/install.sh --global --skill mk-cook
+bash ~/.mk-lab/install.sh --global --skill mk-fix
+bash ~/.mk-lab/install.sh --global --skill mk-secu
+bash ~/.mk-lab/install.sh --global --skill mk-ship
+```
+
+Rồi nói với agent: "làm proposal `<tên>`" (proposal đã duyệt), "tạo DESIGN.md giống style trang …", "xây ngược spec từ màn đăng ký"; "lỗi: bấm Đặt hàng hai lần bị trừ tiền hai lần", "CI đỏ"; "route `/don/:id` có lộ đơn người khác không?", "soát bảo mật nhánh này"; "deploy lên Cloudflare", "đẩy production".
+
+---
+
+## mk-cook làm gì?
+
+```
+proposal approved ──► gate.py ──► test theo từng AC (đỏ) ──► code ──► xanh ──► DoD + chạy thử / xem trình duyệt
+                                                                           └──► Bằng chứng nghiệm thu ──► gate.py --done ──► mk-specs merge
+```
+
+- **Cổng bằng máy** (`scripts/gate.py`, chỉ thư viện chuẩn Python): proposal phải `approved` và có đủ người duyệt nghiệp vụ + kỹ thuật; AC đọc được và thuộc đúng UC; thay đổi > 5 AC hoặc `Quy mô: lớn` phải có `plan.md` cạnh proposal; trước khi báo xong, bằng chứng nghiệm thu phải nhắc đủ từng AC.
+- **Làn giao diện**: đọc `DESIGN.md` (gốc repo — hợp đồng giao diện: token, component kèm trạng thái, bố cục) + `specs/wireframe.html` + AC; trạng thái có luật nghiệp vụ là AC, trạng thái chung theo `DESIGN.md`; kiểm 375px và desktop, bàn phím, console, tương phản.
+- **Tạo `DESIGN.md`** theo 3 cách: đo từ trang mẫu (không chép chữ/logo/ảnh), trích từ code có sẵn, hoặc từ brief.
+- **Xây ngược**: UI đã dựng trước → proposal nháp với Entity/UC/AC (`[OPEN]` cho chỗ đoán), chờ bạn duyệt.
+
+## mk-fix làm gì?
+
+```
+báo lỗi ──► tái hiện (lệnh / log CI / kịch bản) ──► ac.py: AC nào nói hành vi này? ──► xếp loại
+   code sai AC ──► test đỏ theo AC ──► nguyên nhân gốc (file:dòng) ──► sửa ──► xanh ──► fix(UC-xxx)
+   luật sai / thiếu AC ──► proposal nháp, chờ duyệt (không sửa code)
+   hạ tầng ──► lệnh hỏng trước / chạy được sau ──► commit scope miễn trừ
+```
+
+- **`scripts/ac.py`** tra AC trong `specs/`: nguyên văn Given/When/Then, test, AC đã bỏ, proposal nào đang đụng AC đó; `--tim "chữ"` tìm AC theo từ.
+- Không tái hiện được thì không sửa; sửa hỏng 3 lần thì dừng và hỏi; không nới test cho xanh; lỗi chỉ hỏng trên CI cần lượt CI xanh; test chập chờn chạy 20 lần trước/sau.
+
+## mk-secu làm gì?
+
+- **Hai cách**: hỏi một câu tập trung (trả lời trong chat) hoặc soát một phạm vi (phần thay đổi, một nhánh, cả repo) ra báo cáo `specs/security/<ngày-tên>.md`.
+- **Mỗi phát hiện** phải có sáu sự kiện (ai, đầu vào, kiểm soát thiếu, ranh giới, tài sản, hậu quả) + dấu vết `file:dòng`, qua một lượt kiểm cố bác bỏ; kết luận `xác nhận` / `cần kiểm thêm` / `bác bỏ`. "Nên làm" không phải lỗ hổng.
+- **`scripts/secu.py`**: `scope` lấy danh sách file cần soát (và cảnh báo file bí mật đang nằm trong git), `check` kiểm báo cáo đúng khuôn, không lộ giá trị bí mật.
+- Không sửa code, không chạy code của dự án; phát hiện nối vào spec: thiếu AC → đề xuất AC, code sai AC → `mk-fix`.
+
+## mk-ship làm gì?
+
+```
+DEPLOY.md ──► ship.py check ──► DoD ──► wrangler deploy --dry-run ──► (D1 migration nếu bạn đồng ý)
+          ──► check lại ──► production: bạn xác nhận ──► deploy ──► ship.py smoke ──► hỏng: đề xuất rollback + mk-fix
+```
+
+- **`DEPLOY.md`** ở gốc repo: nền tảng, môi trường (nhánh, lệnh, URL), đường dẫn cần kiểm sau triển khai, bí mật cần có, cách quay lui. Chưa có → agent dò (`wrangler.jsonc`, `vercel.json`, …) và viết cùng bạn; chưa có gì → khuyên Cloudflare Workers.
+- **`ship.py check`** chặn: còn thay đổi chưa commit, sai nhánh, spec chưa hợp nhất (production), lỗ hổng mức cao chưa sửa (production; mức nghiêm trọng chặn mọi môi trường), cấu hình wrangler thiếu khoá, khoá bí mật để trong `vars`, file `.dev.vars`/`.env` nằm trong git.
+- **`ship.py smoke`** gọi các đường dẫn trong `DEPLOY.md`, so mã HTTP và chữ cần có.
+- Không bao giờ: xin token qua chat, `wrangler auth token`, `--temporary`, lệnh xoá tài nguyên, đổi DNS, `push --force`.
 ---
 
 ## Bảo mật & Ranh giới tin cậy (v2.0.0)
@@ -233,11 +300,30 @@ mk-lab/
 ├── LICENSE                          # Giấy phép nguồn mở MIT
 ├── README.md
 ├── tests/                           # Bộ kiểm thử cho installer
-└── skills/mk-specs/
-    ├── SKILL.md                     # Điểm điều phối chính: chọn mode, cổng cứng, scripts
-    ├── references/                  # Phương pháp luận: principles, workflow, review, glossary...
-    ├── assets/                      # Mẫu template: PRD, TDD, UC, BR, ADR, proposal, entities...
-    └── scripts/                     # gen.py, verify.py, audit.py, hook.py, mkspecs.py...
+├── skills/mk-specs/
+│   ├── SKILL.md                     # Điểm điều phối chính: chọn mode, cổng cứng, scripts
+│   ├── references/                  # Phương pháp luận: principles, workflow, review, glossary...
+│   ├── assets/                      # Mẫu template: PRD, TDD, UC, BR, ADR, proposal, plan, entities...
+│   └── scripts/                     # gen.py, verify.py, audit.py, hook.py, mkspecs.py...
+├── skills/mk-cook/
+│   ├── SKILL.md                     # apply · ui · design · reverse, cổng cứng
+│   ├── references/                  # workflow-apply, ui-lane, design-md, reverse
+│   ├── assets/DESIGN.md.template
+│   └── scripts/gate.py              # cổng trước khi code / trước khi báo xong
+├── skills/mk-fix/
+│   ├── SKILL.md                     # tái hiện, bốn loại lỗi, cổng cứng, phiếu sửa lỗi
+│   ├── references/                  # triage, root-cause, ci-and-flaky
+│   └── scripts/ac.py                # tra AC cho một lỗi
+├── skills/mk-secu/
+│   ├── SKILL.md                     # hỏi · soát, sáu sự kiện, ba kết luận
+│   ├── references/                  # audit, catalog (danh mục lỗi)
+│   ├── assets/report.md.template
+│   └── scripts/secu.py              # scope · check
+└── skills/mk-ship/
+    ├── SKILL.md                     # triển khai, cổng cứng, Cloudflare trước
+    ├── references/                  # cloudflare, deploy-md
+    ├── assets/DEPLOY.md.template
+    └── scripts/ship.py              # check · smoke
 ```
 
 ---
@@ -248,6 +334,10 @@ mk-lab/
 - Nền tảng lý thuyết học thuật về SDD cho Agentic SE dựa trên công trình nghiên cứu của **Jessica Díaz, Joaquín Gayoso, Andrea Cimminio, Jorge Pérez (Universidad Politécnica de Madrid)** — *"Spec-Driven Development for Agentic Software Engineering: Harnessing Human–Agent Teamwork"* ([arXiv:2609.00252](https://arxiv.org/html/2609.00252v1), 2026).
 - Kỷ luật tinh gọn đặc tả và phòng chống suy diễn lấy cảm hứng từ nguyên tắc kỹ thuật của **Andrej Karpathy** (MIT).
 - Các đóng góp thực chiến độc quyền của `mk-specs` (đánh dấu ✚ trong references): Phân định 3 tầng tài liệu, ma trận truy vết tự động hóa, quy tắc DIVERGENCE, quy trình Consultation Request Pack và Command Security Allowlist.
+- Phương pháp đo style trang mẫu trong `mk-cook` (mode `design`) học từ skill design-system bản public của **Web1trang**, viết lại cho mk-lab.
+- `mk-secu` học ý (không chép chữ) từ **vbsec** của Bùi Tấn Việt (MIT — danh mục lỗi hay gặp của code viết nhanh, độ tin nguồn dữ liệu, bộ code mẫu có đáp án) và **security-audit skill** của Cloudflare (MIT — sáu sự kiện cho một phát hiện, ba kết luận, người kiểm khác người tìm).
+- `mk-ship` học ý từ `ak-deploy`, `ak-ship`, `ak-devops` (MIT — dò nền tảng, một file ghi cách triển khai và quay lui, lệnh wrangler) và tài liệu Cloudflare Workers.
+- `mk-cook`, `mk-fix` học ý từ các bộ skill lập trình phổ biến (cổng trước khi code, nguyên nhân gốc trước khi sửa, dừng sau 3 lần hỏng), viết lại theo SDD.
 
 ---
 
@@ -266,5 +356,9 @@ Phát hành theo giấy phép nguồn mở [MIT License](LICENSE).
 - **Four Scalable Tiers:** (1) PRD with durable story IDs and testable criteria; (2) + standalone HTML wireframes; (3) + Technical Design Documents (TDD); (4) Full enterprise SDD (BR, UC, AC, ADR, and automated traceability).
 - **Eight Methodological Harness Mechanisms:** Context engineering, persistent transactive memory (ADRs & History), executable specifications (Given-When-Then), 3-strike norm encoding, structured 4-part consultation requests, evidence-backed acceptance packs, graduated autonomy levels, and automated drift auditing (`audit.py`).
 - **Enterprise Security (v2.0.0):** Untrusted command gating via `--trust-list-command` (persisted in `~/.config/mk-specs/trusted-commands`), release tag verification for updates, path traversal guards, ReDoS mitigation, and Claude Code automated enforcement hooks (`hook.py`).
+- **mk-fix (v2.4.0):** spec-anchored bug fixing — reproduce first, look up the AC (`ac.py`), classify (code violates AC · wrong rule · missing AC · infrastructure) before touching code; missing/wrong rules become draft proposals; CI-only and flaky-test paths.
+- **mk-secu (v2.4.0):** read-only security review — focused Q&A or scoped audit; each finding needs six facts, a source-to-sink trace and an independent verification pass; verdicts confirmed / needs validation / rejected; findings link back to ACs and hand off to mk-fix (`secu.py scope`, `secu.py check`).
+- **mk-ship (v2.4.0):** deploys committed code, Cloudflare Workers first (Pages/other platforms via `DEPLOY.md`): `ship.py check` gate tied to specs and security reports, production confirmation, post-deploy smoke checks, version-pinned rollback suggestion.
+- **mk-cook (v2.4.0):** turns an approved change proposal into code — machine gate before coding and before reporting done (`gate.py`), tests first from each AC, a UI lane driven by a root `DESIGN.md` design contract and checked in a real browser, `DESIGN.md` creation (from a reference site, existing code, or a brief), and reverse mode (existing UI → draft proposal).
 
-Invoke via `/mk:specs` or natural language. Install globally with `curl -fsSL https://raw.githubusercontent.com/mzavn/mk-lab/main/install.sh | bash -s -- --global`. Licensed under MIT.
+Invoke via `/mk:specs`, `/mk:cook`, `/mk:fix`, `/mk:secu`, `/mk:ship` or natural language. Install globally with `curl -fsSL https://raw.githubusercontent.com/mzavn/mk-lab/main/install.sh | bash -s -- --global` (add `--skill mk-cook`, `--skill mk-fix`, `--skill mk-secu`, `--skill mk-ship` for the others). Licensed under MIT.

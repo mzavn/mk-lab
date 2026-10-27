@@ -37,9 +37,23 @@ Máy đã cài trước v2.0.0 (có thư mục `~/.mk-skills` — tên cũ của
 
 6. **Báo người dùng**: phiên bản đã cài, file đã tạo/sửa, cách gọi (Claude Code: gõ `/mk:specs` rồi nói yêu cầu; agent khác: nói thẳng). Bước kế, tuỳ dự án: nhỏ/MVP → "Viết PRD cho app này theo mk-specs" (agent hỏi chọn mức 1–3, phỏng vấn, dừng trước khi code); lớn → "Khởi tạo SDD cho repo này theo mk-specs" (mode `init`). Không tự commit; người dùng muốn thì commit `chore(specs): adopt mk-specs`.
 
-## Skill khác trong repo
+## Skill khác trong repo: mk-cook, mk-fix, mk-secu, mk-ship
 
-Repo có thể có thêm skill trong `skills/`; chọn bằng `--skill <tên>` (mặc định `mk-specs`), vd `bash ~/.mk-lab/install.sh --global --skill <tên>`. Skill khác `mk-specs` chỉ được chép thư mục skill — không tạo cấu hình, không đụng `AGENTS.md`/`CLAUDE.md`. Checkout cũ (≤ v1.5.1) chưa biết `--skill`: chạy `install.sh --update` trước rồi mới chạy lệnh có `--skill`.
+Ngoài `mk-specs`, repo có bốn skill lập trình bám spec (cài khi người dùng muốn; `mk-cook`, `mk-fix` cần repo đã dùng mk-specs mức 4; `mk-secu`, `mk-ship` dùng được ở repo bất kỳ):
+
+| Skill | Gọi | Dùng khi |
+|---|---|---|
+| `mk-cook` | `/mk:cook` | làm proposal đã duyệt thành code có test theo AC, giao diện theo `DESIGN.md` |
+| `mk-fix` | `/mk:fix` | sửa lỗi: tái hiện, tra AC, xếp loại rồi mới sửa |
+| `mk-secu` | `/mk:secu` | soát bảo mật chỉ đọc, báo cáo trong `specs/security/` |
+| `mk-ship` | `/mk:ship` | triển khai theo `DEPLOY.md`, Cloudflare Workers trước |
+
+```bash
+bash ~/.mk-lab/install.sh --global --skill mk-cook     # chung cho máy (tương tự mk-fix, mk-secu, mk-ship)
+bash ~/.mk-lab/install.sh --project . --skill mk-cook  # vào repo hiện tại (commit .claude/skills/mk-cook)
+```
+
+Chọn skill bằng `--skill <tên>` (mặc định `mk-specs`). Skill khác `mk-specs` chỉ được chép thư mục skill — không tạo cấu hình, không đụng `AGENTS.md`/`CLAUDE.md`. `--update` không kèm `--skill` cập nhật mọi skill đã cài bằng `install.sh`. Checkout cũ (≤ v1.5.1) chưa biết `--skill`: chạy `install.sh --update` trước rồi mới chạy lệnh có `--skill`.
 
 ## Cập nhật
 
