@@ -1,0 +1,36 @@
+# Triển khai <tên dự án>
+- Nền tảng: cloudflare-workers
+
+<!-- mk-ship đọc file này (ship.py check / smoke). Luật đầy đủ: references/deploy-md.md của mk-ship.
+     - Nền tảng: cloudflare-workers | cloudflare-pages | khác (<tên>, vd vercel)
+     - Cấu hình: đường dẫn file wrangler từ gốc repo; bỏ dòng khi file ở gốc (wrangler.json/.jsonc/.toml)
+     - Môi trường production: tên production, prod, hoặc đuôi -production / -prod. Còn lại là môi trường thử.
+     - Nhánh: tên nhánh được triển khai, hoặc * (nhánh nào cũng được).
+     - Lệnh: một lệnh wrangler cài trong dự án (pnpm exec wrangler · yarn wrangler · npx --no wrangler); không bí mật.
+     - Không ghi giá trị bí mật ở bất kỳ đâu trong file này. -->
+
+## Môi trường
+| Môi trường | Nhánh | Lệnh triển khai | URL |
+|---|---|---|---|
+| staging | * | `npx --no wrangler deploy --env staging` | https://<tên>-staging.<tài-khoản>.workers.dev |
+| production | main | `npx --no wrangler deploy --env production` | https://<tên miền> |
+
+## Kiểm sau triển khai
+| Đường dẫn | Mã | Có chữ |
+|---|---|---|
+| / | 200 | <chữ chắc chắn có trên trang chủ> |
+| /api/health | 200 | — |
+
+## Bí mật cần có
+<!-- Chỉ TÊN. Workers: dùng secrets.required trong cấu hình nếu có; mục này cho Pages / nền tảng khác / wrangler cũ. -->
+- <TÊN_BÍ_MẬT>
+
+## Trước khi triển khai
+<!-- Bước riêng của dự án; agent hiện nguyên văn và hỏi trước lần chạy đầu. -->
+- Migration D1 (nếu có): `npx --no wrangler d1 migrations list <db> --remote --env <môi trường>` — áp khi đồng ý.
+
+## Quay lui
+- Workers: `npx --no wrangler rollback <mã phiên bản trước> --env <môi trường> --message "<lý do>"` (mã ghi bằng
+  `npx --no wrangler deployments status --env <môi trường>` trước khi triển khai).
+- Lần triển khai đầu / Pages / nền tảng khác: <các bước, vd dashboard → Deployments → Rollback>.
+- Dữ liệu (D1, KV, R2) không quay lui theo code: <cách xử lý, vd D1 Time Travel do chủ dự án làm>.

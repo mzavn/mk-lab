@@ -62,6 +62,11 @@ Cột tiếng Việt là lời giải thích cho người mới, không phải t
 | **Phát hiện** (`SEC-n`) | Security finding | Một lỗ hổng ứng viên trong báo cáo soát, gọi bằng `<ngày-tên> SEC-n`; cần sáu sự kiện (ai, đầu vào, kiểm soát thiếu, ranh giới, tài sản, hậu quả) + dấu vết `file:dòng` | Nhờ mk-fix "sửa 261027-toan-repo SEC-2" |
 | **Kết luận / Mức** | Verdict / severity | `xác nhận` (có Mức: nghiêm trọng · cao · trung bình · thấp), `cần kiểm thêm` (không Mức, nêu điều còn thiếu), `bác bỏ` (nêu lý do) | Chỉ `xác nhận` mới cần sửa |
 | **Độ tin nguồn** (N1–N4) | Trust level of data | N1 người dùng/bên ngoài gửi vào · N2 dữ liệu đã lưu từ người dùng · N3 cấu hình, code nội bộ · N4 hệ thống; cùng một đoạn code, an toàn hay nguy hiểm tuỳ dữ liệu từ đâu | Đọc trong báo cáo soát |
+| **mk:ship** | Skill triển khai | Skill của mk-lab: đưa code đã commit lên môi trường theo `DEPLOY.md`, Cloudflare Workers trước; cổng `ship.py check` trước, `ship.py smoke` sau; cài `bash ~/.mk-lab/install.sh --global --skill mk-ship` | "deploy lên staging", "đẩy production" |
+| **DEPLOY.md** | Hợp đồng triển khai | File ở gốc repo: nền tảng, môi trường (nhánh, lệnh, URL), kiểm sau triển khai, bí mật cần có, việc trước triển khai, cách quay lui; sửa không cần proposal | Mở khi hỏi "deploy thế nào?" |
+| **Môi trường** (production / thử) | Environment | Nơi chạy bản triển khai. Tên `production`, `prod`, `…-production`, `…-prod` là production (cần bạn xác nhận, chặn chặt hơn); còn lại là thử | "staging", "production" |
+| **Smoke** (kiểm sau triển khai) | Kiểm nhanh sau khi lên | Gọi vài đường dẫn trong `DEPLOY.md`, so mã HTTP và chữ cần có | Hỏng ở production → cân nhắc quay lui |
+| **Rollback** | Quay lui | Trả bản đang chạy về phiên bản trước; không trả lại dữ liệu (D1/KV/R2) | Agent hỏi trước khi chạy |
 
 ## Đánh dấu trong spec
 

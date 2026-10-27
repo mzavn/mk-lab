@@ -75,7 +75,7 @@ Có skill `mk-cook` (một trong `.claude/skills/mk-cook`, `.agents/skills/mk-co
 
 ## 6. Đường tắt: sửa nhỏ, không đổi hành vi
 
-Typo, đổi chữ, refactor giữ nguyên AC, sửa test citation, bug fix không đổi AC, sửa token trong `DESIGN.md` (giao diện, không phải hành vi — hành vi vẫn ở AC):
+Typo, đổi chữ, refactor giữ nguyên AC, sửa test citation, bug fix không đổi AC, sửa token trong `DESIGN.md` (giao diện, không phải hành vi — hành vi vẫn ở AC), sửa `DEPLOY.md` (cách triển khai, không phải hành vi):
 - Không cần thư mục change.
 - Vẫn cập nhật spec trong cùng thay đổi: History của UC bị đụng, AC/`[OPEN]`/`[DIVERGENCE]` liên quan.
 - Bug tái hiện được → test đỏ trước, xanh sau (test thuộc AC đang bị vi phạm; chưa có AC nào nói → đó là thay đổi hành vi, đi đường đầy đủ — trừ lỗi hạ tầng, xem dưới).
