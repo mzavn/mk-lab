@@ -8,6 +8,16 @@ Mỗi bản có số dạng `X.Y.Z`:
 
 Cập nhật: `bash ~/.mk-lab/install.sh --update`. Agent cũng tự nhắc khi có bản mới.
 
+## Chưa phát hành
+
+Dự kiến: v2.5.0
+
+### mk-specs
+
+**Mới**
+
+- **`AGENTS.md` dặn agent ưu tiên bộ mk-lab**: khối mk-specs có thêm mục "Bộ skill mk-lab" — đã cài `mk-cook`, `mk-fix`, `mk-secu`, `mk-ship` thì agent dùng chúng trước skill khác cùng việc (vd bộ skill khác cũng có "fix", "deploy"). Đây là mặc định, không phải luật cứng: bạn nói rõ dùng skill khác thì agent làm theo; repo chỉ có PRD thì `mk-cook`/`mk-fix` không áp. Để nhận khối mới: chạy lại `bash ~/.mk-lab/install.sh --update --project .` trong repo.
+
 ## v2.4.0 — 27/10/2026
 
 ### mk-cook

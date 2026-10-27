@@ -152,7 +152,7 @@ bash ~/.mk-lab/install.sh --project .
 *Lệnh trên sẽ:*
 - Sao chép bộ công cụ vào `.claude/skills/mk-specs` (và `.agents/skills` nếu có `--agents-dir`).
 - Tạo file cấu hình `specs/mk-specs.yml` từ mẫu chuẩn nếu chưa có.
-- Thêm khối định hướng `<!-- mk-specs:start ... end -->` vào `AGENTS.md` và gắn `@AGENTS.md` vào `CLAUDE.md`.
+- Thêm khối định hướng `<!-- mk-specs:start ... end -->` vào `AGENTS.md` và gắn `@AGENTS.md` vào `CLAUDE.md`. Khối dặn agent ưu tiên `mk-cook`, `mk-fix`, `mk-secu`, `mk-ship` khi đã cài (bạn chỉ định skill khác thì agent theo bạn).
 
 
 ### 3. Thêm `mk-cook`, `mk-fix`, `mk-secu`, `mk-ship`
