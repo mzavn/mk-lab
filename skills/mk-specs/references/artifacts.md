@@ -82,7 +82,7 @@ Không phải ERD: tên nghiệp vụ, nghĩa, trạng thái, quan hệ, bất b
 
 ## 8. Proposal (change folder) ✚
 
-- Một thư mục `specs/changes/<yyMMdd>-<slug>/` với **một** `proposal.md` (mẫu `proposal.md`). Thay đổi lớn được thêm `design.md`, `tasks.md` nếu cần, nhưng proposal vẫn là cửa vào.
+- Một thư mục `specs/changes/<yyMMdd>-<slug>/` với **một** `proposal.md` (mẫu `proposal.md`) là cửa vào. Thêm/sửa > 5 AC hoặc `- Quy mô: lớn` → kèm `plan.md` (mẫu `plan.md`): các phase, mỗi phase nêu `UC-xxx AC-n` nó làm, phụ thuộc, cách kiểm, cách quay lui. Không có skill lập kế hoạch riêng, không đặt plan ở `plans/` (chỗ đó chỉ là lịch sử).
 - `## Vì sao` trích nguyên lời người yêu cầu; chưa nói giải pháp.
 - `## Thay đổi spec` viết delta: `ADDED` / `MODIFIED` (cũ → mới) / `DEPRECATED` AC, đoạn flow đổi, thuộc tính entity đổi.
 - Dòng `Người duyệt nghiệp vụ` và `Người duyệt kỹ thuật` phải có tên + ngày trước khi code; dòng `Commit` ghi ba hash khi xong.

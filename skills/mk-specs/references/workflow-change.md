@@ -14,9 +14,10 @@ change ──► tự soát ──► review hai phía ──► commit 1 (propo
 3. Điền:
    - **Vì sao**: vấn đề thật, trích nguyên lời người yêu cầu. Chưa nói giải pháp.
    - **BR**, **Đụng tới** (UC + context), **Đóng** (mục open-issues).
-   - **Thay đổi spec**: delta `ADDED`/`MODIFIED`/`DEPRECATED` AC theo Given/When/Then, cụ thể tới con số; đoạn flow đổi viết bằng ngôn ngữ nghiệp vụ; entity mới/đổi.
+   - **Thay đổi spec**: delta `ADDED`/`MODIFIED`/`DEPRECATED` AC theo Given/When/Then, cụ thể tới con số; đoạn flow đổi viết bằng ngôn ngữ nghiệp vụ; entity mới/đổi. Mỗi AC nằm dưới `### UC-xxx` (hoặc ghi `ADDED UC-xxx AC-n`) để công cụ đếm được.
    - **Quyết định**: ADR nháp khi có lựa chọn đáng ghi — luôn có phương án bị loại.
    - **Thiết kế**: file/symbol, migration (ghi rõ sao lưu dữ liệu thật trước), rủi ro, phần nào AI làm / phần nào người quyết.
+   - **Quy mô** + **plan**: thêm/sửa > 5 AC, hoặc thay đổi nhiều phần phụ thuộc nhau (vd giao diện + API + migration) → `- Quy mô: lớn` và `plan.md` cùng thư mục (mẫu `assets/templates/plan.md`): mỗi phase nêu `UC-xxx AC-n` nó làm, phụ thuộc, cách kiểm, cách quay lui; mọi AC thêm/sửa nằm trong đúng một phase.
 4. Không AC thì không code. AC phải test được; không test được thì viết lại AC.
 5. Proposal dài quá một màn hình đọc của người duyệt nghiệp vụ → tách thay đổi, hoặc dồn chi tiết kỹ thuật xuống "Thiết kế".
 6. Tự soát (`references/review.md`): sửa lỗi của chính mình, hỏi người dùng các điểm cần quyết, điền `## Tự soát`. Chỉ sau đó mới đưa review hai phía.
@@ -33,6 +34,8 @@ change ──► tự soát ──► review hai phía ──► commit 1 (propo
 **Commit 1** — chỉ proposal: `docs(UC-xxx): propose <slug>`.
 
 ## 3. Thực hiện (mode `apply`)
+
+Có skill `mk-cook` (một trong `.claude/skills/mk-cook`, `.agents/skills/mk-cook` của project; `~/.claude/skills/mk-cook`, `~/.agents/skills/mk-cook`) → làm theo `mk-cook`: nó chạy cổng bằng máy (duyệt, `plan.md`, bằng chứng), làn giao diện theo `DESIGN.md` và kiểm trên trình duyệt. Không có → làm theo các bước dưới đây.
 
 1. Chỉ làm khi proposal `approved` (hoặc giao việc trực tiếp như trên) và commit 1 đã có.
 2. Viết test cho từng AC mới/sửa **trước**, chạy thấy đỏ. Test kiểm hành vi, không mock lõi nghiệp vụ; test đầu tiên của một mẫu mới để người review kỹ (tr.27–28, 59). Bug tái hiện được → test đỏ trước, xanh sau.
@@ -72,7 +75,7 @@ change ──► tự soát ──► review hai phía ──► commit 1 (propo
 
 ## 6. Đường tắt: sửa nhỏ, không đổi hành vi
 
-Typo, đổi chữ, refactor giữ nguyên AC, sửa test citation, bug fix không đổi AC:
+Typo, đổi chữ, refactor giữ nguyên AC, sửa test citation, bug fix không đổi AC, sửa token trong `DESIGN.md` (giao diện, không phải hành vi — hành vi vẫn ở AC):
 - Không cần thư mục change.
 - Vẫn cập nhật spec trong cùng thay đổi: History của UC bị đụng, AC/`[OPEN]`/`[DIVERGENCE]` liên quan.
 - Bug tái hiện được → test đỏ trước, xanh sau (test thuộc AC đang bị vi phạm; chưa có AC nào nói → đó là thay đổi hành vi, đi đường đầy đủ).

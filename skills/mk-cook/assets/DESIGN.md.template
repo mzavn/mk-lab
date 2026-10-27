@@ -1,0 +1,64 @@
+# DESIGN.md — <tên sản phẩm>
+
+> Hợp đồng giao diện: mọi code UI dùng token ở đây. Cột Nguồn: nơi đo/trích giá trị (selector › thuộc tính khi đo trang mẫu; file:dòng khi trích từ code; "brief" khi chọn mới). Sửa file này khi đổi giao diện; hành vi (AC) nằm trong `specs/`.
+> Nguồn: <đo từ trang mẫu ngày YYYY-MM-DD (URL ở thân commit, không ghi ở đây) | trích từ code ngày YYYY-MM-DD | brief ngày YYYY-MM-DD>.
+> Hướng: <một câu: hướng thẩm mỹ cho ai — bảng màu, kiểu chữ, bố cục, một điểm nhớ>.
+
+## 1. Màu
+
+| Token | Sáng | Tối | Dùng cho | Nguồn |
+|---|---|---|---|---|
+| `--color-bg` | <giá trị> | <giá trị> | nền trang | <selector › thuộc tính, hoặc file:dòng> |
+| `--color-surface` | | | thẻ, ô nhập, menu | |
+| `--color-text` | | | chữ chính | |
+| `--color-text-muted` | | | chữ phụ, placeholder (tương phản ≥ 4,5:1) | |
+| `--color-border` | | | viền, đường kẻ | |
+| `--color-accent` | | | hành động chính, lựa chọn đang chọn | |
+| `--color-danger` / `--color-success` / `--color-warning` | | | trạng thái | |
+
+## 2. Chữ
+
+| Token | Giá trị | Dùng cho | Nguồn |
+|---|---|---|---|
+| `--font-heading` / `--font-body` / `--font-mono` | <họ chữ, fallback> | (kiểm đủ dấu tiếng Việt) | |
+| `--text-xs` … `--text-3xl` | <cỡ / line-height / tracking / weight> | thang chữ, tỉ lệ <1,2–1,333> | |
+
+## 3. Khoảng cách, lưới, bố cục chung
+
+- Thang: <4, 8, 12, 16, 24, 32, 48, 64, 96 px>
+- Container: <max-width>; lề trang mobile/desktop: <giá trị>
+- Lưới: <số cột, gap>; điểm ngắt: <375 / 768 / 1280>
+
+## 4. Bề mặt
+
+| Token | Giá trị | Dùng cho | Nguồn |
+|---|---|---|---|
+| `--radius-sm` / `--radius-md` / `--radius-lg` | | một hệ bo góc | |
+| `--shadow-1` / `--shadow-2` | | một kiểu nổi khối (bóng **hoặc** viền) | |
+| `--duration-fast` / `--duration-base` / `--ease-out` | <100–150ms / 200–300ms / cubic-bezier> | chuyển động | |
+
+## 5. Component
+
+Mỗi component: cấu trúc, token dùng, biến thể, trạng thái (mặc định · hover · focus · active · disabled · đang tải · lỗi khi áp dụng).
+
+### Nút
+- Chính / phụ / nguy hiểm: <token nền, chữ, viền, radius, padding>
+- Đang tải: <cách hiện>; focus: <vòng focus 2–3px, tương phản ≥ 3:1>
+
+### Ô nhập và form
+- Nhãn trên ô; lỗi dưới ô (<token màu, cỡ>); ô ≥ 16px
+
+### Thẻ / bảng / thông báo / trạng thái rỗng / lỗi mạng chung
+- <công thức>
+
+## 6. Bố cục trang
+
+<Thứ tự khối của từng loại trang chính: đầu trang, khối chính, danh sách/lưới, chân trang.>
+
+## 7. Nguyên tắc mở rộng
+
+1. <4–6 quy tắc để người khác thêm màn mới đúng phong cách mà không cần đọc lại nguồn>
+
+## 8. Lệch cần dọn (chỉ khi trích từ code)
+
+- <giá trị lẻ trong code chưa theo token, file:dòng — người dùng quyết có dọn không>

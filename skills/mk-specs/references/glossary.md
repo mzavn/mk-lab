@@ -43,6 +43,7 @@ Cột tiếng Việt là lời giải thích cho người mới, không phải t
 | **Entity** | Khái niệm nghiệp vụ | Thứ hệ thống quản lý: Đơn hàng, Lịch hẹn… — nghĩa, trạng thái, luật; không phải bảng CSDL | Kiểm tên gọi đúng cách cả nhà vẫn gọi |
 | **ADR** (Architecture Decision Record) | Ghi chép quyết định | Một quyết định quan trọng: bối cảnh, chọn gì, **đã loại gì và vì sao**, ai quyết. Mã `ADR-01` | Quyết, hoặc hỏi lại khi thấy lý do yếu |
 | **Proposal / change** | Đề xuất thay đổi | `specs/changes/<ngày>-<tên>/proposal.md`: đổi gì trong spec trước khi code | Duyệt phần nghiệp vụ |
+| **Plan** (`plan.md`) | Kế hoạch làm | File cạnh proposal khi thay đổi lớn (> 5 AC thêm/sửa hoặc `- Quy mô: lớn`): các phase, mỗi phase nêu `UC-xxx AC-n` nó làm, phụ thuộc, cách kiểm, cách quay lui | Xem thứ tự làm có hợp lý không |
 | **Context** | Vùng nghiệp vụ | Một mảng có ngôn ngữ riêng (catalog, checkout…); mỗi vùng một thư mục trong `specs/` | Gộp/tách khi thấy một từ mang hai nghĩa |
 | **Traceability** | Truy vết | `traceability.md` sinh tự động: UC ↔ AC ↔ test; lỗi production tìm ra spec trong 1 phút | Xem AC nào chưa có test |
 | **Characterization test** | Test chụp hành vi | Test ghi lại code cũ *đang* làm gì (đúng hay sai) trước khi sửa, để biết có đổi hành vi không | Đồng ý trước khi refactor code cũ |
@@ -51,6 +52,8 @@ Cột tiếng Việt là lời giải thích cho người mới, không phải t
 | **Evidence-backed acceptance** | Nghiệm thu dựa trên bằng chứng | Gói bằng chứng chứng minh hoàn thành thay đổi (AC ↔ test xanh, DoD/CI, rationale, link spec) trong proposal | Thẩm định gói bằng chứng thay vì đọc từng dòng diff code |
 | **Norm encoding** | Mã hoá quy tắc | Quy tắc lặp 3 lần: lỗi sửa lặp lại 3 lần được tổng quát hoá thành điều khoản chuẩn mực đưa vào `AGENTS.md` ngoài khối | Duyệt PR thêm luật mới vào `AGENTS.md` |
 | **Graduated autonomy** | Thang tự chủ phân tầng | Mức tự chủ của agent định rõ theo loại việc (vá nhỏ/deps: tự động; tính năng: tự động + tham vấn; bảo mật/tiền: duyệt plan trước) | Xem và điều chỉnh bảng tự chủ trong `AGENTS.md` |
+| **mk:cook** | Skill làm code theo proposal | Skill thứ hai của mk-lab: cổng bằng máy trước khi code và trước khi báo xong, test trước theo AC, làn giao diện, ghi bằng chứng; cài `bash ~/.mk-lab/install.sh --global --skill mk-cook` (hoặc `--project .`) | Nhờ "làm proposal X" khi proposal đã duyệt |
+| **DESIGN.md** | Hợp đồng giao diện | File ở gốc repo: token màu, chữ, khoảng cách, bề mặt, component kèm trạng thái, bố cục. Code giao diện chỉ dùng token trong đó; hành vi vẫn nằm ở AC | Duyệt khi tạo; muốn đổi giao diện thì sửa file này trước |
 
 ## Đánh dấu trong spec
 

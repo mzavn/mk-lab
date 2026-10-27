@@ -1,5 +1,6 @@
 # <yyMMdd>-<slug>: <Tên thay đổi>
 - Status: draft
+- Quy mô: thường
 - BR: BR-YY
 - Đụng tới: UC-XXX (<context>), UC-ZZZ (<context>)
 - Đóng: <[DIVERGENCE]/[OPEN] nào trong open-issues.md, hoặc —>

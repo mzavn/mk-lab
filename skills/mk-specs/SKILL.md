@@ -52,7 +52,7 @@ Mức sau chỉ thêm phần vào mức trước; mã story giữ nguyên khi l�
 | `init` | bắt đầu SDD đầy đủ cho repo mới hoặc repo đang chạy | `references/workflow-bootstrap.md`, `references/artifacts.md` | `specs/` khung Biến thể 1 (`layout: layers`, mặc định chuẩn vibe coding), config, khối mk-specs trong `AGENTS.md` + `@AGENTS.md` trong `CLAUDE.md`, BR/UC đầu tiên hoặc baseline brownfield, đã tự soát |
 | `change` | muốn tính năng mới, đổi luật, đổi API/giao diện | `references/workflow-change.md` §1–2, `references/artifacts.md` | `specs/changes/<yyMMdd>-<slug>/proposal.md` đã tự soát và review hai phía; commit 1 |
 | `review` | vừa viết xong spec/PRD/proposal (tự chạy), hoặc người dùng nhờ soát lại | `references/review.md` | lỗi của agent đã tự sửa, mâu thuẫn giữa các file đã soát, câu hỏi cho người dùng đã trả lời hoặc thành `[OPEN]`, mục `## Tự soát` |
-| `apply` | yêu cầu làm theo proposal đã duyệt | `references/workflow-change.md` §3 | test theo AC (đỏ → xanh), code; commit 2 |
+| `apply` | yêu cầu làm theo proposal đã duyệt | có skill `mk-cook` → theo `mk-cook`; không có → `references/workflow-change.md` §3 | test theo AC (đỏ → xanh), code; commit 2 |
 | `merge` | code xong, cần hợp nhất vào spec | `references/workflow-change.md` §4, `references/traceability.md` §3 | UC/ADR/History cập nhật, change vào archive, file sinh mới; commit 3 |
 | `check` | hỏi spec có khớp test/link không, số liệu, chỉ số | `references/traceability.md` | kết quả gen.py + verify.py, giải thích lỗi |
 | `commit` | cần message commit | `references/workflow-change.md` §5 | subject `<type>(UC-xxx): …` (mức 1–3: `<type>(<mã story>): …`, commit chỉ đổi file spec dùng `docs(specs): …`) + body |
@@ -101,7 +101,7 @@ Project thường bọc thành `npm run specs:gen` / `npm run specs:check`; ưu 
 
 ## Mẫu
 
-`assets/templates/`: mức 1–3 `prd.md`, `tdd.md`; mức 4 `use-case.md`, `proposal.md`, `adr.md`, `business-requirement.md`, `entities.md`, `context-readme.md`, `specs-readme.md`; cấu hình: `assets/mk-specs.yml.template`. Luôn chép mẫu rồi điền; quy tắc từng loại ở `references/workflow-prd.md` (mức 1–3) và `references/artifacts.md` (mức 4).
+`assets/templates/`: mức 1–3 `prd.md`, `tdd.md`; mức 4 `use-case.md`, `proposal.md`, `plan.md` (kèm proposal lớn), `adr.md`, `business-requirement.md`, `entities.md`, `context-readme.md`, `specs-readme.md`; cấu hình: `assets/mk-specs.yml.template`. Luôn chép mẫu rồi điền; quy tắc từng loại ở `references/workflow-prd.md` (mức 1–3) và `references/artifacts.md` (mức 4).
 
 ## Trả lời người dùng
 
