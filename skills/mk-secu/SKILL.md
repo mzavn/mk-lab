@@ -4,7 +4,7 @@ description: 'Read-only security review tied to mk-specs: focused Q&A by default
 license: MIT
 metadata:
   author: mzavn
-  version: "2.4.0"
+  version: "2.5.0"
 ---
 
 # mk:secu — soát bảo mật chỉ đọc, có bằng chứng, nối vào spec
