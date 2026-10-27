@@ -1,0 +1,56 @@
+# Báo cáo soát bảo mật <yyMMdd-slug>
+- Phạm vi: `<lệnh secu.py scope đã dùng>` — <N> file cần soát, <M> bỏ qua
+- Spec: <mức 4 | chưa có>
+- Người soát: <agent/người soát>, <yyyy-MM-dd>
+- Người kiểm: <agent con được giao bác bỏ | lượt riêng của cùng agent>
+- Tham chiếu: `<yyMMdd-slug>` SEC-n (dùng khi nhờ mk-fix)
+
+## Tóm tắt
+<một dòng kết quả của `secu.py check`>. Không thấy phát hiện ngoài danh sách dưới **trong phạm vi đã soát**; phần
+`## Chưa soát` chưa được kết luận.
+
+## Bề mặt tấn công
+
+| UC | Điểm vào | Vai gọi được | Đầu vào N1 | Tài sản |
+|---|---|---|---|---|
+| <UC-ID hoặc —> | <route/job/webhook> | <vai> | <tham số, body, file> | <dữ liệu, tiền> |
+
+## Phát hiện
+
+### SEC-1: <tiêu đề — lớp lỗi ở đâu, ai làm được gì>
+- Kết luận: xác nhận
+- Mức: <nghiêm trọng | cao | trung bình | thấp>
+- Loại: <code sai AC | thiếu AC | luật sai | hạ tầng | chưa có spec>
+- Lớp: <mã lớp trong references/catalog.md hoặc KHAC, có thể thêm mô tả sau mã>
+- AC: <UC-ID AC-n — khi code sai AC / luật sai; không thì xoá dòng>
+- Proposal: <yyMMdd-slug của proposal nháp — khi thiếu AC; không thì xoá dòng>
+- Ai: <chủ thể kém tin>
+- Đầu vào: <dữ liệu/hành động họ điều khiển>
+- Kiểm soát thiếu: <control lẽ ra chặn>
+- Ranh giới: <ranh giới bị vượt>
+- Tài sản: <thứ bị ảnh hưởng>
+- Hậu quả: <chuyện cụ thể xảy ra>
+- Dấu vết:
+  - `<đường/dẫn.py>:<dòng-dòng>` <chỗ code sai — nơi sẽ sửa (token đầu tiên luôn là chỗ này)>
+  - `<đường/dẫn.py>:<dòng>` <nguồn: đầu vào vào từ đâu, rồi các bước tới chỗ sai>
+- Đề xuất sửa: <một hai câu; bí mật lộ: thêm "thu hồi/đổi khoá là việc của chủ dự án, ngoài repo">
+- Bước tiếp: <"nhờ mk-fix sửa `yyMMdd-slug SEC-1`" | "duyệt proposal nháp rồi nhờ mk-fix" | "chủ nghiệp vụ trả lời câu hỏi" | "cài mk-specs">
+
+### SEC-2: <tiêu đề ứng viên chưa đủ bằng chứng>
+- Kết luận: cần kiểm thêm
+- Lớp: <mã lớp>
+- Dấu vết: `<đường/dẫn>:<dòng>`
+- Còn thiếu: <sự kiện còn thiếu (Ai/Đầu vào/…) và cách kiểm>
+
+### SEC-3: <tiêu đề ứng viên đã bị bác>
+- Kết luận: bác bỏ
+- Lớp: <mã lớp>
+- Dấu vết: `<đường/dẫn>:<dòng>`
+- Lý do bác: <vì sao không khai thác được: nguồn N3, kiểm soát ở chỗ khác, spec cho phép…>
+
+## Chưa soát
+- <đường dẫn> (<lý do từ dòng BỎ QUA của scope>)
+- <file/thư mục chưa đọc kịp, lớp không soát được — vd lỗ hổng CVE của phụ thuộc (v1 không gọi mạng)>
+
+## Bước tiếp theo của bạn
+- <việc theo từng Loại: mk-fix, duyệt proposal nháp, câu hỏi cho chủ nghiệp vụ, thu hồi khoá>

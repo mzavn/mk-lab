@@ -1,0 +1,18 @@
+version: 1
+language: vi
+specs_dir: specs
+layout: contexts
+contexts:
+  - id: don-hang
+    title: "Đơn hàng"
+  - id: tai-khoan
+    title: "Tài khoản"
+ids:
+  uc: 'UC-\d{3}'
+  br: 'BR-\d+'
+  adr: 'ADR-\d+'
+decisions_file: decisions.md
+tests:
+  list_command: null
+  file_pattern: 'test_[\w-]+\.py'
+  citation_style: pointer
