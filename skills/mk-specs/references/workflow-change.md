@@ -78,9 +78,11 @@ Có skill `mk-cook` (một trong `.claude/skills/mk-cook`, `.agents/skills/mk-co
 Typo, đổi chữ, refactor giữ nguyên AC, sửa test citation, bug fix không đổi AC, sửa token trong `DESIGN.md` (giao diện, không phải hành vi — hành vi vẫn ở AC):
 - Không cần thư mục change.
 - Vẫn cập nhật spec trong cùng thay đổi: History của UC bị đụng, AC/`[OPEN]`/`[DIVERGENCE]` liên quan.
-- Bug tái hiện được → test đỏ trước, xanh sau (test thuộc AC đang bị vi phạm; chưa có AC nào nói → đó là thay đổi hành vi, đi đường đầy đủ).
+- Bug tái hiện được → test đỏ trước, xanh sau (test thuộc AC đang bị vi phạm; chưa có AC nào nói → đó là thay đổi hành vi, đi đường đầy đủ — trừ lỗi hạ tầng, xem dưới).
 - Hai commit: code (`fix(UC-xxx): …`) rồi spec (`docs(UC-xxx): …`, History mang hash commit code); hoặc một commit nếu chỉ sửa spec.
+- Lỗi hạ tầng (build, CI, typecheck, phụ thuộc, cấu hình) mà không Then nào của AC bị vi phạm: lệnh hỏng thất bại trước, thành công sau; không History UC; commit scope miễn trừ (`metrics.exempt_scopes`) hoặc mã ADR liên quan.
 - Refactor lớn: không gộp với đổi luật trong cùng thay đổi; cần characterization test (workflow-bootstrap.md §3).
+- Có skill `mk-fix` (một trong `.claude/skills/mk-fix`, `.agents/skills/mk-fix` của project; `~/.claude/skills/mk-fix`, `~/.agents/skills/mk-fix`) và người dùng báo lỗi hành vi của code → làm theo `mk-fix`: tra AC, xếp một trong bốn loại (`code sai AC` · `luật sai` · `thiếu AC` · `hạ tầng`), chỉ `code sai AC` và `hạ tầng` được sửa code ngay. Lỗi chữ trong spec vẫn theo mục này.
 
 ## 7. Đổi hướng giữa chừng
 

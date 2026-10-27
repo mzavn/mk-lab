@@ -54,6 +54,14 @@ Cột tiếng Việt là lời giải thích cho người mới, không phải t
 | **Graduated autonomy** | Thang tự chủ phân tầng | Mức tự chủ của agent định rõ theo loại việc (vá nhỏ/deps: tự động; tính năng: tự động + tham vấn; bảo mật/tiền: duyệt plan trước) | Xem và điều chỉnh bảng tự chủ trong `AGENTS.md` |
 | **mk:cook** | Skill làm code theo proposal | Skill thứ hai của mk-lab: cổng bằng máy trước khi code và trước khi báo xong, test trước theo AC, làn giao diện, ghi bằng chứng; cài `bash ~/.mk-lab/install.sh --global --skill mk-cook` (hoặc `--project .`) | Nhờ "làm proposal X" khi proposal đã duyệt |
 | **DESIGN.md** | Hợp đồng giao diện | File ở gốc repo: token màu, chữ, khoảng cách, bề mặt, component kèm trạng thái, bố cục. Code giao diện chỉ dùng token trong đó; hành vi vẫn nằm ở AC | Duyệt khi tạo; muốn đổi giao diện thì sửa file này trước |
+| **mk:fix** | Skill sửa lỗi theo spec | Skill của mk-lab: tái hiện lỗi, tra AC bằng `ac.py`, xếp loại rồi mới sửa; lỗi chưa có AC thành proposal nháp; cài `bash ~/.mk-lab/install.sh --global --skill mk-fix` | Báo "lỗi: …", "CI đỏ", "test chập chờn", "sửa <báo cáo> SEC-2" |
+| **Loại lỗi** | Bug category | Một trong bốn, xét theo thứ tự (trừ hai AC đang chạy mâu thuẫn → `luật sai`, xét trước hết): `code sai AC` (AC đang chạy bị vi phạm — sửa code), `luật sai` (code đúng AC nhưng AC không như ý, hoặc hai AC mâu thuẫn — proposal), `thiếu AC` (chưa AC nào nói — proposal), `hạ tầng` (build/CI/phụ thuộc, không AC nào bị vi phạm — sửa thẳng) | "Lỗi này loại gì?" |
+| **Tái hiện** (reproduce) | Làm lỗi hiện lại | Lệnh ở máy, log lượt CI hỏng, hoặc kịch bản tay cho thấy lỗi — có rồi mới sửa | "Chưa tái hiện được nên chưa sửa" |
+| **Phiếu sửa lỗi** | Bug fix record | Triệu chứng · Tái hiện · Loại · AC · Nguyên nhân gốc (`file:dòng`) · Sửa · Kiểm · Vùng ảnh hưởng — trong câu trả lời và thân commit | Đọc khi duyệt commit `fix(UC-…)` |
+| **mk:secu** | Skill soát bảo mật | Skill của mk-lab, chỉ đọc: hỏi đáp tập trung hoặc soát một phạm vi; ghi báo cáo `specs/security/<ngày-tên>.md`, không sửa code; cài `bash ~/.mk-lab/install.sh --global --skill mk-secu` | "Route này có lộ dữ liệu không?", "soát bảo mật nhánh này" |
+| **Phát hiện** (`SEC-n`) | Security finding | Một lỗ hổng ứng viên trong báo cáo soát, gọi bằng `<ngày-tên> SEC-n`; cần sáu sự kiện (ai, đầu vào, kiểm soát thiếu, ranh giới, tài sản, hậu quả) + dấu vết `file:dòng` | Nhờ mk-fix "sửa 261027-toan-repo SEC-2" |
+| **Kết luận / Mức** | Verdict / severity | `xác nhận` (có Mức: nghiêm trọng · cao · trung bình · thấp), `cần kiểm thêm` (không Mức, nêu điều còn thiếu), `bác bỏ` (nêu lý do) | Chỉ `xác nhận` mới cần sửa |
+| **Độ tin nguồn** (N1–N4) | Trust level of data | N1 người dùng/bên ngoài gửi vào · N2 dữ liệu đã lưu từ người dùng · N3 cấu hình, code nội bộ · N4 hệ thống; cùng một đoạn code, an toàn hay nguy hiểm tuỳ dữ liệu từ đâu | Đọc trong báo cáo soát |
 
 ## Đánh dấu trong spec
 

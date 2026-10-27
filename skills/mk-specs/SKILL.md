@@ -58,7 +58,7 @@ Mức sau chỉ thêm phần vào mức trước; mã story giữ nguyên khi l�
 | `commit` | cần message commit | `references/workflow-change.md` §5 | subject `<type>(UC-xxx): …` (mức 1–3: `<type>(<mã story>): …`, commit chỉ đổi file spec dùng `docs(specs): …`) + body |
 | `audit` | muốn soát chất lượng spec, quy trình | `references/anti-patterns.md`, `references/principles.md` | báo cáo audit.py + danh sách việc ưu tiên; không sửa hàng loạt |
 
-Sửa lỗi nhỏ không đổi AC: dùng đường tắt ở `references/workflow-change.md` §6, không cần change folder. Yêu cầu mơ hồ ("làm cho tốt hơn") → hỏi lại kết quả mong muốn trước khi chọn mode.
+Sửa lỗi nhỏ không đổi AC: dùng đường tắt ở `references/workflow-change.md` §6, không cần change folder; lỗi hành vi của code mà có skill `mk-fix` → theo `mk-fix`. Soát bảo mật → skill `mk-secu` nếu đã cài. Yêu cầu mơ hồ ("làm cho tốt hơn") → hỏi lại kết quả mong muốn trước khi chọn mode.
 
 ## Kỷ luật khi viết spec
 

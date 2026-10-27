@@ -11,7 +11,7 @@ metadata:
 
 `mk-specs` chốt *làm gì* (BR, UC, AC, proposal). `mk-cook` làm phần *làm cho xong*: chỉ code khi proposal đã duyệt, viết test theo từng AC trước, code tối thiểu, kiểm giao diện trên trình duyệt thật, ghi bằng chứng về proposal. Mọi kết quả quay về `specs/`, không có hệ báo cáo riêng.
 
-**Phạm vi.** Làm proposal đã duyệt thành code; làn UI; tạo `DESIGN.md`; xây ngược từ UI ra proposal nháp. **Không** làm: viết/duyệt spec (mk-specs), sửa lỗi ngoài proposal, quét bảo mật, deploy, chạy song song nhiều agent.
+**Phạm vi.** Làm proposal đã duyệt thành code; làn UI; tạo `DESIGN.md`; xây ngược từ UI ra proposal nháp. **Không** làm: viết/duyệt spec (mk-specs), sửa lỗi ngoài proposal (`mk-fix`), soát bảo mật (`mk-secu`), deploy, chạy song song nhiều agent.
 
 **Cần có.** Repo dùng mk-specs mức 4 đã khởi tạo (`specs/mk-specs.yml` và `specs/README.md`, proposal trong `specs/changes/`). Chỉ có `specs/mk-specs.yml` (vừa cài, chưa `init`) → chưa đủ. Repo mức 1–3 (chỉ `specs/PRD.md`) nằm ngoài phạm vi bản này: gợi ý `promote` của mk-specs, hoặc làm theo story với test trước theo dòng "Done khi" mà không dùng cổng. Không có `specs/` → gợi ý cài mk-specs (`bash ~/.mk-lab/install.sh --project .`) rồi nhờ "khởi tạo SDD cho repo này" (mode `init`); không tự viết spec, không tạo file.
 
