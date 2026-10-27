@@ -8,9 +8,7 @@ Mỗi bản có số dạng `X.Y.Z`:
 
 Cập nhật: `bash ~/.mk-lab/install.sh --update`. Agent cũng tự nhắc khi có bản mới.
 
-## Chưa phát hành
-
-Dự kiến: v2.4.0
+## v2.4.0 — 27/10/2026
 
 ### mk-cook
 
