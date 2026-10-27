@@ -231,7 +231,7 @@ class Gate(unittest.TestCase):
     def test_hostile_or_quoted_uc_pattern_and_bad_encoding(self):
         cfg = os.path.join(self.root, "specs", "mk-specs.yml")
         body = self.spec_body("### " + "A" * 30 + "-1 UC-101\n- ADDED AC-1: Given a When b Then c\n")
-        for hostile in ("'([A-Z0-9]+)+Z'", "'(A|A)+Z'", "'(A*)*Z'"):
+        for hostile in ("'([A-Z0-9]+)+Z'", "'(A|A)+Z'", "'(A*)*Z'", "'([A-Z0-9]+){20}Z'", "'(?:A+){15}Z'"):
             with open(cfg, "w", encoding="utf-8") as fh:
                 fh.write(f"ids:\n  uc: {hostile}\n")
             self.write(body=body)

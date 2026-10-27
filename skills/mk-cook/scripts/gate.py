@@ -38,7 +38,7 @@ NEW_AC = re.compile(BULLET + r"(AC-\d+[a-z]?)\b[^:]*:(.*)$")
 HEADING = re.compile(r"^(#{3,})\s")
 BACKTICKS = re.compile(r"`[^`\n]*`")
 PLACEHOLDER = re.compile(r"<(?![\s\d=<>-]|https?:)[^<>\n]+>")
-QUANT = re.compile(r"[+*]|\{\d*,\d*\}")
+QUANT = re.compile(r"[+*]|\{\d*(?:,\d*)?\}")
 
 
 def section(text, title):
