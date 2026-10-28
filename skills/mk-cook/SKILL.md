@@ -4,7 +4,7 @@ description: 'Turn an approved mk-specs change proposal into code: machine gate 
 license: MIT
 metadata:
   author: mzavn
-  version: "2.5.0"
+  version: "2.6.0"
 ---
 
 # mk:cook — từ proposal đã duyệt tới code có test

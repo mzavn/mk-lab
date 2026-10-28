@@ -4,7 +4,7 @@ description: 'Deploy committed code to an environment using a DEPLOY.md contract
 license: MIT
 metadata:
   author: mzavn
-  version: "2.5.0"
+  version: "2.6.0"
 ---
 
 # mk:ship — triển khai code đã commit, có cổng và có đường lui

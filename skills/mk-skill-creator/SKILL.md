@@ -4,7 +4,7 @@ description: 'Create a new skill or improve an existing one for the mk skill sui
 license: MIT
 metadata:
   author: mzavn
-  version: "0.1.0"
+  version: "2.6.0"
 hooks:
   PostToolUse:
     - matcher: "Edit|Write|MultiEdit"
