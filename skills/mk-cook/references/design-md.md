@@ -48,5 +48,3 @@ Luật cứng: **không đoán giá trị** — mọi màu, cỡ, khoảng cách
 - Mỗi component có trạng thái: mặc định, hover, focus, active, disabled, đang tải, lỗi (khi áp dụng).
 - Không chứa tên, logo, câu chữ của trang mẫu.
 - Người dùng đã xem màn mẫu/demo trên trình duyệt và đồng ý.
-
-Ghi công: phương pháp ở mục A học từ skill design-system bản public của Web1trang, viết lại cho mk-lab.

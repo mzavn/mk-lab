@@ -159,7 +159,4 @@ flowchart TD
 
 ## Nguồn
 
-Học ý (chỉ học, chữ và danh mục là của mk-lab): vbsec (MIT © Bùi Tấn Việt) — danh mục lỗi hay gặp ở code viết nhanh
-cùng AI, phân độ tin của nguồn dữ liệu, app mẫu có đáp án để đo; Cloudflare security-audit (MIT © Cloudflare) — hỏi đáp
-tập trung làm mặc định, sáu sự kiện bắt buộc cho một phát hiện, ba kết luận, người kiểm khác người tìm, không chạy code
-mục tiêu. Xếp loại theo AC và bàn giao mk-fix dựng trên vòng đời change của mk-specs.
+Xếp loại theo AC và bàn giao mk-fix dựng trên vòng đời change của mk-specs.

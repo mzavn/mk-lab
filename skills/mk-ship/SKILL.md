@@ -1,6 +1,6 @@
 ---
 name: mk:ship
-description: 'Deploy committed code to an environment using a DEPLOY.md contract at the repo root; Cloudflare Workers is the main path (Pages and other platforms via DEPLOY.md commands). A machine gate (`ship.py check`) validates clean git tree, branch, merged specs, unfixed mk-secu findings, wrangler config, and no leaked secrets in vars, tracked files, or commands. Production requires user confirmation in the same turn. Post-deploy, `ship.py smoke` tests live URLs; failed production smoke triggers a rollback proposal for the exact Worker and version, then mk-fix. Never deletes resources, alters DNS, or handles credentials. Use when asked to deploy, ship, publish, go live, roll back, or create DEPLOY.md / wrangler.jsonc. Vietnamese triggers: "deploy", "triển khai", "đưa lên production", "lên staging", "ship bản này", "quay lui bản deploy", "rollback", "tạo DEPLOY.md".'
+description: 'Deploy committed code to an environment using a DEPLOY.md contract at the repo root; Cloudflare Workers is the main path (Pages and other platforms via DEPLOY.md commands). A machine gate (`ship.py check`) validates clean git tree, branch, merged specs, unfixed mk-secu findings, wrangler config, and no leaked secrets in vars, tracked files, or commands. Production requires user confirmation in the same turn. Post-deploy, `ship.py smoke` tests live URLs; failed production smoke triggers a rollback proposal for the exact Worker and version, then mk-fix. Never deletes resources, alters DNS, or handles credentials. Use mk:ship when asked to deploy, ship, publish, go live, roll back, or create DEPLOY.md / wrangler.jsonc. Vietnamese triggers: "deploy", "triển khai", "đưa lên production", "lên staging", "ship bản này", "quay lui bản deploy", "rollback", "tạo DEPLOY.md".'
 license: MIT
 metadata:
   author: mzavn
@@ -207,8 +207,5 @@ flowchart TD
 
 ## Nguồn
 
-Học ý (chỉ học, chữ là của mk-lab), MIT © AgentKit: `ak-deploy` — dò nền tảng theo thứ tự, kiểm CLI và đăng nhập,
-kiểm URL sau triển khai, một file ghi cách triển khai và quay lui; `ak-ship` — tách "đưa code vào nhánh" khỏi "đưa lên
-môi trường"; `ak-devops` (`references/cloudflare-*.md`) — lệnh wrangler cho Workers, D1, KV, R2. Tài liệu Cloudflare
-Workers/Wrangler (kiểm với wrangler 4.140.0). Cổng nối spec và báo cáo bảo mật dựng trên vòng đời change của mk-specs
+Tài liệu Cloudflare Workers/Wrangler (kiểm với wrangler 4.140.0). Cổng nối spec và báo cáo bảo mật dựng trên vòng đời change của mk-specs
 và định dạng báo cáo của mk-secu.

@@ -93,4 +93,4 @@ flowchart TD
 
 ## Nguồn
 
-Cổng và test theo AC dựng trên vòng đời change của mk-specs (ebook *Spec Driven Development*, anh Huy — huynt.dev; Díaz et al.). Phương pháp đo style trang mẫu trong `references/design-md.md` học từ skill design-system bản public của Web1trang, viết lại cho mk-lab. Bảng tự bào chữa và cổng thẩm mỹ học ý từ các bộ skill phổ biến, viết lại theo SDD.
+Cổng và test theo AC dựng trên vòng đời change của mk-specs (ebook *Spec Driven Development*, anh Huy — huynt.dev; Díaz et al.).

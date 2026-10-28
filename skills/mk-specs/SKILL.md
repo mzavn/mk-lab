@@ -62,7 +62,7 @@ Sửa lỗi nhỏ không đổi AC: dùng đường tắt ở `references/workfl
 
 ## Kỷ luật khi viết spec
 
-Rút từ [Karpathy guidelines](https://github.com/multica-ai/andrej-karpathy-skills) (MIT), áp cho spec; mode `apply` áp y như vậy cho code.
+Áp cho spec; mode `apply` áp y như vậy cho code.
 
 1. **Hỏi trước khi viết.** Nói rõ giả định. Yêu cầu có nhiều cách hiểu → liệt kê, hỏi; không âm thầm chọn. Chưa hiểu người dùng muốn gì → dừng, nêu chỗ chưa rõ, hỏi. Chỉ hỏi điều repo/spec/code không trả lời được.
 2. **Tối thiểu.** Chỉ viết UC/AC/entity/ADR mà yêu cầu cần. Không AC "phòng khi", không cấu hình hoá hay "để sau mở rộng" khi không ai yêu cầu, không exception cho tình huống không xảy ra được; ý tưởng ngoài yêu cầu → một dòng Out of Scope hoặc nhắc người dùng. Spec dài gấp đôi mức cần → cắt.

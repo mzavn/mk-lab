@@ -139,4 +139,4 @@ Vùng ảnh hưởng: <chỗ gọi / dùng chung đã rà>
 
 ## Nguồn
 
-Xếp loại theo AC dựng trên vòng đời change và đường tắt §6 của mk-specs (ebook *Spec Driven Development*, anh Huy — huynt.dev). Các ý nguyên nhân gốc trước khi sửa, đỏ trước xanh sau, dừng sau ba lần hỏng, truy ngược luồng dữ liệu, đọc log CI từ bước hỏng đầu tiên, bảng tự bào chữa học từ các bộ skill gỡ lỗi/sửa lỗi phổ biến, viết lại cho SDD: điểm xuất phát là AC, lỗi không có AC thành proposal chứ không thành code.
+Xếp loại theo AC dựng trên vòng đời change và đường tắt §6 của mk-specs (ebook *Spec Driven Development*, anh Huy — huynt.dev). Điểm xuất phát là AC: lỗi không có AC thành proposal chứ không thành code.
