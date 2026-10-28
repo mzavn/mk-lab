@@ -117,6 +117,33 @@ def commit_target(command, cwd):
     return None
 
 
+def subject_problem(subject, level, cfg):
+    """Reason (Vietnamese) a commit subject lacks the ID scope this repo needs, or None. Shared with the repo git hook."""
+    if not subject or subject.startswith(SKIP_PREFIX):
+        return None
+    m = SUBJECT.match(subject)
+    kind = m.group(1) if m else None
+    scopes = [s.strip() for s in (m.group(2) or "").split(",") if s.strip()] if m else []
+    raw = (cfg or {}).get("metrics", {}).get("exempt_scopes")
+    exempt = {str(s) for s in (["specs"] if raw is None else raw) if re.fullmatch(r"[\w.-]+", str(s))}
+    if level == 3:
+        if kind not in ("feat", "fix") or any(STORY.match(s) or s in exempt for s in scopes):
+            return None
+        return (f"commit `{subject}` thiếu mã story. Mẫu: `{kind or 'feat'}(BOOK-01): …` (mã trong specs/PRD.md); "
+                f"việc không thuộc story nào dùng scope miễn trừ, vd `chore(specs): …`.")
+    import mkspecs
+    patterns = [p for p in (cfg["ids"].get(k) for k in ("uc", "br", "adr")) if p]
+    try:
+        for p in patterns:
+            mkspecs.safe_regex(p, "ids")
+    except mkspecs.ConfigError:
+        return None  # a pattern that may hang: stand down rather than risk it
+    if any(any(re.fullmatch(p, s) for p in patterns) for s in scopes) or (scopes and all(s in exempt for s in scopes)):
+        return None
+    return (f"commit `{subject}` thiếu ID UC/BR/ADR. Mẫu: `{kind or 'feat'}(UC-101): …`; việc toàn repo dùng scope miễn trừ "
+            f"({', '.join(sorted(exempt)) or 'chưa khai'}), thêm scope vào `metrics.exempt_scopes` của specs/mk-specs.yml nếu cần.")
+
+
 def check_commit(command, cwd):
     if "commit" not in command:
         return
@@ -130,28 +157,9 @@ def check_commit(command, cwd):
     if not found:
         return
     _, level, cfg = found
-    m = SUBJECT.match(subject)
-    kind = m.group(1) if m else None
-    scopes = [s.strip() for s in (m.group(2) or "").split(",") if s.strip()] if m else []
-    raw = (cfg or {}).get("metrics", {}).get("exempt_scopes")
-    exempt = {str(s) for s in (["specs"] if raw is None else raw) if re.fullmatch(r"[\w.-]+", str(s))}
-    if level == 3:
-        if kind not in ("feat", "fix") or any(STORY.match(s) or s in exempt for s in scopes):
-            return
-        deny(f"commit `{subject}` thiếu mã story. Mẫu: `{kind or 'feat'}(BOOK-01): …` (mã trong specs/PRD.md); "
-             f"việc không thuộc story nào dùng scope miễn trừ, vd `chore(specs): …`.")
-        return
-    import mkspecs
-    patterns = [p for p in (cfg["ids"].get(k) for k in ("uc", "br", "adr")) if p]
-    try:
-        for p in patterns:
-            mkspecs.safe_regex(p, "ids")
-    except mkspecs.ConfigError:
-        return  # a pattern that may hang: stand down rather than risk it
-    if any(any(re.fullmatch(p, s) for p in patterns) for s in scopes) or (scopes and all(s in exempt for s in scopes)):
-        return
-    deny(f"commit `{subject}` thiếu ID UC/BR/ADR. Mẫu: `{kind or 'feat'}(UC-101): …`; việc toàn repo dùng scope miễn trừ "
-         f"({', '.join(sorted(exempt)) or 'chưa khai'}), thêm scope vào `metrics.exempt_scopes` của specs/mk-specs.yml nếu cần.")
+    reason = subject_problem(subject, level, cfg)
+    if reason:
+        deny(reason)
 
 
 def main():
