@@ -67,6 +67,10 @@ Cột tiếng Việt là lời giải thích cho người mới, không phải t
 | **Môi trường** (production / thử) | Environment | Nơi chạy bản triển khai. Tên `production`, `prod`, `…-production`, `…-prod` là production (cần bạn xác nhận, chặn chặt hơn); còn lại là thử | "staging", "production" |
 | **Smoke** (kiểm sau triển khai) | Kiểm nhanh sau khi lên | Gọi vài đường dẫn trong `DEPLOY.md`, so mã HTTP và chữ cần có | Hỏng ở production → cân nhắc quay lui |
 | **Rollback** | Quay lui | Trả bản đang chạy về phiên bản trước; không trả lại dữ liệu (D1/KV/R2) | Agent hỏi trước khi chạy |
+| **mk:skill-creator** | Skill dựng skill | Skill của mk-lab để tạo, sửa, kiểm skill **của bộ mk** theo một chuẩn: `init.py` tạo khung, `validate.py` kiểm bằng máy, dry-run bằng agent khác; cài `bash ~/.mk-lab/install.sh --global --skill mk-skill-creator` | "tạo skill mới", "kiểm skill mk-ghi-chu" |
+| **validate.py** (kiểm skill) | Kiểm skill bằng máy | Script của mk-skill-creator: in từng dòng `OK`/`LỖI` (tên, frontmatter, cấu trúc, số dòng, nội dung, scripts), thoát 1 khi có lỗi; chỉ đọc | Sửa từng dòng `LỖI` tới khi `Kết quả: 0 lỗi` |
+| **init.py**, chỗ trống mẫu `{{…}}` | Khung skill | `init.py <tên> --path skills` tạo `skills/mk-<tên>/SKILL.md` từ khung; chỗ `{{…}}` là phần bạn (hoặc agent) phải điền trước khi kiểm | Điền hết rồi chạy `validate.py` |
+| **THIRD_PARTY_NOTICES.md** | Thông báo giấy phép bên thứ ba | File giữ thông báo giấy phép của đoạn phỏng theo văn bản người khác; nằm ở gốc repo và trong thư mục skill có đoạn đó (đi theo bản cài) | Không cần làm gì; đừng xoá khi chép skill |
 
 ## Đánh dấu trong spec
 

@@ -37,9 +37,9 @@ Máy đã cài trước v2.0.0 (có thư mục `~/.mk-skills` — tên cũ của
 
 6. **Báo người dùng**: phiên bản đã cài, file đã tạo/sửa, cách gọi (Claude Code: gõ `/mk:specs` rồi nói yêu cầu; agent khác: nói thẳng). Bước kế, tuỳ dự án: nhỏ/MVP → "Viết PRD cho app này theo mk-specs" (agent hỏi chọn mức 1–3, phỏng vấn, dừng trước khi code); lớn → "Khởi tạo SDD cho repo này theo mk-specs" (mode `init`). Không tự commit; người dùng muốn thì commit `chore(specs): adopt mk-specs`.
 
-## Skill khác trong repo: mk-cook, mk-fix, mk-secu, mk-ship
+## Skill khác trong repo: mk-cook, mk-fix, mk-secu, mk-ship, mk-skill-creator
 
-Ngoài `mk-specs`, repo có bốn skill lập trình bám spec (cài khi người dùng muốn; `mk-cook`, `mk-fix` cần repo đã dùng mk-specs mức 4; `mk-secu`, `mk-ship` dùng được ở repo bất kỳ):
+Ngoài `mk-specs`, repo có bốn skill lập trình bám spec (cài khi người dùng muốn; `mk-cook`, `mk-fix` cần repo đã dùng mk-specs mức 4; `mk-secu`, `mk-ship` dùng được ở repo bất kỳ) và một skill để dựng skill:
 
 | Skill | Gọi | Dùng khi |
 |---|---|---|
@@ -47,9 +47,10 @@ Ngoài `mk-specs`, repo có bốn skill lập trình bám spec (cài khi ngườ
 | `mk-fix` | `/mk:fix` | sửa lỗi: tái hiện, tra AC, xếp loại rồi mới sửa |
 | `mk-secu` | `/mk:secu` | soát bảo mật chỉ đọc, báo cáo trong `specs/security/` |
 | `mk-ship` | `/mk:ship` | triển khai theo `DEPLOY.md`, Cloudflare Workers trước |
+| `mk-skill-creator` | `/mk:skill-creator` | tạo, sửa, kiểm skill của bộ mk (`init.py`, `validate.py`) — chỉ cần khi người dùng tự viết skill |
 
 ```bash
-bash ~/.mk-lab/install.sh --global --skill mk-cook     # chung cho máy (tương tự mk-fix, mk-secu, mk-ship)
+bash ~/.mk-lab/install.sh --global --skill mk-cook     # chung cho máy (tương tự mk-fix, mk-secu, mk-ship, mk-skill-creator)
 bash ~/.mk-lab/install.sh --project . --skill mk-cook  # vào repo hiện tại (commit .claude/skills/mk-cook)
 ```
 

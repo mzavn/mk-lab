@@ -1,0 +1,76 @@
+"""Test hành vi của scripts/<script>.py — chạy như agent chạy, kiểm dòng in ra, thoát mã, file.
+
+Chép thành scripts/tests/test_<script>.py, thay <script>, viết test trước (đỏ) rồi mới viết script.
+Chạy: PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s <repo>/skills/mk-<tên>/scripts/tests
+"""
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+import unittest
+
+sys.dont_write_bytecode = True
+
+SCRIPT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "<script>.py")
+
+
+def run(*args):
+    env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
+    return subprocess.run([sys.executable, SCRIPT, *args], capture_output=True, text=True, env=env)
+
+
+def write(path, text):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(text)
+
+
+def read(path):
+    with open(path, encoding="utf-8") as fh:
+        return fh.read()
+
+
+class Base(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
+        # Dữ liệu giả theo định dạng thật (đã scout), không chép dữ liệu người dùng.
+        self.note = os.path.join(self.tmp, "so-di-cho.md")
+        write(self.note, "# Thứ hai\n- mua 2 ổ bánh mì\n- chuyển khoản tiền điện\n")
+
+
+class HappyPath(Base):
+    def test_ket_qua_dung_va_thoat_0(self):
+        res = run(self.note)
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+        self.assertIn("OK", res.stdout)
+
+    def test_chay_hai_lan_ra_cung_ket_qua(self):
+        self.assertEqual(run(self.note).stdout, run(self.note).stdout)
+
+
+class Refuses(Base):
+    def test_file_khong_co_bao_loi_thoat_1(self):
+        res = run(os.path.join(self.tmp, "khong-co.md"))
+        self.assertEqual(res.returncode, 1)
+        self.assertTrue(res.stdout.startswith("Lỗi: ") or res.stderr.startswith("Lỗi: "))
+
+    def test_khong_ghi_de_file_da_co(self):
+        out = os.path.join(self.tmp, "checklist.md")
+        write(out, "bản cũ\n")
+        res = run(self.note, "--out", out)
+        self.assertEqual(res.returncode, 1)
+        self.assertEqual(read(out), "bản cũ\n")
+
+    def test_khong_ghi_xuyen_symlink(self):
+        real = os.path.join(self.tmp, "that.md")
+        link = os.path.join(self.tmp, "checklist.md")
+        os.symlink(real, link)
+        res = run(self.note, "--out", link)
+        self.assertEqual(res.returncode, 1)
+        self.assertFalse(os.path.exists(real))
+
+
+if __name__ == "__main__":
+    unittest.main()

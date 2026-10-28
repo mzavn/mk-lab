@@ -12,6 +12,12 @@ Năm skill, dùng nối tiếp nhau — spec trước, rồi code, sửa lỗi, 
 | **`mk-secu`** | `/mk:secu` | Soát bảo mật **chỉ đọc**: mỗi phát hiện có đủ bằng chứng và lượt kiểm riêng; thiếu luật bảo mật thành AC đề xuất, code sai luật chuyển `mk-fix` |
 | **`mk-ship`** | `/mk:ship` | Triển khai code đã commit, **Cloudflare Workers trước** (Pages và nền tảng khác qua `DEPLOY.md`): cổng trước triển khai nối spec và báo cáo bảo mật, production cần bạn xác nhận, kiểm sau triển khai, quay lui khi hỏng |
 
+Thêm một skill để **dựng skill** cho chính bộ mk:
+
+| Skill | Gọi | Làm gì |
+|---|---|---|
+| **`mk-skill-creator`** | `/mk:skill-creator` | Tạo skill mới hoặc sửa skill cũ theo một chuẩn: chốt yêu cầu, `init.py` dựng khung, script + test trước, `validate.py` kiểm mọi luật đo được, dry-run bằng agent khác, cập nhật README/CHANGELOG |
+
 Cả bộ được thiết kế cho kỷ nguyên **Agentic Software Engineering (SE 3.0)**.
 
 > **Cài đặt trước v2.0.0?** (máy có thư mục `~/.mk-skills` — tên cũ của repo): Xem các bước *"Cần làm khi cập nhật"* của bản v2.0.0 trong [CHANGELOG.md](CHANGELOG.md).
@@ -163,9 +169,10 @@ bash ~/.mk-lab/install.sh --global --skill mk-cook
 bash ~/.mk-lab/install.sh --global --skill mk-fix
 bash ~/.mk-lab/install.sh --global --skill mk-secu
 bash ~/.mk-lab/install.sh --global --skill mk-ship
+bash ~/.mk-lab/install.sh --global --skill mk-skill-creator   # chỉ khi bạn tự viết skill
 ```
 
-Rồi nói với agent: "làm proposal `<tên>`" (proposal đã duyệt), "tạo DESIGN.md giống style trang …", "xây ngược spec từ màn đăng ký"; "lỗi: bấm Đặt hàng hai lần bị trừ tiền hai lần", "CI đỏ"; "route `/don/:id` có lộ đơn người khác không?", "soát bảo mật nhánh này"; "deploy lên Cloudflare", "đẩy production".
+Rồi nói với agent: "làm proposal `<tên>`" (proposal đã duyệt), "tạo DESIGN.md giống style trang …", "xây ngược spec từ màn đăng ký"; "lỗi: bấm Đặt hàng hai lần bị trừ tiền hai lần", "CI đỏ"; "route `/don/:id` có lộ đơn người khác không?", "soát bảo mật nhánh này"; "deploy lên Cloudflare", "đẩy production"; "tạo skill mới gom ghi chú thành checklist", "kiểm skill mk-ghi-chu".
 
 ---
 
@@ -211,6 +218,17 @@ DEPLOY.md ──► ship.py check ──► DoD ──► wrangler deploy --dry-
 - **`ship.py check`** chặn: còn thay đổi chưa commit, sai nhánh, spec chưa hợp nhất (production), lỗ hổng mức cao chưa sửa (production; mức nghiêm trọng chặn mọi môi trường), cấu hình wrangler thiếu khoá, khoá bí mật để trong `vars`, file `.dev.vars`/`.env` nằm trong git.
 - **`ship.py smoke`** gọi các đường dẫn trong `DEPLOY.md`, so mã HTTP và chữ cần có.
 - Không bao giờ: xin token qua chat, `wrangler auth token`, `--temporary`, lệnh xoá tài nguyên, đổi DNS, `push --force`.
+## mk-skill-creator làm gì?
+
+```
+yêu cầu ──► hợp đồng (≤ 6 câu hỏi) ──► init.py ──► script + test ──► SKILL.md + references ──► validate.py 0 lỗi
+        ──► dry-run bằng agent khác (+ audit khi skill đụng file/lệnh) ──► README · CHANGELOG · DoD ──► lệnh commit đề xuất
+```
+
+- **`scripts/init.py <tên> --path skills`** tạo `skills/mk-<tên>/SKILL.md` từ khung (tên `mk:<tên>`, MIT, phiên bản `0.1.0`, đủ mục bắt buộc); thư mục đã có thì từ chối, không ghi đè.
+- **`scripts/validate.py skills/mk-<tên>`** in từng dòng `OK`/`LỖI`, thoát 1 khi có lỗi: tên thư mục ↔ `name`, frontmatter, mô tả ≤ 1024 ký tự có `mk:<tên>`, chỉ `SKILL.md`/`references/`/`assets/`/`scripts/`, không file rác, `SKILL.md` và reference dưới 300 dòng, đường dẫn nhắc tới có thật, có Phạm vi và Chính sách an toàn, script chỉ thư viện chuẩn và có test.
+- Sửa skill cũ: agent trình đề xuất có mã, bạn duyệt mã nào thì sửa mã đó. Không tự commit, push hay phát hành.
+
 ---
 
 ## Bảo mật & Ranh giới tin cậy (v2.0.0)
@@ -319,11 +337,16 @@ mk-lab/
 │   ├── references/                  # audit, catalog (danh mục lỗi)
 │   ├── assets/report.md.template
 │   └── scripts/secu.py              # scope · check
-└── skills/mk-ship/
-    ├── SKILL.md                     # triển khai, cổng cứng, Cloudflare trước
-    ├── references/                  # cloudflare, deploy-md
-    ├── assets/DEPLOY.md.template
-    └── scripts/ship.py              # check · smoke
+├── skills/mk-ship/
+│   ├── SKILL.md                     # triển khai, cổng cứng, Cloudflare trước
+│   ├── references/                  # cloudflare, deploy-md
+│   ├── assets/DEPLOY.md.template
+│   └── scripts/ship.py              # check · smoke
+└── skills/mk-skill-creator/
+    ├── SKILL.md                     # tạo · sửa · kiểm skill theo một chuẩn
+    ├── references/                  # cau-truc, tuong-tac, scripts, quy-trinh
+    ├── assets/                      # khung SKILL.md, khung test, gói dry-run, gói audit
+    └── scripts/                     # init.py · validate.py
 ```
 
 ---
@@ -332,12 +355,8 @@ mk-lab/
 
 - Phương pháp luận SDD kế thừa và mở rộng từ tác phẩm *Spec Driven Development* của anh **Huy ([huynt.dev](https://huynt.dev))**.
 - Nền tảng lý thuyết học thuật về SDD cho Agentic SE dựa trên công trình nghiên cứu của **Jessica Díaz, Joaquín Gayoso, Andrea Cimminio, Jorge Pérez (Universidad Politécnica de Madrid)** — *"Spec-Driven Development for Agentic Software Engineering: Harnessing Human–Agent Teamwork"* ([arXiv:2609.00252](https://arxiv.org/html/2609.00252v1), 2026).
-- Kỷ luật tinh gọn đặc tả và phòng chống suy diễn lấy cảm hứng từ nguyên tắc kỹ thuật của **Andrej Karpathy** (MIT).
 - Các đóng góp thực chiến độc quyền của `mk-specs` (đánh dấu ✚ trong references): Phân định 3 tầng tài liệu, ma trận truy vết tự động hóa, quy tắc DIVERGENCE, quy trình Consultation Request Pack và Command Security Allowlist.
-- Phương pháp đo style trang mẫu trong `mk-cook` (mode `design`) học từ skill design-system bản public của **Web1trang**, viết lại cho mk-lab.
-- `mk-secu` học ý (không chép chữ) từ **vbsec** của Bùi Tấn Việt (MIT — danh mục lỗi hay gặp của code viết nhanh, độ tin nguồn dữ liệu, bộ code mẫu có đáp án) và **security-audit skill** của Cloudflare (MIT — sáu sự kiện cho một phát hiện, ba kết luận, người kiểm khác người tìm).
-- `mk-ship` học ý từ `ak-deploy`, `ak-ship`, `ak-devops` (MIT — dò nền tảng, một file ghi cách triển khai và quay lui, lệnh wrangler) và tài liệu Cloudflare Workers.
-- `mk-cook`, `mk-fix` học ý từ các bộ skill lập trình phổ biến (cổng trước khi code, nguyên nhân gốc trước khi sửa, dừng sau 3 lần hỏng), viết lại theo SDD.
+- `mk-ship` dựa trên tài liệu Cloudflare Workers/Wrangler.
 
 ---
 
@@ -351,7 +370,7 @@ Phát hành theo giấy phép nguồn mở [MIT License](LICENSE).
 
 **mk-lab** is an engineering skill suite for AI coding agents. Its flagship skill, **`mk-specs`**, provides an industrial-grade **Spec-Driven Development (SDD)** discipline engineered for **Agentic Software Engineering (SE 3.0)**.
 
-- **Grounding & Lineage:** Synthesizes academic foundations from Díaz et al. (*Spec-Driven Development for Agentic Software Engineering: Harnessing Human–Agent Teamwork*, arXiv:2609.00252, 2026), practitioner methodology from Huy (huynt.dev), and prompt discipline from Andrej Karpathy.
+- **Grounding & Lineage:** Synthesizes academic foundations from Díaz et al. (*Spec-Driven Development for Agentic Software Engineering: Harnessing Human–Agent Teamwork*, arXiv:2609.00252, 2026) and practitioner methodology from Huy (huynt.dev).
 - **Three-Tier Architecture:** Separates durable, always-active project norms (*System Specs* in `AGENTS.md`) from scoped, ephemeral changes (*Feature Specs* in `specs/changes/`) and on-demand capabilities (*Procedural Skills* in `.claude/skills/`).
 - **Four Scalable Tiers:** (1) PRD with durable story IDs and testable criteria; (2) + standalone HTML wireframes; (3) + Technical Design Documents (TDD); (4) Full enterprise SDD (BR, UC, AC, ADR, and automated traceability).
 - **Eight Methodological Harness Mechanisms:** Context engineering, persistent transactive memory (ADRs & History), executable specifications (Given-When-Then), 3-strike norm encoding, structured 4-part consultation requests, evidence-backed acceptance packs, graduated autonomy levels, and automated drift auditing (`audit.py`).
@@ -359,6 +378,7 @@ Phát hành theo giấy phép nguồn mở [MIT License](LICENSE).
 - **mk-fix (v2.4.0):** spec-anchored bug fixing — reproduce first, look up the AC (`ac.py`), classify (code violates AC · wrong rule · missing AC · infrastructure) before touching code; missing/wrong rules become draft proposals; CI-only and flaky-test paths.
 - **mk-secu (v2.4.0):** read-only security review — focused Q&A or scoped audit; each finding needs six facts, a source-to-sink trace and an independent verification pass; verdicts confirmed / needs validation / rejected; findings link back to ACs and hand off to mk-fix (`secu.py scope`, `secu.py check`).
 - **mk-ship (v2.4.0):** deploys committed code, Cloudflare Workers first (Pages/other platforms via `DEPLOY.md`): `ship.py check` gate tied to specs and security reports, production confirmation, post-deploy smoke checks, version-pinned rollback suggestion.
+- **mk-skill-creator:** builds skills for the mk suite by one house standard — `init.py` scaffolds `skills/mk-<name>`, `validate.py` checks every measurable rule (name, frontmatter, layout, line limits, real paths, scope and safety sections, stdlib-only scripts with tests), then a dry-run by another agent and README/CHANGELOG updates.
 - **mk-cook (v2.4.0):** turns an approved change proposal into code — machine gate before coding and before reporting done (`gate.py`), tests first from each AC, a UI lane driven by a root `DESIGN.md` design contract and checked in a real browser, `DESIGN.md` creation (from a reference site, existing code, or a brief), and reverse mode (existing UI → draft proposal).
 
-Invoke via `/mk:specs`, `/mk:cook`, `/mk:fix`, `/mk:secu`, `/mk:ship` or natural language. Install globally with `curl -fsSL https://raw.githubusercontent.com/mzavn/mk-lab/main/install.sh | bash -s -- --global` (add `--skill mk-cook`, `--skill mk-fix`, `--skill mk-secu`, `--skill mk-ship` for the others). Licensed under MIT.
+Invoke via `/mk:specs`, `/mk:cook`, `/mk:fix`, `/mk:secu`, `/mk:ship`, `/mk:skill-creator` or natural language. Install globally with `curl -fsSL https://raw.githubusercontent.com/mzavn/mk-lab/main/install.sh | bash -s -- --global` (add `--skill mk-cook`, `--skill mk-fix`, `--skill mk-secu`, `--skill mk-ship`, `--skill mk-skill-creator` for the others). Licensed under MIT.

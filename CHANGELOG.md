@@ -8,6 +8,32 @@ Mỗi bản có số dạng `X.Y.Z`:
 
 Cập nhật: `bash ~/.mk-lab/install.sh --update`. Agent cũng tự nhắc khi có bản mới.
 
+## Chưa phát hành
+
+Dự kiến: v2.6.0
+
+### mk-skill-creator
+
+**Mới**
+
+- **Skill mới `mk-skill-creator`** (`/mk:skill-creator`): dựng skill cho bộ mk theo một chuẩn. Bạn nói muốn skill làm gì; agent hỏi một lượt phần còn thiếu (kết quả, ràng buộc, không làm, thế nào là xong), tạo khung, viết script + test trước rồi mới viết hướng dẫn, nhờ một agent khác chạy thử như người dùng thật, cập nhật README/CHANGELOG và đề xuất lệnh commit — không tự commit hay phát hành.
+- **`init.py`** tạo khung `skills/mk-<tên>/SKILL.md` (tên gọi `/mk:<tên>`, đủ mục bắt buộc); thư mục đã có thì từ chối, không ghi đè.
+- **`validate.py`** kiểm một skill bằng máy, in từng dòng `OK`/`LỖI`: tên thư mục khớp tên gọi, mô tả một dòng ≤ 1024 ký tự có `mk:<tên>`, chỉ các thư mục cho phép, không file rác, `SKILL.md` và tài liệu dưới 300 dòng, đường dẫn nhắc tới có thật, có mục Phạm vi và Chính sách an toàn, script chỉ dùng thư viện chuẩn và có test.
+- Sửa skill cũ: agent trình đề xuất có mã, bạn duyệt mã nào thì sửa mã đó.
+- Cài: `bash ~/.mk-lab/install.sh --global --skill mk-skill-creator` (hoặc `--project .`).
+
+### mk-ship
+
+**Sửa**
+
+- Mô tả skill có thêm chữ `mk:ship`, agent nhận ra lời gọi `/mk:ship` chắc hơn.
+
+### mk-specs
+
+**Mới**
+
+- Khối `AGENTS.md` liệt kê thêm `mk-skill-creator` trong bộ mk-lab.
+
 ## v2.5.0 — 27/10/2026
 
 ### mk-specs

@@ -17,5 +17,6 @@ Bộ skill mk-lab (mặc định chọn skill, không phải cổng cứng):
 - `mk-fix`: sửa lỗi, CI đỏ, test chập chờn, phát hiện `SEC-n` — chỉ repo mức 4.
 - `mk-secu`: soát bảo mật, chỉ đọc, không sửa code.
 - `mk-ship`: triển khai (deploy) lên môi trường theo `DEPLOY.md` — không phải mở PR/merge.
+- `mk-skill-creator`: tạo, sửa, kiểm skill **của bộ mk** (tên `mk-*`) — skill khác, code ứng dụng chọn như thường.
 
 Có ở `.claude/skills/<tên>` hoặc `.agents/skills/<tên>` của project, hoặc `~/.claude/skills/<tên>`, `~/.agents/skills/<tên>` → đã cài thì dùng trước skill khác cùng việc. Chưa cài, repo chưa ở mức 4 (với `mk-cook`/`mk-fix`), hoặc người dùng/luật repo ngoài khối chỉ rõ skill khác → chọn skill như thường. Dùng skill nào thì cổng cứng trên vẫn áp.
