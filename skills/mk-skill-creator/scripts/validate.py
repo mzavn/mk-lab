@@ -26,7 +26,8 @@ DESC_LIMIT = 1024
 AUTHOR = "mzavn"
 DIR_RE = re.compile(r"mk-([a-z0-9]+(?:-[a-z0-9]+)*)")
 TOP_DIRS = ("assets", "references", "scripts")
-TOP_FILES = ("SKILL.md", "THIRD_PARTY_NOTICES.md", ".mk-specs-manifest", ".mk-specs-source")  # 2 file cuối: install.sh ghi vào bản cài
+TOP_FILES = ("SKILL.md", "THIRD_PARTY_NOTICES.md",  # sau đây: file install.sh của mk-lab, mk-studio ghi vào bản cài
+             ".mk-specs-manifest", ".mk-specs-source", ".mk-studio-manifest", ".mk-studio-source")
 KEYS_ALLOWED = ("name", "description", "license", "metadata", "hooks", "allowed-tools", "compatibility")
 JUNK_PARTS = ("__pycache__", ".DS_Store", "Thumbs.db")
 HOME_PATH = re.compile("/" + "Users/[A-Za-z0-9._-]+")  # chia đôi để chính file này không tự khớp

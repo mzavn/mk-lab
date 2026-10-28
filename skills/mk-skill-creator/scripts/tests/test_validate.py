@@ -173,8 +173,8 @@ class Structure(Base):
         self.check(0)
 
     def test_ac3_installed_copy_with_installer_files_passes(self):
-        write(os.path.join(self.root, ".mk-specs-manifest"), "x  SKILL.md\n")
-        write(os.path.join(self.root, ".mk-specs-source"), "~/.mk-lab\n")
+        for name in (".mk-specs-manifest", ".mk-specs-source", ".mk-studio-manifest", ".mk-studio-source"):
+            write(os.path.join(self.root, name), "x\n")
         self.check(0)
 
     def test_ac3_skill_ignored_entirely_by_git_is_checked_like_outside_git(self):
