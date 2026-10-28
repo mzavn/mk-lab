@@ -5,6 +5,13 @@ license: MIT
 metadata:
   author: mzavn
   version: "0.1.0"
+hooks:
+  PostToolUse:
+    - matcher: "Edit|Write|MultiEdit"
+      hooks:
+        - type: command
+          command: 'for d in "$HOME/.claude/skills/mk-skill-creator" "$CLAUDE_PROJECT_DIR/.claude/skills/mk-skill-creator"; do if [ -f "$d/scripts/hook.py" ]; then python3 "$d/scripts/hook.py"; exit 0; fi; done; exit 0'
+          timeout: 15
 ---
 
 # mk:skill-creator — tạo và sửa skill của bộ mk theo một chuẩn
@@ -22,7 +29,7 @@ metadata:
 | Mode | Khi người dùng… | Đọc | Kết quả |
 |---|---|---|---|
 | `tạo` | muốn skill mới | `references/quy-trinh.md`, `references/cau-truc.md`, `references/tuong-tac.md`, `references/scripts.md` (khi có script) | `skills/mk-<tên>/` qua validate, báo cáo dry-run, tài liệu repo đã cập nhật |
-| `sửa` | muốn sửa, tách, chuẩn hoá skill có sẵn, hoặc mô tả không kích hoạt | `references/quy-trinh.md` §3, `references/tuong-tac.md` §2, reference của phần cần sửa | đề xuất có mã → mã được duyệt đã áp → validate 0 lỗi |
+| `sửa` | muốn sửa, tách, chuẩn hoá skill có sẵn, hoặc mô tả không kích hoạt | `references/quy-trinh.md` §3, §9, `references/tuong-tac.md` §2, reference của phần cần sửa | đề xuất có mã → mã được duyệt đã áp → validate 0 lỗi |
 | `kiểm` | chỉ hỏi skill có đúng chuẩn không | `references/quy-trinh.md` §8 | kết quả `validate.py` giải thích bằng lời thường, cách sửa từng dòng `LỖI` |
 
 ## Bước 1 — Chốt hợp đồng (mode `tạo`, `sửa`)
@@ -55,7 +62,7 @@ PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s <repo>/skills/mk-<tên
 python3 <skill>/scripts/validate.py <repo>/skills/mk-<tên>
 ```
 
-Chạy test trước, validate sau (biến `PYTHONDONTWRITEBYTECODE=1` để test không để lại `__pycache__` trong skill). `validate.py` in từng dòng `OK:`/`LỖI:`, thoát 1 khi có lỗi. Sửa đến khi `Kết quả: 0 lỗi`. Không nới luật, không đổi script kiểm để qua. Dòng `LỖI` nào bạn tin là sai luật → trình nguyên dòng cho người dùng, không tự bỏ qua. Ý nghĩa từng dòng: `references/quy-trinh.md` §8. Dòng `OK: frontmatter` có "có hooks" → Bước 6 phải có audit.
+Chạy test trước, validate sau (biến `PYTHONDONTWRITEBYTECODE=1` để test không để lại `__pycache__` trong skill); skill không có `scripts/` → bỏ lệnh test, báo "không có test". `validate.py` in từng dòng `OK:`/`LỖI:`, thoát 1 khi có lỗi. Sửa đến khi `Kết quả: 0 lỗi`. Không nới luật, không đổi script kiểm để qua. Dòng `LỖI` nào bạn tin là sai luật → trình nguyên dòng cho người dùng, không tự bỏ qua. Ý nghĩa từng dòng: `references/quy-trinh.md` §8. Dòng `OK: frontmatter` có "có hooks" → Bước 6 phải có audit. Trên Claude Code, sau khi skill này được gọi trong phiên (chưa gọi → không có hook), hook (`scripts/hook.py`) báo lỗi validate ngay khi bạn sửa file trong một skill mk — chỉ để biết sớm, không chặn; hook im lặng **không** có nghĩa là 0 lỗi (quá giờ, hỏng, chưa cài cũng im); agent khác không có hook, và ở mọi agent vẫn phải tự chạy hai lệnh trên trước khi trình (`references/quy-trinh.md` §9).
 
 ## Bước 6 — Dry-run và audit bằng agent riêng
 
@@ -110,3 +117,4 @@ Mọi thay đổi ở README, CHANGELOG, `AGENTS.md` trình thành bảng mã `D
 | `assets/goi-audit.md` | agent chính → agent audit | gói phạm vi, câu hỏi bảo mật, khuôn báo cáo |
 | `scripts/init.py` | agent chính | tạo khung `mk-<tên>/`, không ghi đè |
 | `scripts/validate.py` | agent chính | kiểm cơ học mọi luật đo được (chỉ đọc, tất định) |
+| `scripts/hook.py` | Claude Code (hook PostToolUse) | sửa file trong skill mk → báo lỗi validate cho agent; im lặng ở chỗ khác |

@@ -20,6 +20,7 @@ Dự kiến: v2.6.0
 - **`init.py`** tạo khung `skills/mk-<tên>/SKILL.md` (tên gọi `/mk:<tên>`, đủ mục bắt buộc); thư mục đã có thì từ chối, không ghi đè.
 - **`validate.py`** kiểm một skill bằng máy, in từng dòng `OK`/`LỖI`: tên thư mục khớp tên gọi, mô tả một dòng ≤ 1024 ký tự có `mk:<tên>`, chỉ các thư mục cho phép, không file rác, `SKILL.md` và tài liệu dưới 300 dòng, đường dẫn nhắc tới có thật, có mục Phạm vi và Chính sách an toàn, script chỉ dùng thư viện chuẩn và có test.
 - Sửa skill cũ: agent trình đề xuất có mã, bạn duyệt mã nào thì sửa mã đó.
+- **Báo lỗi ngay khi sửa (Claude Code):** sau khi gọi `/mk:skill-creator`, mỗi lần agent sửa một file trong một skill `mk-*` còn lỗi, agent thấy ngay các dòng `LỖI` để sửa tiếp — không chặn việc đang làm, im lặng với mọi file khác. Agent khác vẫn tự chạy `validate.py`.
 - Cài: `bash ~/.mk-lab/install.sh --global --skill mk-skill-creator` (hoặc `--project .`).
 
 ### mk-ship

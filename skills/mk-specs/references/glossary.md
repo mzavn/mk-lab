@@ -69,6 +69,7 @@ Cột tiếng Việt là lời giải thích cho người mới, không phải t
 | **Rollback** | Quay lui | Trả bản đang chạy về phiên bản trước; không trả lại dữ liệu (D1/KV/R2) | Agent hỏi trước khi chạy |
 | **mk:skill-creator** | Skill dựng skill | Skill của mk-lab để tạo, sửa, kiểm skill **của bộ mk** theo một chuẩn: `init.py` tạo khung, `validate.py` kiểm bằng máy, dry-run bằng agent khác; cài `bash ~/.mk-lab/install.sh --global --skill mk-skill-creator` | "tạo skill mới", "kiểm skill mk-ghi-chu" |
 | **validate.py** (kiểm skill) | Kiểm skill bằng máy | Script của mk-skill-creator: in từng dòng `OK`/`LỖI` (tên, frontmatter, cấu trúc, số dòng, nội dung, scripts), thoát 1 khi có lỗi; chỉ đọc | Sửa từng dòng `LỖI` tới khi `Kết quả: 0 lỗi` |
+| **Hook kiểm skill** (PostToolUse) | Báo lỗi ngay khi sửa | Chỉ Claude Code: sau khi gọi `/mk:skill-creator`, mỗi lần sửa file trong skill `mk-*` còn lỗi validate, agent được báo các dòng `LỖI`; không chặn, im lặng với file khác | Không cần làm gì; agent khác vẫn tự chạy `validate.py` |
 | **init.py**, chỗ trống mẫu `{{…}}` | Khung skill | `init.py <tên> --path skills` tạo `skills/mk-<tên>/SKILL.md` từ khung; chỗ `{{…}}` là phần bạn (hoặc agent) phải điền trước khi kiểm | Điền hết rồi chạy `validate.py` |
 | **THIRD_PARTY_NOTICES.md** | Thông báo giấy phép bên thứ ba | File giữ thông báo giấy phép của đoạn phỏng theo văn bản người khác; nằm ở gốc repo và trong thư mục skill có đoạn đó (đi theo bản cài) | Không cần làm gì; đừng xoá khi chép skill |
 

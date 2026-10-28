@@ -228,6 +228,7 @@ yêu cầu ──► hợp đồng (≤ 6 câu hỏi) ──► init.py ──�
 - **`scripts/init.py <tên> --path skills`** tạo `skills/mk-<tên>/SKILL.md` từ khung (tên `mk:<tên>`, MIT, phiên bản `0.1.0`, đủ mục bắt buộc); thư mục đã có thì từ chối, không ghi đè.
 - **`scripts/validate.py skills/mk-<tên>`** in từng dòng `OK`/`LỖI`, thoát 1 khi có lỗi: tên thư mục ↔ `name`, frontmatter, mô tả ≤ 1024 ký tự có `mk:<tên>`, chỉ `SKILL.md`/`references/`/`assets/`/`scripts/`, không file rác, `SKILL.md` và reference dưới 300 dòng, đường dẫn nhắc tới có thật, có Phạm vi và Chính sách an toàn, script chỉ thư viện chuẩn và có test.
 - Sửa skill cũ: agent trình đề xuất có mã, bạn duyệt mã nào thì sửa mã đó. Không tự commit, push hay phát hành.
+- **Claude Code:** sau khi gọi `/mk:skill-creator`, mỗi lần agent sửa một file trong skill `mk-*` mà skill đó còn lỗi, agent được báo ngay các dòng `LỖI` (hook chỉ báo, không chặn; im lặng với file ngoài skill). Agent khác không có hook nhưng vẫn chạy `validate.py` trước khi trình.
 
 ---
 

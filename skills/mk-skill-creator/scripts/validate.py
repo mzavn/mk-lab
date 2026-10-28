@@ -38,6 +38,7 @@ PATTERN_CHARS = set("*<>…{$")
 NEWER_STDLIB = {"tomllib", "graphlib", "zoneinfo", "_tomllib"}
 MAIN_GUARD = re.compile(r"""^if\s+__name__\s*==\s*['"]__main__['"]\s*:""", re.M)
 NO_BYTECODE = re.compile(r"^[ \t]*sys\.dont_write_bytecode[ \t]*=[ \t]*True\b", re.M)
+CONTROL = re.compile(r"[\x00-\x1f\x7f-\x9f]")
 SHOW = 60  # độ dài tối đa của giá trị lấy từ file in lại trong dòng LỖI
 
 
@@ -442,7 +443,7 @@ def run(root):
         nonlocal total
         if errs:
             total += len(errs)
-            out.extend(f"LỖI: {group} — {e}" for e in errs)
+            out.extend(CONTROL.sub("?", f"LỖI: {group} — {e}") for e in errs)  # tên/chữ lấy từ file: không để ký tự điều khiển ra terminal
         else:
             out.append(f"OK: {group} ({ok})" if ok else f"OK: {group}")
 

@@ -312,6 +312,12 @@ class Hostile(Base):
         self.check(0)
         self.assertLess(time.monotonic() - start, 5)
 
+    def test_control_characters_from_file_names_are_not_printed(self):
+        write(os.path.join(self.root, "la\x1b[2J.txt"), "x\n")
+        out = self.check()
+        self.assertNotIn("\x1b", out)
+        self.assertIn("'la?[2J.txt' không thuộc cấu trúc", out)
+
     def test_personal_path_value_is_not_echoed(self):
         write(os.path.join(self.root, "references", "cach-gom.md"), f"Mở {HOME}/note.md\n")
         out = self.check()
