@@ -11,6 +11,7 @@ Năm skill, dùng nối tiếp nhau — spec trước, rồi code, sửa lỗi, 
 | **`mk-fix`** | `/mk:fix` | Sửa lỗi theo spec: tái hiện trước, tra AC, xếp loại (code sai AC · luật sai · thiếu AC · hạ tầng) rồi mới sửa; lỗi chưa có AC thành đề xuất, không sửa lén; CI đỏ, test chập chờn |
 | **`mk-secu`** | `/mk:secu` | Soát bảo mật **chỉ đọc**: mỗi phát hiện có đủ bằng chứng và lượt kiểm riêng; thiếu luật bảo mật thành AC đề xuất, code sai luật chuyển `mk-fix` |
 | **`mk-ship`** | `/mk:ship` | Triển khai code đã commit, **Cloudflare Workers trước** (Pages và nền tảng khác qua `DEPLOY.md`): cổng trước triển khai nối spec và báo cáo bảo mật, production cần bạn xác nhận, kiểm sau triển khai, quay lui khi hỏng |
+| **`mk-ux`** | `/mk:ux` | Trải nghiệm người dùng gắn vào spec: nhu cầu thầm kín của khách và người trong nhà thành AC hành vi; luật đo, mẫu chuẩn (bảng dữ liệu, form, lớp nổi…), gu đã chốt trong `DESIGN.md`; đo trang thật ở 4 khổ bằng `ux.py score` và soi bằng mắt người dùng; sửa qua `mk-cook`/`mk-fix`, đo lại trước/sau |
 
 Thêm một skill để **dựng skill** cho chính bộ mk:
 
@@ -161,7 +162,7 @@ bash ~/.mk-lab/install.sh --project .
 - Thêm khối định hướng `<!-- mk-specs:start ... end -->` vào `AGENTS.md` và gắn `@AGENTS.md` vào `CLAUDE.md`. Khối dặn agent ưu tiên `mk-cook`, `mk-fix`, `mk-secu`, `mk-ship` khi đã cài (bạn chỉ định skill khác thì agent theo bạn).
 
 
-### 3. Thêm `mk-cook`, `mk-fix`, `mk-secu`, `mk-ship`
+### 3. Thêm `mk-cook`, `mk-fix`, `mk-secu`, `mk-ship`, `mk-ux`
 Cài cạnh `mk-specs` (chung cho máy, hoặc thay `--global` bằng `--project .`):
 
 ```bash
@@ -169,10 +170,11 @@ bash ~/.mk-lab/install.sh --global --skill mk-cook
 bash ~/.mk-lab/install.sh --global --skill mk-fix
 bash ~/.mk-lab/install.sh --global --skill mk-secu
 bash ~/.mk-lab/install.sh --global --skill mk-ship
+bash ~/.mk-lab/install.sh --global --skill mk-ux
 bash ~/.mk-lab/install.sh --global --skill mk-skill-creator   # chỉ khi bạn tự viết skill
 ```
 
-Rồi nói với agent: "làm proposal `<tên>`" (proposal đã duyệt), "tạo DESIGN.md giống style trang …", "xây ngược spec từ màn đăng ký"; "lỗi: bấm Đặt hàng hai lần bị trừ tiền hai lần", "CI đỏ"; "route `/don/:id` có lộ đơn người khác không?", "soát bảo mật nhánh này"; "deploy lên Cloudflare", "đẩy production"; "tạo skill mới gom ghi chú thành checklist", "kiểm skill mk-ghi-chu".
+Rồi nói với agent: "làm proposal `<tên>`" (proposal đã duyệt), "tạo DESIGN.md giống style trang …", "xây ngược spec từ màn đăng ký"; "lỗi: bấm Đặt hàng hai lần bị trừ tiền hai lần", "CI đỏ"; "route `/don/:id` có lộ đơn người khác không?", "soát bảo mật nhánh này"; "deploy lên Cloudflare", "đẩy production"; "khách cần gì ở form đăng ký này?", "soi UX trang quản trị học viên"; "tạo skill mới gom ghi chú thành checklist", "kiểm skill mk-ghi-chu".
 
 ---
 
@@ -218,6 +220,10 @@ DEPLOY.md ──► ship.py check ──► DoD ──► wrangler deploy --dry-
 - **`ship.py check`** chặn: còn thay đổi chưa commit, sai nhánh, spec chưa hợp nhất (production), lỗ hổng mức cao chưa sửa (production; mức nghiêm trọng chặn mọi môi trường), cấu hình wrangler thiếu khoá, khoá bí mật để trong `vars`, file `.dev.vars`/`.env` nằm trong git.
 - **`ship.py smoke`** gọi các đường dẫn trong `DEPLOY.md`, so mã HTTP và chữ cần có.
 - Không bao giờ: xin token qua chat, `wrangler auth token`, `--temporary`, lệnh xoá tài nguyên, đổi DNS, `push --force`.
+
+## mk-ux làm gì?
+
+- **needs** nhu cầu thầm kín → AC hành vi (qua mk-specs) · **system** luật đo, mẫu chuẩn, gu đã chốt trong `DESIGN.md` (token vẫn của mk-cook) · **audit** `assets/measure.js` ở 4 khổ → `ux.py score` + agent riêng soi bằng mắt người dùng → báo cáo `UX-n` (`ux.py check`) · **improve** mã bạn duyệt → mk-cook/mk-fix sửa → `ux.py score --baseline` (Đo trước / Đo sau) → bài học vào `DESIGN.md`. Khung năm tầng rút từ *The Design of Everyday Things* và *Don't Make Me Think*; đẹp chỉ là một trong sáu phẩm chất (hợp lý, dễ dùng, tiện, gọn, hợp gu, đẹp). Luật máy chưa áp được ghi `CHƯA KIỂM`, không tính đạt; không sửa code, không viết token; thử nhanh trên trang hỏng sẵn `assets/demo-loi.html`.
 ## mk-skill-creator làm gì?
 
 ```
@@ -343,6 +349,11 @@ mk-lab/
 │   ├── references/                  # cloudflare, deploy-md
 │   ├── assets/DEPLOY.md.template
 │   └── scripts/ship.py              # check · smoke
+├── skills/mk-ux/
+│   ├── SKILL.md                     # needs · system · audit · improve, cổng cứng
+│   ├── references/                  # principles, standards, structure, patterns-*, surfaces, ai-mistakes, needs, system, audit
+│   ├── assets/                      # measure.js, demo-loi.html, khuôn báo cáo, gói soi độc lập, khuôn ux-needs
+│   └── scripts/ux.py                # score · check · contrast
 └── skills/mk-skill-creator/
     ├── SKILL.md                     # tạo · sửa · kiểm skill theo một chuẩn
     ├── references/                  # cau-truc, tuong-tac, scripts, quy-trinh
@@ -358,6 +369,7 @@ mk-lab/
 - Nền tảng lý thuyết học thuật về SDD cho Agentic SE dựa trên công trình nghiên cứu của **Jessica Díaz, Joaquín Gayoso, Andrea Cimminio, Jorge Pérez (Universidad Politécnica de Madrid)** — *"Spec-Driven Development for Agentic Software Engineering: Harnessing Human–Agent Teamwork"* ([arXiv:2609.00252](https://arxiv.org/html/2609.00252v1), 2026).
 - Các đóng góp thực chiến độc quyền của `mk-specs` (đánh dấu ✚ trong references): Phân định 3 tầng tài liệu, ma trận truy vết tự động hóa, quy tắc DIVERGENCE, quy trình Consultation Request Pack và Command Security Allowlist.
 - `mk-ship` dựa trên tài liệu Cloudflare Workers/Wrangler.
+- `mk-ux` diễn đạt lại ý từ *The Design of Everyday Things* (Don Norman, 2013) và *Don't Make Me Think, Revisited* (Steve Krug, 2014), có ghi trang; không chép nguyên văn.
 
 ---
 
@@ -381,5 +393,6 @@ Phát hành theo giấy phép nguồn mở [MIT License](LICENSE).
 - **mk-ship (v2.4.0):** deploys committed code, Cloudflare Workers first (Pages/other platforms via `DEPLOY.md`): `ship.py check` gate tied to specs and security reports, production confirmation, post-deploy smoke checks, version-pinned rollback suggestion.
 - **mk-skill-creator:** builds skills for the mk suite by one house standard — `init.py` scaffolds `skills/mk-<name>`, `validate.py` checks every measurable rule (name, frontmatter, layout, line limits, real paths, scope and safety sections, stdlib-only scripts with tests), then a dry-run by another agent and README/CHANGELOG updates.
 - **mk-cook (v2.4.0):** turns an approved change proposal into code — machine gate before coding and before reporting done (`gate.py`), tests first from each AC, a UI lane driven by a root `DESIGN.md` design contract and checked in a real browser, `DESIGN.md` creation (from a reference site, existing code, or a brief), and reverse mode (existing UI → draft proposal).
+- **mk-ux:** human-centred UX tied to specs — user needs (customers and in-house staff) become behaviour AC; measurable UX rules, pattern contracts and the owner's locked taste live in `DESIGN.md`; audits measure the real page at 4 widths (`assets/measure.js` + `ux.py score`, unmarked rules reported as not checked) plus an independent user-eye review; fixes go through mk-cook/mk-fix and are re-measured before/after.
 
-Invoke via `/mk:specs`, `/mk:cook`, `/mk:fix`, `/mk:secu`, `/mk:ship`, `/mk:skill-creator` or natural language. Install globally with `curl -fsSL https://raw.githubusercontent.com/mzavn/mk-lab/main/install.sh | bash -s -- --global` (add `--skill mk-cook`, `--skill mk-fix`, `--skill mk-secu`, `--skill mk-ship`, `--skill mk-skill-creator` for the others). Licensed under MIT.
+Invoke via `/mk:specs`, `/mk:cook`, `/mk:fix`, `/mk:secu`, `/mk:ship`, `/mk:ux`, `/mk:skill-creator` or natural language. Install globally with `curl -fsSL https://raw.githubusercontent.com/mzavn/mk-lab/main/install.sh | bash -s -- --global` (add `--skill mk-cook`, `--skill mk-fix`, `--skill mk-secu`, `--skill mk-ship`, `--skill mk-ux`, `--skill mk-skill-creator` for the others). Licensed under MIT.

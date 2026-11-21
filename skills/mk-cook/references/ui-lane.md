@@ -42,6 +42,8 @@ Chạy dev server của repo (lệnh trong `AGENTS.md`/`package.json`), mở b�
 5. So với `wireframe.html` (nếu có): đủ khối, đúng thứ tự.
 6. Tương phản chữ thường ≥ 4,5:1, chữ lớn ≥ 3:1 (kể cả chữ mờ, placeholder).
 
+Có skill `mk-ux` (tìm như `mk-cook` trong `.claude/skills`, `.agents/skills` của project hoặc thư mục cài chung) → bước 1 và 6 thay bằng phép đo của mk-ux: chạy `assets/measure.js` của mk-ux ở 4 khổ 320, 390, 768, 1440 rồi `ux.py score` (đọc `references/standards.md` của mk-ux); bằng chứng ghi `Kết quả: a/b lượt đạt · chưa kiểm k luật`. Bước 2–5 giữ nguyên.
+
 Không có công cụ trình duyệt → nói rõ giới hạn, đưa người dùng danh sách kiểm tay ở trên và chờ họ báo kết quả; bằng chứng ghi "người dùng <tên> xem ngày <ngày> bằng <trình duyệt>". Không tự ghi "đã kiểm giao diện" thay người dùng.
 
 ## 5. Ghi vào bằng chứng

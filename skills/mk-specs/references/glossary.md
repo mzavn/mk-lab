@@ -72,6 +72,15 @@ Cột tiếng Việt là lời giải thích cho người mới, không phải t
 | **Hook kiểm skill** (PostToolUse) | Báo lỗi ngay khi sửa | Chỉ Claude Code: sau khi gọi `/mk:skill-creator`, mỗi lần sửa file trong skill `mk-*` còn lỗi validate, agent được báo các dòng `LỖI`; không chặn, im lặng với file khác | Không cần làm gì; agent khác vẫn tự chạy `validate.py` |
 | **init.py**, chỗ trống mẫu `{{…}}` | Khung skill | `init.py <tên> --path skills` tạo `skills/mk-<tên>/SKILL.md` từ khung; chỗ `{{…}}` là phần bạn (hoặc agent) phải điền trước khi kiểm | Điền hết rồi chạy `validate.py` |
 | **THIRD_PARTY_NOTICES.md** | Thông báo giấy phép bên thứ ba | File giữ thông báo giấy phép của đoạn phỏng theo văn bản người khác; nằm ở gốc repo và trong thư mục skill có đoạn đó (đi theo bản cài) | Không cần làm gì; đừng xoá khi chép skill |
+| **mk:ux** | Skill trải nghiệm | Skill của mk-lab: nhu cầu người dùng → AC hành vi; luật đo, mẫu chuẩn, gu trong `DESIGN.md`; đo trang thật (`ux.py score`) và soi bằng mắt người dùng; sửa qua mk-cook/mk-fix; cài `bash ~/.mk-lab/install.sh --global --skill mk-ux` | "soi UX màn này", "khách cần gì ở form này" |
+| **Mode `needs` / `system` / `audit` / `improve`** | Bốn việc của mk-ux | `needs` nhu cầu → AC; `system` luật đo, mẫu, gu trong `DESIGN.md`; `audit` đo + soi, báo cáo `UX-n`; `improve` chuyển sửa, đo lại trước/sau | Nói tự nhiên, agent tự chọn |
+| **Nhu cầu thầm kín** · **Người trong nhà** | Hidden need · in-house user | Điều người dùng muốn mà không nói ("điền rồi đừng bắt điền lại"); người trong nhà là tư vấn, vận hành dùng dữ liệu phía sau | Thấy trong `ux-needs.md` |
+| **`ux-needs.md`** | Nhu cầu của một change | Hành trình, việc chính từng màn, câu hỏi chủ sản phẩm; nằm cạnh `proposal.md`; AC vẫn chỉ ở proposal | Trả lời mục "Hỏi chủ sản phẩm" |
+| **Bề mặt** | Surface | `web`, `app-web` (đo bằng máy); `app`, `slide`, `image`, `video` (kiểm tay) | Báo cáo ghi rõ phần nào kiểm tay |
+| **Sáu phẩm chất** · **Hạng** | Qualities · rank | hợp lý · dễ dùng · tiện · gọn · hợp gu · đẹp (thứ tự giải xung đột); hạng phát hiện: hỏng · lệch hệ · gu | Gu chỉ bạn quyết |
+| **Mẫu chuẩn** | Pattern contract | Mặc định của một loại khối (`data-table` phải có tìm, phân trang, chọn số dòng…): bắt buộc có, màn nhỏ, trạng thái, hỏi chủ sản phẩm, kiểm bằng | Đổi mặc định ở `## Mẫu` của `DESIGN.md` |
+| **Luật đo** · **Lượt đo** · **CHƯA KIỂM** | Measured rule · run · not checked | Luật có ngưỡng (`tap-target` 44×44…) trong `## Luật đo`; lượt = một màn ở một khổ; `CHƯA KIỂM` = máy chưa áp được (chưa đánh dấu `data-ux`, nền ảnh) — không tính đạt | Đánh dấu theo gợi ý hoặc kiểm tay |
+| **Phát hiện UX** (`UX-n`) · **Gu đã chốt** | UX finding · locked taste | Một vấn đề trong báo cáo `<specs_dir>/ux/`: người dùng cảm thấy gì, điểm A/B, khoảng cách, tác động; gu đã chốt là quyết định khẩu vị của bạn trong `DESIGN.md`, agent không đảo ngược | Duyệt `UX-n` cần sửa |
 
 ## Đánh dấu trong spec
 

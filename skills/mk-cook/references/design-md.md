@@ -4,6 +4,8 @@
 
 Gốc repo đã có `DESIGN.md` mà là tài liệu khác (kiến trúc, ghi chú thiết kế phần mềm) → hỏi người dùng đặt tên khác hay dời file cũ; không ghi đè.
 
+Làm lại `DESIGN.md` đã có: giữ nguyên các mục của mk-ux nếu có (`## Luật trải nghiệm`, `## Mẫu`, `## Gu đã chốt`, `## Luật đo`, `## Bài học`), đặt sau phần token; chỉ người dùng mới bỏ được chúng.
+
 Chọn một trong 3 cách — hỏi người dùng khi họ chưa nói:
 
 | Cách | Hợp khi | Kết quả |

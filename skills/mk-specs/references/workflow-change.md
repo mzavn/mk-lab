@@ -18,6 +18,7 @@ change ──► tự soát ──► review hai phía ──► commit 1 (propo
    - **Quyết định**: ADR nháp khi có lựa chọn đáng ghi — luôn có phương án bị loại.
    - **Thiết kế**: file/symbol, migration (ghi rõ sao lưu dữ liệu thật trước), rủi ro, phần nào AI làm / phần nào người quyết.
    - **Quy mô** + **plan**: thêm/sửa > 5 AC, hoặc thay đổi nhiều phần phụ thuộc nhau (vd giao diện + API + migration) → `- Quy mô: lớn` và `plan.md` cùng thư mục (mẫu `assets/templates/plan.md`): mỗi phase nêu `UC-xxx AC-n` nó làm, phụ thuộc, cách kiểm, cách quay lui; mọi AC thêm/sửa nằm trong đúng một phase.
+   - **Có màn hình** (form, trang, bảng quản trị, slide, video cho người xem) và có skill `mk-ux` (tìm như `mk-cook` ở §3) → trước khi viết AC chạy mk-ux mode `needs`: hành trình, việc chính, câu hỏi ghi vào `ux-needs.md` cùng thư mục; proposal chỉ nhận AC hành vi, số hình thức (cỡ chữ, vùng chạm, màu) vào `## Luật đo` của `DESIGN.md`. Không có → bỏ bước này.
 4. Không AC thì không code. AC phải test được; không test được thì viết lại AC.
 5. Proposal dài quá một màn hình đọc của người duyệt nghiệp vụ → tách thay đổi, hoặc dồn chi tiết kỹ thuật xuống "Thiết kế".
 6. Tự soát (`references/review.md`): sửa lỗi của chính mình, hỏi người dùng các điểm cần quyết, điền `## Tự soát`. Chỉ sau đó mới đưa review hai phía.

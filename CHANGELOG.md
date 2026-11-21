@@ -8,6 +8,36 @@ Mỗi bản có số dạng `X.Y.Z`:
 
 Cập nhật: `bash ~/.mk-lab/install.sh --update`. Agent cũng tự nhắc khi có bản mới.
 
+## Chưa phát hành
+
+Dự kiến: v2.7.0
+
+### mk-ux
+
+**Mới**
+
+- **Skill mới `mk-ux`** (`/mk:ux`): trải nghiệm người dùng gắn vào spec. Bạn nói tự nhiên ("khách cần gì ở form này?", "soi UX trang quản trị", "màn này khó dùng quá" kèm ảnh), agent tự chọn một trong bốn việc:
+  - **needs**: lập hành trình của khách và người trong nhà (tư vấn, vận hành), tìm nhu cầu thầm kín ("điền rồi đừng bắt điền lại", "nút nào cần bấm", "lười cuộn, bấm là xem video"), biến thành AC hành vi cho proposal; câu hỏi cho bạn ghi trong `ux-needs.md`.
+  - **system**: đặt luật đo, mẫu chuẩn (bảng dữ liệu luôn có tìm, phân trang, chọn số dòng; form; lớp nổi; thanh một hàng trên điện thoại…) và gu bạn đã chốt vào `DESIGN.md`, sau phần token của mk-cook.
+  - **audit**: đo trang thật ở 4 khổ (320, 390, 768, 1440) bằng `assets/measure.js` + `ux.py score`, nhờ một agent khác soi bằng mắt người dùng, viết báo cáo `UX-n` (điểm A, điểm B, khoảng cách, tác động) trong `specs/ux/`, kiểm bằng `ux.py check`. Slide, hình, video, app điện thoại kiểm tay theo danh sách.
+  - **improve**: bạn duyệt mã nào thì mã đó được chuyển cho mk-cook/mk-fix sửa; đo lại, báo `Đo trước / Đo sau`; lỗi gặp lại thành luật trong `DESIGN.md`.
+- Đẹp chỉ là một trong sáu phẩm chất: hợp lý, dễ dùng, tiện, gọn, hợp gu, đẹp. Gu là của bạn: điều đã chốt không bị nêu lại hay đảo ngược.
+- Máy chưa kiểm được thì ghi `CHƯA KIỂM`, không bao giờ tính là đạt.
+- Thử nhanh: mở `assets/demo-loi.html` (trang hỏng sẵn) và nhờ agent soi.
+- Cài: `bash ~/.mk-lab/install.sh --global --skill mk-ux` (hoặc `--project .`).
+
+### mk-cook
+
+**Mới**
+
+- Có `mk-ux`: bước kiểm trình duyệt của làn giao diện dùng phép đo của mk-ux ở 4 khổ; làm lại `DESIGN.md` giữ nguyên các mục của mk-ux.
+
+### mk-specs
+
+**Mới**
+
+- Có `mk-ux`: proposal có màn hình được gợi ý chạy mk-ux `needs` trước khi viết AC; thuật ngữ mk-ux có trong bảng thuật ngữ; khối định hướng trong `AGENTS.md` có thêm dòng `mk-ux` (cập nhật khi chạy lại cài đặt).
+
 ## v2.6.0 — 28/10/2026
 
 ### mk-skill-creator

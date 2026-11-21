@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo lỗi UX — Tiệm bánh mì chị Lan (dữ liệu giả)</title>
+<!--
+  Trang giả để thử mk-ux. Mỗi mã đo được có ít nhất một lỗi CỐ Ý (ghi "LỖI:" ở chú thích).
+  Đo: MK_UX_SCREEN = "demo-loi", khổ 320, 390, 768, 1440; kết quả mong đợi ở
+  scripts/tests/fixtures/demo-loi.expected. Không CDN, không link ngoài, chỉ CSS nội tuyến.
+-->
+<style>
+  html { font-size: 16px; }
+  body { margin: 0; padding: 16px; font-family: system-ui, sans-serif; font-size: 16px; line-height: 1.5;
+    color: #1f2937; background: #ffffff; }
+  h1 { font-size: 28px; line-height: 1.25; margin: 0 0 12px; }
+  h2 { font-size: 22px; line-height: 1.3; margin: 24px 0 8px; }
+  p, li, td, a, button, input, label { font-size: 16px; }
+  a { color: #1d4ed8; }
+  button { min-height: 44px; min-width: 44px; padding: 0 16px; border: 1px solid #374151; border-radius: 8px;
+    background: #f3f4f6; color: #111827; font-family: inherit; }
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; margin: 12px 0; }
+  .cta button { background: #1d4ed8; color: #ffffff; border-color: #1d4ed8; }
+  .ma-don { font-size: 10px; }
+  .ghi-chu { font-size: 14px; }
+  .canh-bao { color: #F79D2C; }
+  .bang-rong { width: 400px; box-sizing: border-box; padding: 12px; border: 1px solid #9ca3af; }
+  .gioi-thieu { min-height: 1000px; }
+  .o-nhap { display: block; height: 44px; box-sizing: border-box; padding: 0 12px; margin: 4px 0 12px;
+    border: 1px solid #6b7280; border-radius: 8px; width: 100%; max-width: 320px; }
+  .nho { font-size: 14px; }
+  .cuon-bang { overflow-x: auto; }
+  table { border-collapse: collapse; }
+  th, td { text-align: left; padding: 8px; border-bottom: 1px solid #d1d5db; }
+  .phan-trang { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .phan-trang button { padding: 0; }
+  .hop-thoai { max-width: 480px; margin-top: 16px; padding: 16px; border: 1px solid #374151; border-radius: 12px; }
+  .dau-hop { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .dau-hop h2 { margin: 0; }
+  .cong-cu { display: flex; gap: 12px; align-items: center; margin-top: 16px; }
+  .nut-32 { width: 32px; height: 32px; min-width: 0; min-height: 0; padding: 0; }
+  .nut-20 { width: 20px; height: 20px; min-width: 0; min-height: 0; padding: 0; line-height: 1; }
+</style>
+</head>
+<body>
+  <!-- LỖI h1: trang có hai h1 (cái thứ hai ở khối việc chính). -->
+  <h1>Tiệm bánh mì chị Lan</h1>
+
+  <!-- LỖI primary-cta: hai nút chính cạnh nhau, cùng lọt khung nhìn ở mọi khổ. -->
+  <div class="cta">
+    <button type="button" data-ux="primary">Đặt bánh</button>
+    <button type="button" data-ux="primary">Gọi chị Lan</button>
+  </div>
+
+  <!-- LỖI text-min: chữ 10px (mọi khổ). -->
+  <div><span class="ma-don">Mã đơn mẫu: DH-0012</span></div>
+
+  <!-- LỖI body-text-mobile: đoạn văn 14px (chỉ trượt ở khổ dưới 768). -->
+  <p class="ghi-chu">Bánh nướng mỗi sáng lúc 5 giờ, giao trong phường từ 6 giờ.</p>
+
+  <!-- LỖI contrast: chữ cam #F79D2C trên nền trắng (khoảng 2,1:1). -->
+  <p class="canh-bao">Hôm nay hết bánh mì chả cá sau 9 giờ.</p>
+
+  <!-- LỖI overflow-x: khối cố định 400px (+ lề trang 16px) tràn ngang ở 320 và 390; 768, 1440 vừa. -->
+  <div class="bang-rong">Bảng giá cố định rộng 400px: bánh mì thịt 20.000đ, bánh mì trứng 15.000đ.</div>
+
+  <!-- Nội dung dài đẩy việc chính xuống dưới màn đầu. -->
+  <div class="gioi-thieu">
+    <h2>Về tiệm</h2>
+    <p>Chị Lan bán bánh mì ở đầu hẻm từ năm 2015. Khách quen đặt trước qua số 0901 234 567 hoặc
+      email <a href="#lien-he">lan.nguyen+test@example.com</a> để giữ bánh nóng.</p>
+    <ul>
+      <li>Bánh mì thịt nướng</li>
+      <li>Bánh mì trứng ốp la</li>
+      <li>Bánh mì chả cá Nha Trang</li>
+    </ul>
+    <p>Khoá học "Nấu ăn tại gia" của chị Lan mở mỗi tối thứ Bảy cho người mới bắt đầu.</p>
+  </div>
+
+  <!-- LỖI main-task-first-view: khối việc chính nằm dưới hơn 1000px nội dung (trượt ở 320, 390). -->
+  <section data-ux="main-task" id="lien-he">
+    <h1>Đặt bánh trước</h1>
+
+    <!-- LỖI pattern-form + input-size: ô số điện thoại không có nhãn, chữ 14px. -->
+    <form data-ux="form" action="#" onsubmit="return false">
+      <label for="ten">Tên người đặt</label>
+      <input class="o-nhap" id="ten" type="text" value="Nguyễn Thị Lan">
+      <input class="o-nhap nho" type="tel" placeholder="0901 234 567">
+      <button type="submit">Gửi đơn</button>
+    </form>
+
+    <!-- LỖI pattern-data-table: bảng đơn thiếu page-size và range.
+         LỖI one-row: thanh phân trang 9 nút xuống dòng ở 320 và 390. -->
+    <div data-ux="data-table">
+      <h2>Đơn hôm nay</h2>
+      <input class="o-nhap" data-ux="search" type="search" aria-label="Tìm đơn" placeholder="Tìm theo tên">
+      <div class="cuon-bang">
+        <table>
+          <thead><tr><th>Khách</th><th>Món</th><th>Số lượng</th></tr></thead>
+          <tbody>
+            <tr><td>Chị Hoa</td><td>Bánh mì thịt</td><td>2</td></tr>
+            <tr><td>Anh Minh</td><td>Bánh mì trứng</td><td>1</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="phan-trang" data-ux="pager">
+        <button type="button" aria-label="Trang trước">‹</button>
+        <button type="button">1</button>
+        <button type="button">2</button>
+        <button type="button">3</button>
+        <button type="button">4</button>
+        <button type="button">5</button>
+        <button type="button">6</button>
+        <button type="button">7</button>
+        <button type="button" aria-label="Trang sau">›</button>
+      </div>
+    </div>
+
+    <!-- LỖI pattern-overlay: hộp thoại có phần đầu nhưng thiếu overlay-actions. -->
+    <div class="hop-thoai" data-ux="overlay" role="dialog" aria-labelledby="tieu-de-xoa">
+      <div class="dau-hop" data-ux="overlay-head">
+        <h2 id="tieu-de-xoa">Huỷ đơn của chị Hoa?</h2>
+        <button type="button" aria-label="Đóng">×</button>
+      </div>
+      <p>Đơn sẽ bị huỷ và không hoàn tác được.</p>
+    </div>
+
+    <!-- LỖI tap-target: nút 32×32 (trượt dưới 1024) và nút biểu tượng 20×20 (trượt cả ở 1440). -->
+    <div class="cong-cu">
+      <button class="nut-32" type="button" aria-label="Sửa đơn">✎</button>
+      <button class="nut-20" type="button" aria-label="Xoá đơn">×</button>
+    </div>
+  </section>
+</body>
+</html>

@@ -1,0 +1,49 @@
+# Kết quả mong đợi của assets/demo-loi.html: mỗi dòng "<screen>@<width> <code>" ứng với một dòng TRƯỢT
+# của `python3 scripts/ux.py score <thư mục>` (khổ mặc định 320,390,768,1440), xếp theo khổ rồi mã.
+# Tạo lại: mở assets/demo-loi.html ở từng khổ (cao 700, 844, 1024, 900), đặt window.MK_UX_SCREEN = "demo-loi",
+# chạy assets/measure.js, lưu chuỗi trả về thành demo-loi@<khổ>.json vào một thư mục tạm, rồi chạy score.
+# Ghi chú: lỗi nút 20×20 ở khổ 1440 (ngưỡng tap-target-desktop) được ux.py báo dưới mã tap-target.
+demo-loi@320 body-text-mobile
+demo-loi@320 contrast
+demo-loi@320 h1
+demo-loi@320 input-size
+demo-loi@320 main-task-first-view
+demo-loi@320 one-row
+demo-loi@320 overflow-x
+demo-loi@320 pattern-data-table
+demo-loi@320 pattern-form
+demo-loi@320 pattern-overlay
+demo-loi@320 primary-cta
+demo-loi@320 tap-target
+demo-loi@320 text-min
+demo-loi@390 body-text-mobile
+demo-loi@390 contrast
+demo-loi@390 h1
+demo-loi@390 input-size
+demo-loi@390 main-task-first-view
+demo-loi@390 one-row
+demo-loi@390 overflow-x
+demo-loi@390 pattern-data-table
+demo-loi@390 pattern-form
+demo-loi@390 pattern-overlay
+demo-loi@390 primary-cta
+demo-loi@390 tap-target
+demo-loi@390 text-min
+demo-loi@768 contrast
+demo-loi@768 h1
+demo-loi@768 input-size
+demo-loi@768 pattern-data-table
+demo-loi@768 pattern-form
+demo-loi@768 pattern-overlay
+demo-loi@768 primary-cta
+demo-loi@768 tap-target
+demo-loi@768 text-min
+demo-loi@1440 contrast
+demo-loi@1440 h1
+demo-loi@1440 input-size
+demo-loi@1440 pattern-data-table
+demo-loi@1440 pattern-form
+demo-loi@1440 pattern-overlay
+demo-loi@1440 primary-cta
+demo-loi@1440 tap-target
+demo-loi@1440 text-min
