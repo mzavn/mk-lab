@@ -25,23 +25,26 @@ dùng mk-specs mức 4 (`specs/mk-specs.yml`, `specs/README.md`, file UC); chưa
 
 1. Đọc `AGENTS.md`/`CLAUDE.md` nếu có: luật riêng chỉ thu hẹp, không nới cổng cứng dưới đây.
 2. Chọn mode theo bảng. Yêu cầu không rõ là `hỏi` hay `soát` → hỏi **một** câu trước khi tạo file nào.
-3. Đọc `references/audit.md` (mode `soát`: toàn bộ; mode `hỏi`: §2, §5–§7, §10) và `references/catalog.md`.
+3. Đọc `references/audit.md` (mode `soát`: toàn bộ; mode `hỏi`: §2, §5–§7, §10), `references/catalog.md` và
+   `references/catalog-saas.md` — cả hai danh mục, ở cả hai mode, mọi repo (không chọn theo tín hiệu).
 
-| Mode | Khi người dùng… | Kết quả |
-|---|---|---|
-| `hỏi` (mặc định) | hỏi về một route, hàm, file, cấu hình ("route `/hoa-don/:id` có lộ hoá đơn công ty khác không") | trả lời trong chat: kết luận + dấu vết `file:dòng`; **không tạo file** |
-| `soát` | nhờ soát/kiểm/audit bảo mật một phạm vi: phần thay đổi, một nhánh, cả repo, trước khi phát hành | báo cáo `<specs_dir>/security/<yyMMdd>-<slug>.md`, proposal nháp khi spec thiếu luật, gợi ý mk-fix |
+| Mode | Khi người dùng… | Đọc | Kết quả |
+|---|---|---|---|
+| `hỏi` (mặc định) | hỏi về một route, hàm, file, cấu hình ("route `/hoa-don/:id` có lộ hoá đơn công ty khác không") | `audit.md` §2, §5–§7, §10 · `references/catalog.md` · `references/catalog-saas.md` | trả lời trong chat: kết luận + dấu vết `file:dòng`; **không tạo file** |
+| `soát` | nhờ soát/kiểm/audit bảo mật một phạm vi: phần thay đổi, một nhánh, một khoảng phát hành, cả repo | `audit.md` toàn bộ · `references/catalog.md` · `references/catalog-saas.md` | báo cáo `<specs_dir>/security/<yyMMdd>-<slug>.md`, proposal nháp khi spec thiếu luật, gợi ý mk-fix |
 
 ## Lệnh máy
 
 ```bash
-python3 <skill>/scripts/secu.py scope [<đường dẫn>] [--thay-doi [<nhánh gốc>]]   # file cần soát, BỎ QUA, NHẠY CẢM
+python3 <skill>/scripts/secu.py scope [<đường dẫn>] [--thay-doi [<nhánh gốc> | <a>..<b>]]   # file cần soát, BỎ QUA, NHẠY CẢM
 python3 <skill>/scripts/secu.py check <báo cáo.md> [--root <gốc repo>]          # trước khi báo xong
 ```
 
 `<skill>` = thư mục chứa file này. Hai lệnh chỉ đọc; `scope` gọi `git --no-optional-locks`. `check` thoát 0 → in
 dòng tóm tắt ("4 phát hiện · xác nhận 2 (cao 1, thấp 1) · cần kiểm thêm 1 · bác bỏ 1"); 1 → sửa từng dòng `CHẶN:`
-rồi chạy lại; 2 → sai cách gọi hoặc không đọc được file. `scope` thoát 2 khi không phải repo git hoặc nhánh gốc không có.
+rồi chạy lại; 2 → sai cách gọi, không đọc được file, hoặc danh mục hỏng (mã trùng, file thiếu → cài lại skill).
+`scope` thoát 2 khi không phải repo git, nhánh gốc/mốc không có, có `...`, hoặc mốc sau của `a..b` khác commit đang
+checkout. `--thay-doi a..b` chỉ lấy file sửa/thêm giữa hai mốc (`audit.md` §3).
 
 ## Cổng cứng (không bỏ qua, kể cả khi được giục)
 
@@ -78,8 +81,9 @@ rồi chạy lại; 2 → sai cách gọi hoặc không đọc được file. `s
 | `- Hậu quả:` | cụ thể chuyện gì xảy ra? |
 
 Cộng `- Dấu vết:` — token `` `đường/dẫn:dòng` `` (hoặc `:a-b`). **Token đầu là chỗ code sai** (nơi sẽ sửa), các token
-sau là đường từ nguồn tới đó. `- Lớp:` bắt đầu bằng mã trong `references/catalog.md` (hoặc `KHAC`); mỗi ứng viên một
-khối `### SEC-n`, kể cả khi bị bác. Không dùng link markdown.
+sau là đường từ nguồn tới đó (`PARITY`: token sau là đường có kiểm, ở vị trí khác). `- Lớp:` bắt đầu bằng mã trong
+`references/catalog.md` hoặc `references/catalog-saas.md` (hoặc `KHAC`); nhiều lớp cùng khớp → bảng chọn mã ở đầu
+`references/catalog-saas.md`. Mỗi ứng viên một khối `### SEC-n`, kể cả khi bị bác. Không dùng link markdown.
 
 | Kết luận | Khi | Dòng bắt buộc |
 |---|---|---|
@@ -93,7 +97,7 @@ khối `### SEC-n`, kể cả khi bị bác. Không dùng link markdown.
 
 | Loại | Khi | Báo cáo ghi | Bàn giao |
 |---|---|---|---|
-| `code sai AC` | AC bảo mật đang chạy, code vi phạm | `- AC: <UC-ID> AC-n` | "nhờ mk-fix sửa `<yyMMdd-slug> SEC-n`" |
+| `code sai AC` | AC bảo mật đang chạy, code vi phạm — `- Mức:` không dưới `trung bình` | `- AC: <UC-ID> AC-n` (một gốc lỗi vi phạm nhiều AC: nêu đủ) | "nhờ mk-fix sửa `<yyMMdd-slug> SEC-n`" |
 | `thiếu AC` | không AC nào nói tới, hoặc AC chỉ tả trường hợp bình thường, im lặng về ranh giới | `- Proposal: <yyMMdd-slug>` — proposal `Status: draft` với `ADDED <UC-ID> AC-n: Given <vai không quyền> … Then KHÔNG …` | người dùng duyệt proposal → mk-fix |
 | `luật sai` | AC nói rõ điều nguy hiểm là đúng | `- AC:` trỏ AC đó | câu hỏi cho chủ nghiệp vụ (bối cảnh · phương án · AC · hệ quả) |
 | `hạ tầng` | bí mật trong git, cấu hình triển khai, phụ thuộc | — | mk-fix loại hạ tầng; bí mật lộ: thu hồi/đổi khoá là việc của chủ dự án, ngoài repo — gỡ khỏi code chưa đủ |
@@ -110,8 +114,8 @@ chưa cài → gợi ý `bash ~/.mk-lab/install.sh --project .` rồi "khởi t�
 ```mermaid
 flowchart TD
   S[Đọc spec: UC tiền, quyền, dữ liệu cá nhân, tải file; Entity] --> P[secu.py scope]
-  P --> A[Bề mặt tấn công theo UC: điểm vào, vai, N1–N4]
-  A --> D[Dò theo catalog → ứng viên]
+  P --> A[Bề mặt tấn công: lát dọc mỗi UC, điểm vào, vai, N1–N4]
+  A --> D[Dò theo catalog.md + catalog-saas.md → ứng viên; lượt chéo TENANT, PARITY, EXPOSE, LOG]
   D --> F[Sáu sự kiện + dấu vết]
   F --> V[Lượt kiểm cố bác bỏ]
   V --> K[Kết luận → Loại theo spec]

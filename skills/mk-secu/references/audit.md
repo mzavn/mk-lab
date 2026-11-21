@@ -1,7 +1,7 @@
 # Soát bảo mật — quy trình chi tiết
 
-Đọc khi làm mode `soát` (và phần §2, §5–§7 khi trả lời mode `hỏi`). Danh mục lớp lỗi: `catalog.md`. Mẫu báo cáo:
-`../assets/report.md.template`. Mọi bước chỉ **đọc** — xem cổng cứng trong `SKILL.md`.
+Đọc khi làm mode `soát` (và phần §2, §5–§7 khi trả lời mode `hỏi`). Danh mục lớp lỗi: `catalog.md` và
+`catalog-saas.md`. Mẫu báo cáo: `../assets/report.md.template`. Mọi bước chỉ **đọc** — xem cổng cứng trong `SKILL.md`.
 
 ## 1. Đọc spec trước khi đọc code
 
@@ -34,7 +34,12 @@ python3 <skill>/scripts/secu.py scope                       # toàn repo (hoặc
 python3 <skill>/scripts/secu.py scope src/api               # một thư mục
 python3 <skill>/scripts/secu.py scope --thay-doi            # thay đổi chưa commit + file mới
 python3 <skill>/scripts/secu.py scope --thay-doi main       # khác với main (từ merge base) + chưa commit
+python3 <skill>/scripts/secu.py scope --thay-doi v2.6.0..HEAD   # file sửa/thêm giữa hai mốc (trước phát hành)
 ```
+
+- Giá trị có `..` là khoảng `a..b`: chỉ file sửa/thêm giữa hai commit, không cộng thay đổi chưa commit hay file chưa
+  theo dõi; mốc sau phải là commit đang checkout (skill đọc cây làm việc) — khác thì `checkout <mốc sau>` trước. `...`
+  không nhận. Không có `..` → nhánh gốc như dòng trên.
 
 - Chép đúng lệnh đã dùng và số file vào `- Phạm vi:`.
 - Mọi dòng `BỎ QUA:` đưa vào `## Chưa soát` (gộp theo lý do được, nhưng giữ đường dẫn).
@@ -52,14 +57,29 @@ Lập bảng nháp (đưa vào báo cáo mục `## Bề mặt tấn công`):
 | UC | Điểm vào (route, job, webhook, lệnh) | Vai gọi được | Đầu vào N1 | Tài sản |
 |---|---|---|---|---|
 
-- Tìm điểm vào từ bảng route, decorator, file cấu hình router, handler hàng đợi, cron.
+- Tìm điểm vào từ bảng route, decorator, file cấu hình router, handler hàng đợi, cron, danh sách tool của agent.
 - Điểm vào không thuộc UC nào vẫn soát; ghi UC là "—" (thường dẫn tới Loại `thiếu AC`).
 - Mỗi điểm vào: đi theo đầu vào N1 tới chỗ dùng (sink): truy vấn, render, lệnh, đường dẫn file, gọi mạng, câu ghi tiền.
+
+**Lát dọc + lượt chéo** (repo mức 4 có từ 2 UC trở lên — file UC trong `specs_dir`, trừ `changes/`):
+
+1. **Lát dọc mỗi UC.** Đọc hết một UC theo chiều dữ liệu chạy: điểm vào → xử lý → dịch vụ → lưu trữ/tool, rồi mới
+   sang UC khác. Mỗi UC có điểm vào trong phạm vi có ít nhất một dòng trong `## Bề mặt tấn công`.
+2. **Lượt chéo** sau khi xong mọi lát: so giữa các lát cho bốn lớp chỉ lộ ra khi đặt hai đường cạnh nhau — `TENANT`
+   (mọi truy vấn, cache, job có lọc công ty không), `PARITY` (mỗi đối tượng: liệt kê mọi đường ghi, đường nào thiếu
+   kiểm mà đường khác có), `EXPOSE` (cùng bản ghi, mỗi đường trả những trường nào), `LOG` (lời gọi log và middleware
+   ghi chung của mọi lát).
+3. Đầu báo cáo ghi `- Lượt chéo: TENANT, PARITY, EXPOSE, LOG — <các SEC-n tìm ở lượt này, hoặc "không có ứng viên">`.
+   Soát phần thay đổi, mode `hỏi`, hoặc repo dưới 2 UC → bỏ dòng này.
 
 ## 5. Dò theo danh mục
 
 - Với mỗi điểm vào, đọc **trọn hàm xử lý** và hàm nó gọi, không chỉ dòng khớp mẫu.
-- Dò toàn repo theo dấu hiệu của từng lớp trong `catalog.md` (tìm bằng công cụ tìm kiếm của agent, không chạy code).
+- Dò toàn repo theo dấu hiệu của từng lớp trong **cả hai** danh mục `catalog.md` và `catalog-saas.md` (mọi repo, mọi
+  mode — không chọn file theo tín hiệu), tìm bằng công cụ tìm kiếm của agent, không chạy code.
+- Ứng viên khớp nhiều lớp → bảng **Chọn mã khi nhiều lớp cùng khớp** ở đầu `catalog-saas.md`.
+- AC bảo mật đang chạy (§1) là nguồn ứng viên: với mỗi AC, hỏi "đường nào làm Then của AC này sai?" — gồm đường phụ
+  (sao chép, khôi phục, nhập, hàng loạt, tool).
 - Ứng viên = chỗ có dấu hiệu + nguồn N1/N2 có thể tới. Ghi nháp: lớp, file:dòng nguồn, file:dòng chỗ dùng.
 - Nguồn chỉ là N3/N4 → bỏ ngay (ghi lý do nếu người dùng có thể thắc mắc, như một phát hiện `bác bỏ`).
 
@@ -100,6 +120,10 @@ Lập bảng nháp (đưa vào báo cáo mục `## Bề mặt tấn công`):
 | `cao` | đọc/sửa dữ liệu cá nhân, tiền, đơn của người khác; leo vai |
 | `trung bình` | cần thêm điều kiện (nạn nhân bấm link, cấu hình riêng) hoặc dữ liệu ít nhạy cảm |
 | `thấp` | ảnh hưởng hẹp, khó khai thác, hoặc chỉ lộ thông tin phụ trợ |
+| sàn | vi phạm AC bảo mật đang chạy (Loại `code sai AC`) → không dưới `trung bình`, kể cả khi dòng trên cho `thấp`; `secu.py check` chặn `code sai AC` + `thấp` chưa có `- Đã sửa:` |
+
+Một gốc lỗi vi phạm nhiều AC → một phát hiện, `- AC:` nêu đủ các AC đó; mỗi AC bị vi phạm phải có ở `- AC:` của ít
+nhất một phát hiện.
 
 ## 8. Xếp loại theo spec (`- Loại:`)
 

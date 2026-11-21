@@ -3,6 +3,7 @@
 - Spec: <mức 4 | chưa có>
 - Người soát: <agent/người soát>, <yyyy-MM-dd>
 - Người kiểm: <agent con được giao bác bỏ | lượt riêng của cùng agent>
+- Lượt chéo: TENANT, PARITY, EXPOSE, LOG — <các SEC-n tìm ở lượt này, hoặc "không có ứng viên"; soát phần thay đổi hoặc repo dưới 2 UC thì xoá dòng>
 - Tham chiếu: `<yyMMdd-slug>` SEC-n (dùng khi nhờ mk-fix)
 
 ## Tóm tắt
@@ -21,7 +22,7 @@
 - Kết luận: xác nhận
 - Mức: <nghiêm trọng | cao | trung bình | thấp>
 - Loại: <code sai AC | thiếu AC | luật sai | hạ tầng | chưa có spec>
-- Lớp: <mã lớp trong references/catalog.md hoặc KHAC, có thể thêm mô tả sau mã>
+- Lớp: <mã lớp trong references/catalog.md hoặc references/catalog-saas.md, hoặc KHAC, có thể thêm mô tả sau mã>
 - AC: <UC-ID AC-n — khi code sai AC / luật sai; không thì xoá dòng>
 - Proposal: <yyMMdd-slug của proposal nháp — khi thiếu AC; không thì xoá dòng>
 - Ai: <chủ thể kém tin>

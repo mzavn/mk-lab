@@ -3,7 +3,7 @@
 
 Usage:
   python3 <skill>/scripts/secu.py check <report.md> [--root DIR]
-  python3 <skill>/scripts/secu.py scope [<path>] [--thay-doi [<base-branch>]]
+  python3 <skill>/scripts/secu.py scope [<path>] [--thay-doi [<base-branch> | <a>..<b>]]
 
 check (root = --root, default cwd):
   - Header (before the first `## `/`### `): `- Phạm vi:`, `- Spec:` (`mức 4` | `chưa có`), `- Người soát:`,
@@ -13,7 +13,10 @@ check (root = --root, default cwd):
     Đề xuất sửa not empty; Loại code sai AC|thiếu AC|luật sai|hạ tầng|chưa có spec; Lớp not empty;
     Dấu vết has a backticked `<path>:<line>` or `<path>:<a>-<b>` (path may hold spaces).
     `- Đã sửa: commit <7–40 hex>` only here. Any `- Lớp:` starts with a `### CODE —` code of the skill's
-    references/catalog.md, or KHAC. A `SEC-n` heading of level other than 3 (outside fences) is blocked.
+    references/catalog.md or references/catalog-saas.md, or KHAC (a code twice, or a file without codes → exit 2).
+    A confirmed PARITY needs a trace token after the first at another place (other path once a leading `./` is
+    dropped, or same path with a disjoint line range). Confirmed `code sai AC` without `- Đã sửa:` is not `thấp`.
+    A `SEC-n` heading of level other than 3 (outside fences) is blocked.
     cần kiểm thêm: `- Còn thiếu:`. bác bỏ: `- Lý do bác:`.
   - Loại code sai AC / luật sai: `- AC:` names `<UC-ID> AC-n`; when specs/mk-specs.yml exists, the UC file
     (`<UC-ID>-*.md` under specs_dir, not under changes/) has a `### AC-n` heading without `(deprecated`.
@@ -22,10 +25,11 @@ check (root = --root, default cwd):
     target does not start with `#` or `<letters>:` (as mk-specs verify.py reads links).
   - No secret value (provider key formats, JWT, URL password, private key body): line numbers only.
   Passing prints `N phát hiện · xác nhận a (cao b, …) · cần kiểm thêm c · bác bỏ d`.
-scope: tracked files (or, with --thay-doi, changed + untracked files; with a branch, also `<branch>...HEAD`),
+scope: tracked files (or, with --thay-doi, changed + untracked files; with a branch, also `<branch>...HEAD`;
+  with `<a>..<b>`, only files changed/added between the two commits, b must be HEAD's commit),
   limited to <path> or the current subfolder, paths from the repo root; sensitive files flagged first, then
   skipped files listed with their reason. Every git call uses `git --no-optional-locks`.
-Exit 0 pass · 1 blocked (`CHẶN:` lines) · 2 bad call / unreadable file / not a git repo / unknown branch.
+Exit 0 pass · 1 blocked (`CHẶN:` lines) · 2 bad call / unreadable file / not a git repo / unknown branch or ref.
 Standard library only; output is deterministic.
 """
 import argparse
@@ -52,7 +56,9 @@ FIELD = re.compile(r"^- ([^:\n`]{1,40}):[ \t]*(.*)$")
 BACKTICKS = re.compile(r"`[^`\n]*`")
 PLACEHOLDER = re.compile(r"<(?![\s\d=<>-]|https?:)[^<>\n]+>")
 LINK = re.compile(r"\]\(([^)\s]+)\)")
-TRACE = re.compile(r"`[^`:\n]+:\d+(?:-\d+)?`")
+TRACE = re.compile(r"`([^`:\n]+):(\d+)(?:-(\d+))?`")
+CATALOGS = ("catalog.md", "catalog-saas.md")
+CATALOG_NAMES = " hoặc ".join("references/" + name for name in CATALOGS)
 HASH = re.compile(r"(?<![0-9A-Za-z])[0-9a-f]{7,40}(?![0-9A-Za-z])")
 AC_ID = re.compile(r"\bAC-\d+[a-z]?\b")
 ID = re.compile(r"\b([A-Z][A-Z0-9]*-\d+[a-z]?)\b")
@@ -261,22 +267,44 @@ def parse(text):
     return header, findings, sections
 
 
-def class_ok(value, codes):
+def class_code(value):
     m = re.match(r"[`*\s]*([A-Z][A-Z0-9-]*)", value or "")
-    return bool(m) and m.group(1) in codes
+    return m.group(1) if m else None
 
 
 def catalog_codes():
-    """Class codes of `### CODE — …` headings in ../references/catalog.md, plus KHAC."""
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, "references", "catalog.md")
-    try:
-        with open(path, encoding="utf-8") as fh:
-            codes = set(re.findall(r"^### ([A-Z][A-Z0-9-]+) —", fh.read(), re.M))
-    except (OSError, UnicodeDecodeError):
-        codes = set()
-    if not codes:
-        raise BadCall("không đọc được mã lớp trong references/catalog.md của skill — cài lại skill")
-    return codes | {"KHAC"}
+    """Class codes of `### CODE — …` headings in ../references/catalog.md and catalog-saas.md, plus KHAC."""
+    refs = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, "references")
+    found = []
+    for name in CATALOGS:
+        try:
+            with open(os.path.join(refs, name), encoding="utf-8") as fh:
+                codes = re.findall(r"^### ([A-Z][A-Z0-9-]+) —", fh.read(), re.M)
+        except (OSError, UnicodeDecodeError):
+            codes = []
+        if not codes:
+            raise BadCall(f"không đọc được mã lớp trong references/{name} — cài lại skill")
+        found += codes
+    dup = sorted({c for c in found if found.count(c) > 1})
+    if dup:
+        raise BadCall("mã lớp trùng giữa các file danh mục: " + ", ".join(dup) + " — cài lại skill")
+    return set(found) | {"KHAC"}
+
+
+def trace_places(value):
+    """[(path without leading ./, first line, last line)] of the backticked trace tokens, in order."""
+    out = []
+    for m in TRACE.finditer(value or ""):
+        path = m.group(1)
+        while path.startswith("./"):
+            path = path[2:]
+        a, b = int(m.group(2)), int(m.group(3) or m.group(2))
+        out.append((path, min(a, b), max(a, b)))
+    return out
+
+
+def other_place(first, tok):
+    return tok[0] != first[0] or tok[2] < first[1] or tok[1] > first[2]
 
 
 def check_finding(sid, f, cfg, codes, root, blocked):
@@ -296,9 +324,14 @@ def check_finding(sid, f, cfg, codes, root, blocked):
         if choice(f.get("Loại"), TYPES) is None:
             blocked.append(f"{sid}: `- Loại:` phải là " + " / ".join(TYPES))
         if empty(f.get("Lớp")):
-            blocked.append(f"{sid}: trống `- Lớp:` (mã lớp trong references/catalog.md)")
-        if not TRACE.search(f.get("Dấu vết") or ""):
+            blocked.append(f"{sid}: trống `- Lớp:` (mã lớp trong {CATALOG_NAMES})")
+        places = trace_places(f.get("Dấu vết"))
+        if not places:
             blocked.append(f"{sid}: `- Dấu vết:` không có token dạng `đường-dẫn:số`")
+        if class_code(f.get("Lớp")) == "PARITY" and not any(other_place(places[0], t) for t in places[1:]):
+            blocked.append(f"{sid}: PARITY cần ≥ 2 dấu vết ở hai vị trí — đường yếu (sửa ở đây) trước, đường có kiểm sau")
+        if choice(f.get("Loại"), TYPES) == "code sai AC" and level == "thấp" and "Đã sửa" not in f:
+            blocked.append(f"{sid}: code sai AC thì `- Mức:` ít nhất trung bình")
     else:
         if not empty(f.get("Mức")):
             blocked.append(f"{sid}: chỉ phát hiện xác nhận có `- Mức:` (đang là {verdict})")
@@ -306,8 +339,8 @@ def check_finding(sid, f, cfg, codes, root, blocked):
             blocked.append(f"{sid}: cần kiểm thêm thiếu `- Còn thiếu:` (sự kiện còn thiếu)")
         if verdict == "bác bỏ" and empty(f.get("Lý do bác")):
             blocked.append(f"{sid}: bác bỏ thiếu `- Lý do bác:`")
-    if not empty(f.get("Lớp")) and not class_ok(f["Lớp"], codes):
-        blocked.append(f"{sid}: `- Lớp:` phải bắt đầu bằng một mã trong references/catalog.md (hoặc KHAC)")
+    if not empty(f.get("Lớp")) and class_code(f["Lớp"]) not in codes:
+        blocked.append(f"{sid}: `- Lớp:` phải bắt đầu bằng một mã trong {CATALOG_NAMES} (hoặc KHAC)")
     if "Đã sửa" in f:
         if verdict != "xác nhận":
             blocked.append(f"{sid}: `- Đã sửa:` chỉ dành cho phát hiện xác nhận")
@@ -473,6 +506,32 @@ def skip_reason(top, rel):
     return None
 
 
+def commit_of(top, ref):
+    """Full hash of the commit `ref` names, else None (a ref that looks like an option is never a commit)."""
+    if not ref or ref.startswith("-"):
+        return None
+    out = git(top, "rev-parse", "--verify", "--quiet", ref + "^{commit}")
+    return out.decode("ascii", "replace").strip() if out else None
+
+
+def range_commits(top, value):
+    """`<hash a>..<hash b>` for `--thay-doi a..b`; BadCall unless both are commits and b is HEAD's commit."""
+    if "..." in value:
+        raise BadCall("chỉ nhận khoảng a..b")
+    first, last = value.split("..", 1)
+    if not first or not last:
+        raise BadCall(f"thiếu mốc: {value}")
+    hashes = []
+    for ref in (first, last):
+        h = commit_of(top, ref)
+        if h is None:
+            raise BadCall(f"mốc không tồn tại: {ref}")
+        hashes.append(h)
+    if hashes[1] != commit_of(top, "HEAD"):
+        raise BadCall(f"checkout {last} trước khi soát — skill đọc cây làm việc")
+    return hashes[0] + ".." + hashes[1]
+
+
 def scope(path, base):
     start = os.path.realpath(path) if path else os.getcwd()
     if path and not os.path.exists(start):
@@ -488,6 +547,9 @@ def scope(path, base):
     prefix = "" if prefix == "." else prefix
     if base is None:
         files = set(zlist(git(top, "ls-files", "-z") or b""))
+    elif ".." in base:
+        files = set(zlist(git(top, "diff", "--name-only", "-z", "--diff-filter=d", range_commits(top, base)) or b""))
+        files = {f for f in files if os.path.lexists(os.path.join(top, f))}
     else:
         has_head = git(top, "rev-parse", "--verify", "--quiet", "HEAD") is not None
         files = set(zlist(git(top, "ls-files", "-z", "--others", "--exclude-standard") or b""))
@@ -531,7 +593,7 @@ def main():
     c.add_argument("--root", default=".")
     s = sub.add_parser("scope", help="liệt kê file cần soát")
     s.add_argument("path", nargs="?")
-    s.add_argument("--thay-doi", nargs="?", const="", default=None, metavar="NHÁNH_GỐC")
+    s.add_argument("--thay-doi", nargs="?", const="", default=None, metavar="NHÁNH_GỐC|A..B")
     args = ap.parse_args()
     if not args.cmd:
         ap.print_usage(sys.stderr)

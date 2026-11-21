@@ -1,8 +1,11 @@
 # Danh mục lớp lỗi (mã dùng ở `- Lớp:`)
 
 Danh mục giúp **dò**, không thay cho bằng chứng: khớp dấu hiệu chỉ tạo *ứng viên*; ứng viên thành `xác nhận` khi đủ
-sáu sự kiện và dấu vết (`SKILL.md`). Độ tin nguồn N1–N4 xem `audit.md` §2. Lỗi không thuộc lớp nào → `- Lớp: KHAC`
-và nói rõ trong tiêu đề. Mỗi lớp: dấu hiệu · nguồn đáng ngại · khi nào nặng · khi nào hạ (hoặc bỏ) · cần chứng minh · sửa.
+sáu sự kiện và dấu vết (`SKILL.md`). Độ tin nguồn N1–N4 xem `audit.md` §2. Mã lớp nằm ở hai file, luôn đọc cả hai:
+file này (nhóm 1–3) và `catalog-saas.md` (nhóm 4: app nhiều công ty, nhiều vai, có agent — kèm bảng **Chọn mã khi
+nhiều lớp cùng khớp**). Lỗi không thuộc lớp nào → `- Lớp: KHAC`, nói rõ trong tiêu đề và nêu CWE khi biết
+(`KHAC — CWE-601 chuyển hướng mở`). Mỗi lớp: dấu hiệu · nguồn đáng ngại · khi nào nặng · khi nào hạ (hoặc bỏ) · cần
+chứng minh · sửa · gợi ý AC (luật "Then KHÔNG …" cho proposal nháp khi Loại `thiếu AC`).
 
 **Chọn lớp theo chỗ code sai, không theo hậu quả.** Tên file ghép từ tham số làm đọc được file khoá → `PATH-TRAVERSAL`
 (không phải `SECRET`); template tắt escape làm lộ phiên → `XSS` (không phải `SESSION`); câu trừ số dư không điều kiện
@@ -18,6 +21,7 @@ cho hai yêu cầu song song cùng rút → `RACE` (không phải `AUTHZ`). Mộ
 - Hạ/bỏ khi: dữ liệu công khai theo spec; có kiểm chủ ở tầng khác (middleware, policy, row-level security) — phải chỉ ra.
 - Chứng minh: đường từ tham số tới truy vấn, và chỗ lẽ ra so `owner == người gọi` mà không có.
 - Sửa: lọc theo chủ ngay trong truy vấn; trả "không tìm thấy" như đối tượng không tồn tại.
+- Gợi ý AC: Given khách A có mã đơn của khách B When mở hoặc sửa đơn đó Then 404 như đơn không tồn tại.
 
 ### AUTHZ — Thiếu kiểm quyền theo chức năng
 - Dấu hiệu: route quản trị/nhân viên chỉ kiểm "đã đăng nhập"; vai đọc từ thứ người dùng gửi (header, body, cookie không ký); ẩn nút ở giao diện thay cho kiểm ở máy chủ.
@@ -26,6 +30,7 @@ cho hai yêu cầu song song cùng rút → `RACE` (không phải `AUTHZ`). Mộ
 - Hạ/bỏ khi: route không đăng ký ra ngoài (chỉ gọi nội bộ, chứng minh được); spec cho mọi vai làm việc đó.
 - Chứng minh: bảng route → hàm, và vai thấp nhất gọi được.
 - Sửa: kiểm vai ở máy chủ, từ dữ liệu mà client không tự sửa được.
+- Gợi ý AC: Given vai nhân viên When gọi thẳng route xoá/xuất dữ liệu của quản trị Then 403, không có gì đổi.
 
 ### MASS-ASSIGN — Nhận nguyên body vào bản ghi
 - Dấu hiệu: `Model.update(req.body)`, `**data`, vòng lặp gán mọi khoá; danh sách trường cho phép lẫn trường chỉ hệ thống hay người quản trị được đổi (vai, quyền, số dư, trạng thái xác minh, chủ sở hữu, định danh đăng nhập).
@@ -34,14 +39,17 @@ cho hai yêu cầu song song cùng rút → `RACE` (không phải `AUTHZ`). Mộ
 - Hạ/bỏ khi: danh sách cho phép chỉ có trường vô hại; schema xác thực loại bỏ khoá lạ.
 - Chứng minh: khoá nhạy cảm đi được tới câu ghi.
 - Sửa: danh sách trường cho phép theo từng thao tác; trường nhạy cảm có luồng riêng.
+- Gợi ý AC: Given khách sửa hồ sơ When body có thêm `role` hay `balance` Then các trường đó KHÔNG đổi.
 
 ### SESSION — Phiên, JWT, cookie
 - Dấu hiệu: JWT chấp nhận `alg: none` hoặc không kiểm chữ ký (`decode` thay `verify`); khoá ký quá ngắn/dễ đoán (khoá nằm trong mã/git → `SECRET`); phiên không hết hạn, không thu hồi được khi đăng xuất/đổi mật khẩu; cookie phiên thiếu `HttpOnly`/`Secure`.
+- Vòng đời phiên: token của bước giữa (đã qua mật khẩu nhưng chưa qua OTP; token đặt lại mật khẩu) dùng được ở API thường; vai đọc từ claim trong token cũ sau khi nhân viên nghỉ việc hay tài khoản bị khoá; đổi/đặt lại mật khẩu không thu hồi phiên đang mở; thao tác nhạy cảm (đổi email, tắt 2FA, rút tiền) không xác thực lại.
 - Nguồn: N1 (token do client giữ).
 - Nặng khi: giả được phiên người khác hoặc vai cao hơn.
 - Hạ khi: chỉ thiếu cờ cookie mà không có đường XSS/mạng hở đi kèm (ghi `cần kiểm thêm`, nêu sự kiện thiếu).
-- Chứng minh: chỗ tạo và chỗ kiểm token; giá trị nào client đổi được mà máy chủ vẫn nhận.
-- Sửa: kiểm chữ ký với thuật toán cố định, hạn ngắn, khoá từ kho bí mật.
+- Chứng minh: chỗ tạo và chỗ kiểm token; giá trị nào client đổi được mà máy chủ vẫn nhận. Vòng đời: ai đang giữ token nào, quyền đổi ở đâu, và chỗ kiểm token không đọc lại trạng thái tài khoản.
+- Sửa: kiểm chữ ký với thuật toán cố định, hạn ngắn, khoá từ kho bí mật; mỗi yêu cầu đọc lại trạng thái tài khoản/vai (hoặc thu hồi phiên khi quyền đổi); token trung gian chỉ dùng cho bước kế tiếp.
+- Gợi ý AC: Given tài khoản vừa bị khoá hoặc vừa đổi mật khẩu When phiên cũ gọi API Then 401.
 
 ### WEAK-HASH — Băm mật khẩu yếu
 - Dấu hiệu: mật khẩu lưu thẳng, hoặc băm bằng MD5/SHA-1/SHA-256 một lần, không muối.
@@ -50,6 +58,7 @@ cho hai yêu cầu song song cùng rút → `RACE` (không phải `AUTHZ`). Mộ
 - Hạ/bỏ khi: hàm băm nhanh dùng cho việc không dính tới mật khẩu hay chữ ký (nhận diện nội dung, chia nhóm) — không phải lỗi.
 - Chứng minh: hàm băm nằm trên đường lưu/kiểm **mật khẩu**.
 - Sửa: bcrypt/scrypt/argon2 hoặc PBKDF2 nhiều vòng, có muối.
+- Gợi ý AC: Given mật khẩu khách vừa đặt When đọc bảng người dùng Then chỉ thấy giá trị băm chậm có muối.
 
 ### RATE-LIMIT — Không giới hạn thử ở chỗ xác thực
 - Dấu hiệu: đăng nhập, quên mật khẩu, OTP, mã mời không đếm số lần thử theo tài khoản/IP.
@@ -60,16 +69,18 @@ cho hai yêu cầu song song cùng rút → `RACE` (không phải `AUTHZ`). Mộ
   repo → `cần kiểm thêm`. Giới hạn thấy được trong repo (cấu hình) → hạ mức hoặc bỏ.
 - Chứng minh: hàm xử lý không có bộ đếm, không có middleware giới hạn trên route.
 - Sửa: đếm theo tài khoản + IP, khoá tạm, trả lời giống nhau khi sai.
+- Gợi ý AC: Given 5 lần nhập sai liên tiếp When thử lần thứ 6 Then bị từ chối dù mật khẩu đúng, tới hết thời gian khoá.
 
 ## Nhóm 2 — Dữ liệu chảy vào chỗ nguy hiểm
 
 ### SQLI — Chèn SQL/NoSQL
-- Dấu hiệu: ghép chuỗi/f-string/template vào câu truy vấn; `raw()`, `$where`, toán tử Mongo lấy từ object người dùng gửi (`{"$ne": null}`).
+- Dấu hiệu: ghép chuỗi/f-string/template vào câu truy vấn; `raw()`, `$where`, toán tử Mongo lấy từ object người dùng gửi (`{"$ne": null}`); danh sách cho phép bằng regex thiếu neo cuối (`^(asc|desc)` không có `$`) rồi ghép giá trị vào `ORDER BY`.
 - Nguồn: N1; N2 khi giá trị đã lưu được ghép lại vào câu khác.
 - Nặng khi: đọc/sửa bảng khác, vượt điều kiện chủ sở hữu, đăng nhập không cần mật khẩu.
 - Hạ/bỏ khi: phần ghép không mang N1 — hằng, hoặc giá trị đã bị kiểm khớp danh sách cho phép (vd trong module schema/validator dùng chung) trước khi tới đây; lần ngược tới nguồn, qua cả file khác — không phải lỗi.
 - Chứng minh: giá trị N1 đi tới chuỗi SQL mà không qua tham số hoá hay danh sách cố định.
 - Sửa: truy vấn tham số hoá; tên cột/hướng sắp xếp chọn từ danh sách cho phép.
+- Gợi ý AC: Given ô tìm kiếm hoặc tham số sắp xếp chứa ký tự SQL When gửi Then kết quả chỉ lọc đúng chữ đó hoặc báo lỗi đầu vào.
 
 ### XSS — Chèn mã vào trang
 - Dấu hiệu: `innerHTML`, `dangerouslySetInnerHTML`, `v-html`, `|safe`, `mark_safe`, template tắt escape; ghép HTML bằng chuỗi.
@@ -78,6 +89,7 @@ cho hai yêu cầu song song cùng rút → `RACE` (không phải `AUTHZ`). Mộ
 - Hạ/bỏ khi: giá trị đã escape đúng ngữ cảnh; CSP chặn script nội tuyến (vẫn ghi nếu có đường vòng).
 - Chứng minh: giá trị đi từ nguồn tới chỗ render mà không qua escape.
 - Sửa: để framework escape; HTML cho phép thì lọc bằng thư viện sanitize.
+- Gợi ý AC: Given tên khách chứa thẻ `<script>` When quản trị mở trang chi tiết Then thẻ hiện như chữ, không chạy.
 
 ### CMDI — Chèn lệnh hệ điều hành
 - Dấu hiệu: `os.system`, `exec`, `subprocess(..., shell=True)`, `child_process.exec`, backtick shell ghép đầu vào.
@@ -86,6 +98,7 @@ cho hai yêu cầu song song cùng rút → `RACE` (không phải `AUTHZ`). Mộ
 - Hạ/bỏ khi: gọi bằng danh sách đối số, chương trình cố định, đầu vào không thể bắt đầu bằng `-` hoặc có `--` chặn.
 - Chứng minh: đầu vào tới chuỗi lệnh đi qua shell.
 - Sửa: gọi không qua shell với danh sách đối số; thư viện thay cho lệnh ngoài.
+- Gợi ý AC: Given tên file chứa `;` hay `$(…)` When xử lý file Then không lệnh nào ngoài chương trình cố định chạy.
 
 ### PATH-TRAVERSAL — Đọc/ghi file ngoài thư mục cho phép
 - Dấu hiệu: `open(dir + name)`, `path.join(base, req.query.file)`, `send_file` với tên do người dùng gửi; giải nén không kiểm `../`.
@@ -94,6 +107,7 @@ cho hai yêu cầu song song cùng rút → `RACE` (không phải `AUTHZ`). Mộ
 - Hạ/bỏ khi: tên chỉ là khoá tra trong bảng; đường dẫn đã chuẩn hoá rồi kiểm nằm trong thư mục gốc.
 - Chứng minh: đầu vào tới hàm mở file mà không chuẩn hoá + kiểm tiền tố.
 - Sửa: tra tên qua bảng; hoặc `realpath` rồi kiểm nằm trong thư mục gốc.
+- Gợi ý AC: Given tên file `../../config` When tải xuống Then 404, không đọc file ngoài thư mục cho phép.
 
 ### SSRF — Máy chủ đi lấy URL do người dùng chọn
 - Dấu hiệu: tải ảnh/xem trước link/webhook từ URL người dùng gửi (`requests.get(url)`, `urlopen`, `fetch`).
@@ -102,6 +116,7 @@ cho hai yêu cầu song song cùng rút → `RACE` (không phải `AUTHZ`). Mộ
 - Hạ khi: chỉ gọi tới danh sách tên miền cố định; nội dung không trả lại (SSRF mù — vẫn ghi, mức thấp hơn).
 - Chứng minh: URL đi từ đầu vào tới hàm gọi mạng; không kiểm địa chỉ đích sau khi phân giải.
 - Sửa: danh sách tên miền cho phép; chặn dải nội bộ sau khi phân giải; không theo chuyển hướng.
+- Gợi ý AC: Given link ảnh trỏ địa chỉ nội bộ hay metadata cloud When đặt ảnh từ link Then từ chối, không gọi tới.
 
 ### DESERIAL — Giải tuần tự dữ liệu không tin
 - Dấu hiệu: `pickle.loads`, `yaml.load` không `SafeLoader`, `unserialize`, `ObjectInputStream`, `Marshal.load` trên dữ liệu ngoài.
@@ -110,6 +125,7 @@ cho hai yêu cầu song song cùng rút → `RACE` (không phải `AUTHZ`). Mộ
 - Hạ/bỏ khi: dữ liệu do chính app tạo và chỉ app ghi được (N3/N4) — chỉ ra không có đường ghi từ ngoài.
 - Chứng minh: ai ghi được dữ liệu trước khi nó bị giải.
 - Sửa: định dạng dữ liệu thuần (JSON) + kiểm schema.
+- Gợi ý AC: Given cookie hay file tải lên bị sửa tay When máy chủ đọc Then chỉ nhận dữ liệu đúng schema, không dựng object tuỳ ý.
 
 ### FILE-UPLOAD — Tải file lên
 - Dấu hiệu: lưu file với tên/đuôi do người dùng gửi, vào thư mục web phục vụ trực tiếp; chỉ kiểm `Content-Type` hoặc đuôi phía client; không giới hạn cỡ.
@@ -118,14 +134,16 @@ cho hai yêu cầu song song cùng rút → `RACE` (không phải `AUTHZ`). Mộ
 - Hạ khi: lưu ở kho riêng tên ngẫu nhiên, phục vụ với `Content-Disposition: attachment` từ tên miền khác.
 - Chứng minh: đường từ file tải lên tới chỗ lưu và chỗ phục vụ.
 - Sửa: đặt tên mới, kiểm nội dung thật, lưu ngoài thư mục web, giới hạn cỡ.
+- Gợi ý AC: Given file `.html` hay `.php` đổi đuôi thành ảnh When tải lên rồi mở link Then file KHÔNG chạy, không hiển thị như trang.
 
 ### LLM-TOOL — Chèn chỉ thị vào tính năng dùng LLM
-- Dấu hiệu: nội dung người dùng/trang web/email ghép thẳng vào prompt của agent có công cụ (gửi mail, chạy SQL, gọi API, đọc file); đầu ra LLM được chạy như mã/SQL/HTML.
+- Dấu hiệu: nội dung người dùng/trang web/email ghép thẳng vào prompt của agent có công cụ (gửi mail, chạy SQL, gọi API, đọc file); chữ người dùng nối vào chỉ thị hệ thống; cờ trạng thái (đã duyệt, đã thanh toán) nằm cạnh chữ người dùng trong kết quả tool, model không tách được; đầu ra LLM được chạy như mã/SQL/HTML.
 - Nguồn: N1 (cả nội dung gián tiếp: tài liệu, trang được tóm tắt). Đầu ra LLM coi như N1.
 - Nặng khi: công cụ có quyền ghi, gửi ra ngoài, đọc dữ liệu người khác.
 - Hạ khi: LLM không có công cụ, đầu ra chỉ hiển thị đã escape.
-- Chứng minh: đường từ nội dung kém tin tới prompt, và công cụ nguy hiểm agent đó gọi được mà không cần người duyệt.
-- Sửa: tách quyền công cụ theo người dùng, xác nhận trước hành động ghi, coi đầu ra LLM là dữ liệu.
+- Chứng minh: đường từ nội dung kém tin tới prompt, và công cụ nguy hiểm agent đó gọi được. Tool ghi không cần xác nhận ngoài luồng → `AGENCY` (`catalog-saas.md`).
+- Sửa: tách quyền công cụ theo người dùng, giữ chữ kém tin ngoài chỉ thị hệ thống, cờ trạng thái lấy từ máy chủ, coi đầu ra LLM là dữ liệu.
+- Gợi ý AC: Given ghi chú của khách chứa câu ra lệnh cho trợ lý When trợ lý tóm tắt đơn Then không tool ghi nào chạy.
 
 ## Nhóm 3 — Cấu hình, bí mật, phụ thuộc
 
@@ -136,6 +154,7 @@ cho hai yêu cầu song song cùng rút → `RACE` (không phải `AUTHZ`). Mộ
 - Hạ khi: giá trị rõ ràng giả/mẫu (`changeme`, `.env.example` không có giá trị thật) — khi đó không phải phát hiện.
 - Chứng minh: file + dòng + khoá dùng để làm gì (che giá trị, giữ ≤ 4 ký tự đầu).
 - Sửa: chuyển sang biến môi trường/kho bí mật **và** thu hồi/đổi khoá (gỡ khỏi code không xoá khỏi lịch sử git). Loại: `hạ tầng` (repo chưa có spec → `chưa có spec`; vẫn ghi thu hồi/đổi khoá ở `- Đề xuất sửa:`).
+- Gợi ý AC: Given repo và bundle phía client When tìm khoá API, mật khẩu DB Then không có giá trị thật nào.
 
 ### DEBUG-ERROR — Chế độ debug, lỗi lộ chi tiết
 - Dấu hiệu: `DEBUG = True`, `app.run(debug=True)`, trả stack trace/câu SQL/biến môi trường cho client; trang debug công khai.
@@ -144,6 +163,7 @@ cho hai yêu cầu song song cùng rút → `RACE` (không phải `AUTHZ`). Mộ
 - Hạ/bỏ khi: chỉ ở cấu hình dev được chọn bằng biến môi trường, không có đường bật ở production — không phải phát hiện.
 - Chứng minh: cấu hình production thật sự dùng giá trị đó.
 - Sửa: tắt theo môi trường, trả lỗi chung, ghi chi tiết vào log.
+- Gợi ý AC: Given yêu cầu gây lỗi máy chủ ở production When trả về Then chỉ có thông báo chung và mã tra cứu, không stack trace.
 
 ### CORS — Cho trang khác đọc dữ liệu có phiên
 - Dấu hiệu: phản chiếu `Origin` hoặc `*` cùng `Access-Control-Allow-Credentials: true`; danh sách origin so khớp lỏng (`endswith`).
@@ -152,6 +172,7 @@ cho hai yêu cầu song song cùng rút → `RACE` (không phải `AUTHZ`). Mộ
 - Hạ/bỏ khi: API không dùng cookie (token trong header do JS tự gắn); dữ liệu công khai.
 - Chứng minh: header CORS + cách xác thực + cookie gửi chéo trang được.
 - Sửa: danh sách origin chính xác; không bật credentials khi không cần.
+- Gợi ý AC: Given trang ở tên miền lạ When gọi API kèm cookie phiên Then trình duyệt không cho trang đó đọc phản hồi.
 
 ### CSRF — Thao tác thay người dùng từ trang khác
 - Dấu hiệu: thao tác ghi bằng cookie phiên, không token CSRF, cookie không `SameSite=Lax/Strict`; thao tác ghi bằng `GET`.
@@ -160,6 +181,7 @@ cho hai yêu cầu song song cùng rút → `RACE` (không phải `AUTHZ`). Mộ
 - Hạ/bỏ khi: xác thực bằng header (Bearer) không tự gửi; cookie `SameSite=Strict`; framework có token mặc định đang bật.
 - Chứng minh: request chéo trang mang được cookie và máy chủ không kiểm gì thêm.
 - Sửa: `SameSite` + token CSRF cho thao tác ghi; không ghi bằng `GET`.
+- Gợi ý AC: Given khách đang đăng nhập mở trang lạ When trang đó gửi form đổi email Then máy chủ từ chối.
 
 ### DEP-NAME — Tên phụ thuộc lạ (slopsquatting)
 - Dấu hiệu: gói trong file khai báo hoặc `import` không có trong kho chính thức, tên gần giống gói nổi tiếng, gói mới thêm không ai nhắc trong code review; script `postinstall` lạ.
@@ -168,14 +190,17 @@ cho hai yêu cầu song song cùng rút → `RACE` (không phải `AUTHZ`). Mộ
 - Hạ khi: gói nội bộ có registry riêng cấu hình trong repo.
 - Chứng minh: v1 không gọi mạng nên không tra được kho gói → thường là `cần kiểm thêm` ("Còn thiếu: tra tên gói trên kho chính thức"), trừ khi repo tự cho thấy (lockfile trỏ registry lạ).
 - Sửa: dùng gói chính chủ, ghim phiên bản trong lockfile, xoá gói không dùng.
+- Gợi ý AC: (hạ tầng, thường không thành AC) mỗi gói mới có trong kho chính thức và được ghim trong lockfile.
 
 ### RACE — Tranh chấp ở tiền, kho, lượt dùng
-- Dấu hiệu: đọc số dư/tồn kho/lượt dùng mã giảm giá → kiểm → ghi ở hai câu riêng, không khoá, không giao dịch, không điều kiện trong câu ghi.
+- Dấu hiệu: đọc số dư/tồn kho/lượt dùng mã giảm giá → kiểm → ghi ở hai câu riêng, không khoá, không giao dịch, không điều kiện trong câu ghi; đếm lượt thử OTP sau khi đã so mã (yêu cầu song song cùng được so); đếm số bản ghi rồi mới chèn để giữ hạn mức; kiểm ở một giao dịch, ghi ở giao dịch khác.
 - Nguồn: N1 (gửi nhiều yêu cầu song song).
-- Nặng khi: tiền, điểm, tồn kho, mã dùng một lần — spec thường có AC "không âm"/"một lần".
-- Hạ khi: chạy một tiến trình một luồng theo cấu hình thấy được; câu ghi có điều kiện (`UPDATE … WHERE balance >= ?`) và kiểm số dòng bị đổi.
+- Nặng khi: tiền, điểm, tồn kho, mã dùng một lần, hạn mức gói, lượt thử OTP — spec thường có AC "không âm"/"một lần"/"tối đa N".
+- Hạ khi: chạy một tiến trình một luồng theo cấu hình thấy được trong repo (không thấy cách chạy máy chủ → coi như có thể
+  chạy song song, không vì thế mà ghi `cần kiểm thêm`); câu ghi có điều kiện (`UPDATE … WHERE balance >= ?`) và kiểm số dòng bị đổi.
 - Chứng minh: khoảng giữa lần đọc và lần ghi, và cách hai yêu cầu cùng lọt qua.
 - Sửa: một câu ghi có điều kiện hoặc khoá hàng trong giao dịch; khoá duy nhất cho thao tác một lần.
+- Gợi ý AC: Given số dư 100 When hai yêu cầu rút 100 gửi cùng lúc Then nhiều nhất một yêu cầu thành công.
 
 ## Không phải phát hiện
 
@@ -184,3 +209,4 @@ cho hai yêu cầu song song cùng rút → `RACE` (không phải `AUTHZ`). Mộ
 - Kẻ tấn công phải có sẵn quyền cao hơn thứ họ đạt được (quản trị "tấn công" chính dữ liệu mình quản).
 - Code chết, test, script dev không chạy ở production (chỉ ra vì sao không chạy).
 - Lỗ hổng của phụ thuộc theo CVE — v1 không tra mạng; nếu nghi, ghi vào `## Chưa soát`.
+- Repo không có cơ chế đăng nhập nào **và** không AC nào đòi đăng nhập/vai → một câu trong `## Tóm tắt`, không phải phát hiện `AUTHZ`. Có AC đòi → phát hiện theo AC đó (`code sai AC`, Mức không dưới `trung bình`).

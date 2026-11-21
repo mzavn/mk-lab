@@ -13,10 +13,18 @@ import unittest
 
 sys.dont_write_bytecode = True
 SECU = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "secu.py")
-CATALOG = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-                       "references", "catalog.md")
+REFS = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "references")
+CATALOG = os.path.join(REFS, "catalog.md")
+CATALOG_SAAS = os.path.join(REFS, "catalog-saas.md")
 CODES = {"IDOR", "AUTHZ", "MASS-ASSIGN", "SESSION", "WEAK-HASH", "RATE-LIMIT", "SQLI", "XSS", "CMDI", "PATH-TRAVERSAL",
          "SSRF", "DESERIAL", "FILE-UPLOAD", "LLM-TOOL", "SECRET", "DEBUG-ERROR", "CORS", "CSRF", "DEP-NAME", "RACE"}
+SAAS_CODES = {"TENANT", "PARITY", "EXPOSE", "STATE", "AGENCY", "LOG", "RESOURCE"}
+BOTH_FILES = "references/catalog.md hoặc references/catalog-saas.md"
+
+
+def headings(path):
+    with open(path, encoding="utf-8") as fh:
+        return re.findall(r"^### ([A-Z][A-Z0-9-]+) —", fh.read(), re.M)
 
 
 def cat(*parts):
@@ -123,8 +131,8 @@ def report(*findings, head=HEAD, tail=TAIL):
 FULL = report(FINDING_1, FINDING_2, FINDING_3, FINDING_4)
 
 
-def run(*args, cwd=None, env=None):
-    return subprocess.run([sys.executable, SECU, *args], capture_output=True, text=True, cwd=cwd, env=env)
+def run(*args, cwd=None, env=None, script=SECU):
+    return subprocess.run([sys.executable, script, *args], capture_output=True, text=True, cwd=cwd, env=env)
 
 
 def write(path, content, mode="w"):
@@ -144,9 +152,21 @@ class Check(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.root, ignore_errors=True)
 
-    def check(self, text, root=None):
+    def check(self, text, root=None, script=SECU):
         write(self.path, text)
-        return run("check", self.path, "--root", root or self.root)
+        return run("check", self.path, "--root", root or self.root, script=script)
+
+    def skill_copy(self, catalog=None, saas=None):
+        """secu.py copied into a temp skill whose references/ holds the given catalogs (None = file absent)."""
+        skill = os.path.realpath(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, skill, True)
+        script = os.path.join(skill, "scripts", "secu.py")
+        os.makedirs(os.path.dirname(script))
+        shutil.copy(SECU, script)
+        for name, text in (("catalog.md", catalog), ("catalog-saas.md", saas)):
+            if text is not None:
+                write(os.path.join(skill, "references", name), text, "wb" if isinstance(text, bytes) else "w")
+        return script
 
     def blocked(self, text, *needles, root=None):
         res = self.check(text, root=root)
@@ -207,16 +227,83 @@ class Check(unittest.TestCase):
 
     # UC-802 AC-1 (Lớp)
     def test_class_must_start_with_a_catalog_code(self):
-        with open(CATALOG, encoding="utf-8") as fh:
-            headings = set(re.findall(r"^### ([A-Z][A-Z0-9-]+) —", fh.read(), re.M))
-        self.assertEqual(headings, CODES)
-        for code in sorted(CODES) + ["KHAC", "IDOR (đọc đơn của khách khác)", "`SSRF` — ảnh đại diện"]:
+        self.assertEqual(set(headings(CATALOG)), CODES)
+        self.assertEqual(set(headings(CATALOG_SAAS)), SAAS_CODES)
+        for code in sorted(CODES | SAAS_CODES) + ["KHAC", "IDOR (đọc đơn của khách khác)", "`SSRF` — ảnh đại diện",
+                                                  "TENANT — đọc chéo công ty"]:
             res = self.check(report(FINDING_1.replace("- Lớp: IDOR", "- Lớp: " + code)))
             self.assertEqual(res.returncode, 0, code + res.stdout)
-        for bad in ("lỗi quyền truy cập", "IDORX", "idor", "Broken access control", "KHÁC"):
+        for bad in ("lỗi quyền truy cập", "IDORX", "idor", "Broken access control", "KHÁC", "TENANTX", "tenant"):
             res = self.blocked(report(FINDING_1.replace("- Lớp: IDOR", "- Lớp: " + bad)), "SEC-1", "Lớp")
-            self.assertIn("catalog", res.stdout)
+            self.assertIn(BOTH_FILES, res.stdout)
         self.blocked(report(FINDING_4.replace("- Lớp: SQLI", "- Lớp: tiêm SQL")), "SEC-4", "Lớp")
+        res = self.blocked(report(FINDING_1.replace("- Lớp: IDOR", "- Lớp:")), "SEC-1", "Lớp")
+        self.assertIn(BOTH_FILES, res.stdout)
+
+    def test_codes_are_read_from_both_named_catalog_files(self):
+        script = self.skill_copy("### ALPHA — a\n", "### BETA — b\n### GAMMA-2 — c\n")
+        for code in ("ALPHA", "BETA", "GAMMA-2", "KHAC"):
+            res = self.check(report(FINDING_1.replace("- Lớp: IDOR", "- Lớp: " + code)), script=script)
+            self.assertEqual(res.returncode, 0, code + res.stdout)
+        res = self.check(report(FINDING_1), script=script)
+        self.assertEqual(res.returncode, 1, res.stdout)
+        self.assertIn(BOTH_FILES, res.stdout)
+        # another .md in references/ is not a catalog
+        write(os.path.join(os.path.dirname(os.path.dirname(script)), "references", "audit.md"), "### DELTA — d\n")
+        res = self.check(report(FINDING_1.replace("- Lớp: IDOR", "- Lớp: DELTA")), script=script)
+        self.assertEqual(res.returncode, 1, res.stdout)
+
+    # UC-802 AC-8
+    def test_duplicate_code_across_or_within_catalog_files_exits_2(self):
+        for main, saas in (("### ZED — a\n### BETA — b\n", "### BETA — x\n### ZED — y\n"),
+                           ("### ZED — a\n### ZED — b\n### BETA — c\n", "### BETA — d\n")):
+            res = self.check(FULL, script=self.skill_copy(main, saas))
+            self.assertEqual(res.returncode, 2, res.stdout)
+            self.assertIn("mã lớp trùng giữa các file danh mục: BETA, ZED — cài lại skill", res.stdout)
+            self.assertNotIn("CHẶN:", res.stdout)
+
+    def test_missing_or_empty_catalog_file_exits_2_naming_it(self):
+        real = "".join(f"### {c} — x\n" for c in headings(CATALOG))
+        for main, saas, name in ((real, None, "catalog-saas.md"), (real, "# trống\n", "catalog-saas.md"),
+                                 (None, "### BETA — b\n", "catalog.md"), ("## IDOR — sai cấp\n", "### BETA — b\n", "catalog.md"),
+                                 (real, b"\xff\xfe### BETA \x00", "catalog-saas.md")):
+            res = self.check(FULL.replace("- Kết luận: xác nhận", "- Kết luận: sai"), script=self.skill_copy(main, saas))
+            self.assertEqual(res.returncode, 2, name + res.stdout)
+            self.assertIn(f"không đọc được mã lớp trong references/{name} — cài lại skill", res.stdout)
+            self.assertNotIn("CHẶN:", res.stdout)
+
+    # UC-802 AC-9
+    def test_confirmed_parity_needs_two_trace_locations(self):
+        parity = FINDING_1.replace("- Lớp: IDOR", "- Lớp: PARITY")
+        old = "  - `app/orders.py:12` nhận `order_id` từ đường dẫn\n  - `app/db.py:30-34` truy vấn không lọc chủ đơn\n"
+        self.assertIn(old, parity)
+        msg = "SEC-1: PARITY cần ≥ 2 dấu vết ở hai vị trí — đường yếu (sửa ở đây) trước, đường có kiểm sau"
+        good = ("`app/copy.py:12`\n  - `app/orders.py:12`", "`app/a.py:10-20`\n  - `app/a.py:21`",
+                "`app/a.py:10-20` và `app/a.py:5-9`", "`./app/a.py:3` `./app/a.py:3` `app/b.py:3`",
+                "`app/a.py:7` `app/a.py:8-9`")
+        for trace in good:
+            res = self.check(report(parity.replace(old, "  - " + trace + "\n")))
+            self.assertEqual(res.returncode, 0, trace + res.stdout)
+        bad = ("`app/a.py:12`", "`app/a.py:12` `app/a.py:12`", "`app/a.py:10-20` `app/a.py:20-25`",
+               "`./app/a.py:5` `app/a.py:5`", "`app/a.py:10-20`\n  - `./app/a.py:15`", "`app/a.py:9` `app/a.py:1-9`")
+        for trace in bad:
+            self.blocked(report(parity.replace(old, "  - " + trace + "\n")), msg)
+        one = "  - `app/a.py:12`\n"
+        for finding in (FINDING_3.replace("- Lớp: FILE-UPLOAD", "- Lớp: PARITY"),
+                        FINDING_4.replace("- Lớp: SQLI", "- Lớp: PARITY")):
+            res = self.check(report(finding))
+            self.assertEqual(res.returncode, 0, res.stdout)
+        res = self.check(report(FINDING_1.replace(old, one)))
+        self.assertEqual(res.returncode, 0, res.stdout)
+
+    # UC-802 AC-10
+    def test_code_violating_ac_is_at_least_medium(self):
+        low = FINDING_1.replace("- Mức: cao", "- Mức: thấp")
+        self.blocked(report(low), "SEC-1: code sai AC thì `- Mức:` ít nhất trung bình")
+        for ok in (low + "- Đã sửa: commit a1b2c3d\n", FINDING_1.replace("- Mức: cao", "- Mức: trung bình"),
+                   FINDING_2, FINDING_2.replace("- Loại: thiếu AC", "- Loại: luật sai").replace("- Proposal:", "- AC: UC-101 AC-1\n- Proposal:")):
+            res = self.check(report(ok))
+            self.assertEqual(res.returncode, 0, ok + res.stdout)
 
     # UC-802 AC-4 (heading level)
     def test_finding_heading_must_be_level_three(self):
@@ -461,6 +548,60 @@ class Scope(unittest.TestCase):
         self.assertEqual(res.returncode, 2)
         self.assertIn("khong-co-nhanh", res.stdout + res.stderr)
 
+    # UC-803 AC-6
+    def range_repo(self):
+        """tag v1 = init; v2 = app.py changed, src/new.py + vendor/n.php + .env added, src/api/users.py deleted."""
+        git(self.repo, "tag", "v1")
+        write(os.path.join(self.repo, "app.py"), "print(2)\n")
+        write(os.path.join(self.repo, "src/new.py"), "n\n")
+        write(os.path.join(self.repo, "vendor/n.php"), "<?php\n")
+        write(os.path.join(self.repo, ".env"), "A=1\n")
+        os.remove(os.path.join(self.repo, "src/api/users.py"))
+        git(self.repo, "add", "-A")
+        git(self.repo, "reset", "-q", "untracked.py")
+        git(self.repo, "commit", "-q", "-m", "v2")
+        git(self.repo, "tag", "v2")
+        write(os.path.join(self.repo, "src/web/page.js"), "let dirty\n")  # uncommitted: not in a range
+
+    def test_range_lists_files_changed_between_two_refs(self):
+        self.range_repo()
+        for rng in ("v1..v2", "v1..HEAD", "v1..main"):
+            res = run("scope", "--thay-doi", rng, cwd=self.repo)
+            self.assertEqual(res.returncode, 0, rng + res.stdout + res.stderr)
+            self.assertEqual(self.listed(res.stdout), [".env", "app.py", "src/new.py"], rng)
+            self.assertIn("BỎ QUA: vendor/n.php", res.stdout)
+            self.assertIn("NHẠY CẢM: .env — file bí mật đang nằm trong git", res.stdout)
+            for absent in ("users.py", "page.js", "untracked.py", "ignored.txt"):
+                self.assertNotIn(absent, res.stdout, rng)
+        res = run("scope", "src", "--thay-doi", "v1..v2", cwd=self.repo)
+        self.assertEqual(self.listed(res.stdout), ["src/new.py"])
+        res = run("scope", "--thay-doi", "v2..HEAD", cwd=self.repo)
+        self.assertEqual(res.returncode, 0, res.stdout)
+        self.assertEqual(res.stdout.strip(), "0 file cần soát · 0 bỏ qua")
+        # no `..` keeps the base-branch meaning: merge base + uncommitted + untracked
+        res = run("scope", "--thay-doi", "v1", cwd=self.repo)
+        self.assertEqual(self.listed(res.stdout), [".env", "app.py", "src/new.py", "src/web/page.js", "untracked.py"])
+
+    def test_bad_range_exits_2_with_reason(self):
+        self.range_repo()
+        cases = (("..v2", "thiếu mốc: ..v2"), ("v1..", "thiếu mốc: v1.."), ("..", "thiếu mốc: .."),
+                 ("v1..khong-co", "mốc không tồn tại: khong-co"), ("khong-co..v2", "mốc không tồn tại: khong-co"),
+                 ("v1...v2", "chỉ nhận khoảng a..b"), ("v1...", "chỉ nhận khoảng a..b"),
+                 ("v1..HEAD:app.py", "mốc không tồn tại: HEAD:app.py"))
+        for rng, msg in cases:
+            res = run("scope", "--thay-doi", rng, cwd=self.repo)
+            self.assertEqual(res.returncode, 2, rng + res.stdout)
+            self.assertIn(msg, res.stdout, rng)
+            self.assertNotIn("file cần soát", res.stdout, rng)
+        res = run("scope", "--thay-doi", "v2..v1", cwd=self.repo)
+        self.assertEqual(res.returncode, 2, res.stdout)
+        self.assertIn("checkout v1 trước khi soát — skill đọc cây làm việc", res.stdout)
+        write(os.path.join(self.repo, "app.py"), "print(3)\n")
+        git(self.repo, "commit", "-q", "-am", "v3")
+        res = run("scope", "--thay-doi", "v1..v2", cwd=self.repo)
+        self.assertEqual(res.returncode, 2, res.stdout)
+        self.assertIn("checkout v2 trước khi soát — skill đọc cây làm việc", res.stdout)
+
     # UC-803 AC-3
     def test_sensitive_files_are_flagged_before_skip_rules(self):
         pk = "-----BEGIN PRIVATE " + "KEY-----\nMIIE\n"
@@ -513,12 +654,13 @@ class Scope(unittest.TestCase):
         os.chmod(shim, os.stat(shim).st_mode | stat.S_IEXEC)
         env = dict(os.environ, PATH=bindir + os.pathsep + os.environ.get("PATH", ""))
         write(os.path.join(self.repo, "app.py"), "print(9)\n")
-        for args in (("scope",), ("scope", "--thay-doi"), ("scope", "--thay-doi", "main")):
+        for args in (("scope",), ("scope", "--thay-doi"), ("scope", "--thay-doi", "main"), ("scope", "--thay-doi", "main..HEAD")):
             self.assertEqual(run(*args, cwd=self.repo, env=env).returncode, 0, args)
         with open(log, encoding="utf-8") as fh:
             calls = [ln for ln in fh.read().splitlines() if ln]
         self.assertTrue(calls)
         self.assertTrue(all(c.startswith("--no-optional-locks") for c in calls), calls)
+        self.assertTrue(any(re.search(r"\bdiff\b.*\b[0-9a-f]{40}\.\.[0-9a-f]{40}\b", c) for c in calls), calls)
 
 
 if __name__ == "__main__":
