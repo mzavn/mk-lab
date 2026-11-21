@@ -4,7 +4,7 @@ description: 'Human-centred UX for the mk suite, tied to mk-specs: turns real us
 license: MIT
 metadata:
   author: mzavn
-  version: "2.7.0"
+  version: "2.8.0"
 ---
 
 # mk:ux — trải nghiệm từ nhu cầu thật, gắn vào spec và design system

@@ -4,7 +4,7 @@ description: 'Fix bugs the spec-driven way in a level-4 mk-specs repo: reproduce
 license: MIT
 metadata:
   author: mzavn
-  version: "2.7.0"
+  version: "2.8.0"
 ---
 
 # mk:fix — sửa lỗi bắt đầu từ AC, không từ triệu chứng
