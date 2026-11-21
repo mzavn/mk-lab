@@ -8,6 +8,20 @@ Mỗi bản có số dạng `X.Y.Z`:
 
 Cập nhật: `bash ~/.mk-lab/install.sh --update`. Agent cũng tự nhắc khi có bản mới.
 
+## Chưa phát hành
+
+Dự kiến: v2.8.0
+
+### mk-secu
+
+**Mới**
+
+- **Soát được lỗi của app nhiều công ty, nhiều vai, có agent**: danh mục thêm 7 lớp — đọc chéo dữ liệu công ty khác, đường phụ (sao chép, nhập, làm hàng loạt, tool của agent) bỏ kiểm quyền mà đường chính có, trả thừa trường nhạy cảm, đổi số liệu đã chốt, agent làm việc ghi tiền/quyền không cần xác nhận, ghi mật khẩu/token vào log, một yêu cầu không cần đăng nhập làm cạn tài nguyên. Phiên còn sống sau khi khoá tài khoản hay đổi mật khẩu cũng được soát.
+- **Cùng một lỗi, mọi model chọn cùng một lớp**: bảng thứ tự chọn mã khi nhiều lớp cùng khớp.
+- **App có nhiều ca sử dụng** được đọc theo từng luồng (từ điểm vào tới chỗ lưu dữ liệu), rồi một lượt so chéo giữa các luồng.
+- **Code vi phạm luật bảo mật đã ghi trong spec** không bao giờ bị xếp mức thấp; `secu.py check` chặn khi điều này bị quên.
+- **Soát trước phát hành theo khoảng**: `secu.py scope --thay-doi v1..v2`.
+
 ## v2.7.0 — 21/11/2026
 
 ### mk-ux
