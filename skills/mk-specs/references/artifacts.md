@@ -93,4 +93,5 @@ Không phải ERD: tên nghiệp vụ, nghĩa, trạng thái, quan hệ, bất b
 
 - Là **cửa vào**, không phải changelog: tối đa 5 dòng banner "Cập nhật …"/"Hợp nhất …" (gen.py tự bỏ dòng cũ nhất theo `readme.banner`); lịch sử đầy đủ nằm ở History từng UC/ADR và `git log -- specs/`.
 - Dòng đếm, dải ID (`BR-01…BR-NN`, `ADR-01…ADR-NN`), dòng chỉ số, số divergence/open do gen.py cập nhật theo `readme.lines` — không sửa tay.
+- Bảng chỉ mục UC giữa `<!-- mk-specs:uc-index:start -->` và `<!-- mk-specs:uc-index:end -->` do gen.py sinh (traceability.md §3) — không sửa tay; mỗi context cần một link `](<thư mục context>/` trong README (audit.py báo context thiếu).
 - Mục "Hàng đợi quyết định": chỉ những `[DIVERGENCE]`/`[OPEN]` ảnh hưởng tới tiền, quyền, bảo mật hoặc lời hứa trong BR, mỗi mục một dòng + link UC.

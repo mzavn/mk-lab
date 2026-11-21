@@ -7,7 +7,8 @@ UC files: `<UC-ID>-*.md` / `<UC-ID>.md` under specs_dir except `changes/`, `_tem
 <title>` inside `## Acceptance Criteria`, up to the next heading; dropped if the title holds `(deprecated` or the UC is
 `- Status: deprecated`. Open proposals: specs_dir/changes/<slug>/proposal.md (not archive/), AC lines read by the rules
 of mk-cook gate.py (copied, not imported — ADR-29). Exit 0 found · 1 not found, dropped or duplicate UC id · 2 bad
-arguments or no specs/mk-specs.yml. Standard library only; output is deterministic.
+arguments, specs/PRD.md whose header `- Status:` is not `promoted` (level 1–3 repo; checked first) or no
+specs/mk-specs.yml. Standard library only; output is deterministic.
 """
 import argparse
 import json
@@ -301,6 +302,12 @@ def main():
         1 <= len(ids) <= 2 and (len(ids) == 1 or AC_ARG.fullmatch(ids[1])))
     if bad:
         ap.error("")
+    prd = os.path.join(args.root, "specs", "PRD.md")
+    if os.path.isfile(prd):
+        m = re.search(r"^- Status:(.*)$", read(prd).split("\n## ", 1)[0], re.M)
+        if not first_word(m.group(1) if m else "").startswith("promoted"):
+            print("repo mức 1–3 (specs/PRD.md chưa promoted) — sửa theo story trong PRD, không dùng ac.py")
+            return 2
     for need in ("mk-specs.yml", "README.md"):
         if not os.path.isfile(os.path.join(args.root, "specs", need)):
             print(f"mk-fix ac: cần repo mk-specs mức 4 đã init — chưa có specs/{need} (nhờ mk-specs `init` trước)")

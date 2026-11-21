@@ -7,6 +7,7 @@
 - Tham chiếu: `<yyMMdd-slug>` SEC-n (dùng khi nhờ mk-fix)
 
 ## Tóm tắt
+<chỉ khi không hỏi được người dùng (cổng 6): dòng đầu là cảnh báo công bố, dòng kết quả `secu.py check` xuống dòng thứ hai>
 <một dòng kết quả của `secu.py check`>. Không thấy phát hiện ngoài danh sách dưới **trong phạm vi đã soát**; phần
 `## Chưa soát` chưa được kết luận.
 

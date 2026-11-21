@@ -45,7 +45,7 @@ class Handler(BaseHTTPRequestHandler):
         try:
             body = {}
             if method == "POST":
-                length = int(self.headers.get("Content-Length") or 0)
+                length = max(0, int(self.headers.get("Content-Length") or 0))
                 body = json.loads(self.rfile.read(min(length, 65536)) or b"{}")
             if not isinstance(body, dict):
                 raise ValueError("body")

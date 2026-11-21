@@ -95,7 +95,9 @@ Không dòng nào đúng → mã có dấu hiệu khớp trong danh mục.
 ### LOG — Dữ liệu nhạy cảm vào log
 - Dấu hiệu: middleware ghi nguyên body/header của mọi yêu cầu; mật khẩu, token, OTP, số thẻ trong lời gọi log; lỗi
   của dịch vụ gửi mail/SMS ghi kèm người nhận; chuỗi người dùng có ký tự xuống dòng ghi thẳng (giả được dòng log);
-  nhật ký kiểm toán lấy mã client gửi làm khoá. Bí mật viết cứng trong lời gọi log → `SECRET`.
+  nhật ký kiểm toán lấy mã client gửi làm khoá; token/khoá trong query string của URL mà nhật ký truy cập mặc định
+  (vd `BaseHTTPRequestHandler.log_message`, access log của web server) ghi nguyên dòng yêu cầu. Bí mật viết cứng
+  trong lời gọi log → `SECRET`.
 - Nguồn: N1 (body, header); người nhận không đáng là ai đọc được log (vận hành, dịch vụ log bên ngoài).
 - Nặng khi: mật khẩu, token còn hạn → `cao`; dữ liệu cá nhân → `trung bình`.
 - Hạ/bỏ khi: bộ lọc che trường chạy trước khi ghi (cấu hình thấy được trong repo); log chỉ bật ở môi trường dev.
@@ -107,7 +109,9 @@ Không dòng nào đúng → mã có dấu hiệu khớp trong danh mục.
 - Dấu hiệu: đọc hết body không giới hạn cỡ; giải nén không giới hạn tổng cỡ hay số mục; `limit`/`page_size` lấy từ
   query không có chặn trên; regex có lượng từ lồng nhau chạy trên đầu vào; route công khai trả mọi dòng của bảng.
 - Nguồn: N1 trên đường **không cần đăng nhập**.
-- Nặng khi: một yêu cầu nhỏ gây chi phí lớn hơn nhiều bậc (vài KB gửi lên → hàng GB bộ nhớ hay hàng phút CPU).
+- Nặng khi: tính chi phí một yêu cầu với đầu vào lớn nhất máy chủ nhận (trần body/giải nén thấy được trong repo; không
+  thấy trần → coi ≥ 1 GB): ≥ 1 GB bộ nhớ hoặc ≥ 60 giây CPU → `cao`; ≥ 10 MB bộ nhớ hoặc ≥ 1 giây CPU → `trung bình`;
+  dưới mức đó → không phải phát hiện. Ghi con số đã tính ở `- Hậu quả:` (`audit.md` §7).
 - Hạ/bỏ khi: cần đăng nhập → không phải phát hiện; giới hạn ở tầng trước thấy được trong repo; chi phí cố định theo
   thiết kế, không tăng theo cỡ đầu vào (vd băm mật khẩu ở mức khuyến nghị khi đăng nhập) → không phải phát hiện; vấn
   đề là số lần thử (`RATE-LIMIT`) hay loại file (`FILE-UPLOAD`).

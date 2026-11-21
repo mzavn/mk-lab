@@ -2,7 +2,8 @@
 
 ## 1. Trước khi code
 
-1. Chạy cổng: `python3 <skill>/scripts/gate.py <slug>`. Thoát 1 → dừng (SKILL.md cổng cứng 1). Thoát 0 → giữ danh sách "Test cần viết" làm việc phải làm.
+1. Chạy cổng: `python3 <skill>/scripts/gate.py <slug>`. Thoát 1 → dừng (SKILL.md cổng cứng 1): trước khi cổng thoát 0, không tạo/sửa file nào ngoài thư mục change và `plans/reports/` — không code, không test nháp, không script thử (bản thử để thư mục tạm ngoài repo, vd `mktemp -d`). Thoát 0 → giữ danh sách "Test cần viết" làm việc phải làm.
+   - `CHẶN: AC-n đã có trong UC-x — dùng số kế: AC-m …` → người viết proposal đổi số; nếu file UC đang được viết sẵn cho change này thì thêm dòng History trỏ `changes/archive/<slug>/proposal.md`. `UC-x không có AC-n` / `không thấy file UC-x` → sửa số hoặc mã UC trong proposal. Đổi số AC là đổi proposal → xin duyệt lại phần đổi (§6).
 2. Đọc proposal (`## Vì sao`, `## Thay đổi spec`, `## Quyết định`, `## Thiết kế`), `plan.md` nếu có, UC chính và `entities` liên quan, ADR được nhắc. Code đụng tới: đọc trước, theo đúng cách repo đang viết (cấu trúc thư mục, tên, thư viện test).
 3. Có `plan.md` → làm theo từng phase đúng thứ tự phụ thuộc; mỗi phase xong mới sang phase sau. Không có → làm theo thứ tự UC trong danh sách cổng.
 4. Proposal có màn hình (Thay đổi spec/Thiết kế nhắc trang, form, bảng, nút; hoặc có `specs/wireframe.html`) → đọc `ui-lane.md` trước khi viết test.
@@ -41,7 +42,7 @@ AC `DEPRECATED` (cổng in ở mục "Bỏ"): xoá hoặc sửa test và code c�
 
 ## 6. Bằng chứng và cổng `--done`
 
-Điền `## Bằng chứng nghiệm thu` trong proposal (thay mọi chỗ trống mẫu):
+Điền `## Bằng chứng nghiệm thu` trong proposal (thay mọi chỗ trống mẫu). Sửa proposal ở mọi Status theo tiêu đề (SKILL.md cổng cứng 8): chạy `gate.py <slug>` ghi lại số "AC thêm/sửa"; thay đúng khối từ dòng bắt đầu bằng `## Bằng chứng nghiệm thu` tới dòng kế bắt đầu bằng `## ` (hoặc hết file), không thay theo chuỗi tự do; chạy lại `gate.py <slug>` — cùng số thì đi tiếp, khác thì khôi phục khối đã cắt rồi sửa lại. Mẫu:
 
 ```
 - AC ↔ Test: UC-204 AC-9 ↔ `tests/test_layout.py` › "Layout › test_contexts_overrides" (đỏ → xanh); UC-207 AC-7 ↔ ⚠ kiểm tay: kịch bản …, kết quả …

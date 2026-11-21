@@ -92,3 +92,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         self.dispatch("POST")
+
+    def log_message(self, fmt, *args):
+        import sys
+        sys.stderr.write("%s %s\n" % (self.command, urlparse(self.path).path))

@@ -35,17 +35,18 @@ python3 <skill>/scripts/gate.py <slug-hoặc-thư-mục-change>          # trư�
 python3 <skill>/scripts/gate.py <slug-hoặc-thư-mục-change> --done   # trước khi báo xong
 ```
 
-`<skill>` = thư mục chứa file này. Thoát 0 → đi tiếp; 1 → **dừng**, đọc dòng `CHẶN:` và nói rõ ai cần làm gì; 2 → sai cách gọi. Cổng kiểm: Status `approved`/`implemented` và đủ hai người duyệt (nghiệp vụ, kỹ thuật — không `chờ`); AC đọc được (có số, mỗi dòng một AC hoặc một dãy `AC-1, AC-2` ngay sau `ADDED`/`MODIFIED`/`DEPRECATED`, mỗi AC thuộc đúng một UC); > 5 AC thêm/sửa hoặc `- Quy mô: lớn` thì cần `plan.md` nhắc mỗi AC ở đúng một phase; với `--done`: mục `## Bằng chứng nghiệm thu` không còn chỗ trống mẫu `<…>` (ngoài dấu backtick) và nhắc mọi AC thêm/sửa/bỏ dạng `<UC-ID> AC-n`. AC `DEPRECATED` được liệt kê riêng: xoá hoặc sửa test và code tương ứng.
+`<skill>` = thư mục chứa file này. Thoát 0 → đi tiếp; 1 → **dừng**, đọc dòng `CHẶN:` và nói rõ ai cần làm gì; 2 → sai cách gọi. Cổng kiểm: Status `approved`/`implemented` và đủ hai người duyệt (nghiệp vụ, kỹ thuật — không `chờ`); AC đọc được (có số, mỗi dòng một AC hoặc một dãy `AC-1, AC-2` ngay sau `ADDED`/`MODIFIED`/`DEPRECATED`, mỗi AC thuộc đúng một UC); số AC khớp file UC thật (có `specs/mk-specs.yml` và `specs_dir`): `ADDED AC-n` mà UC đã có `### AC-n` (kể cả deprecated) → chặn, gợi ý số kế; file UC viết sẵn cho chính change này (có chuỗi `<slug>/proposal.md`, vd dòng History) chỉ bị chặn khi có hai `### AC-n` cùng số; `MODIFIED`/`DEPRECATED` cần file UC và tiêu đề AC đó; > 5 AC thêm/sửa hoặc `- Quy mô: lớn` thì cần `plan.md` nhắc mỗi AC ở đúng một phase; với `--done`: mục `## Bằng chứng nghiệm thu` không còn chỗ trống mẫu `<…>` (ngoài dấu backtick) và nhắc mọi AC thêm/sửa/bỏ dạng `<UC-ID> AC-n`. AC `DEPRECATED` được liệt kê riêng: xoá hoặc sửa test và code tương ứng.
 
 ## Cổng cứng (không bỏ qua, kể cả khi được giục)
 
-1. **Cổng máy thoát 1 thì không sửa file code.** Kể cả khi người dùng nói "làm luôn": trả lời đang chặn ở đâu, ai cần làm gì (duyệt, viết plan, sửa AC).
+1. **Cổng máy chưa thoát 0 thì không tạo/sửa file nào ngoài thư mục change của proposal và `plans/reports/`** — không code, không test nháp, không script thử; muốn thử cách làm thì để ở thư mục tạm ngoài repo. Kể cả khi người dùng nói "làm luôn" hay "viết test trước cho nhanh": trả lời đang chặn ở đâu, ai cần làm gì (duyệt, viết plan, sửa AC).
 2. **Test trước theo AC.** Mỗi AC thêm/sửa có test chạy thấy đỏ trước khi code; xanh sau. Test kiểm hành vi người dùng thấy, không kiểm chi tiết cài đặt, không mock lõi nghiệp vụ. (Đây là "test trước" — không gọi là TDD; trong mk-specs TDD là tài liệu thiết kế kỹ thuật.)
 3. **Spec không nói thì không đoán.** Câu hỏi nghiệp vụ giữa chừng → dừng, tham vấn 4 phần (bối cảnh & câu hỏi · phương án · điều khoản spec liên quan · hệ quả). Tiền, quyền, bảo mật, dữ liệu cá nhân, pháp lý → chờ chủ sản phẩm quyết. Câu trả lời ghi vào proposal (hoặc ADR) trước khi code tiếp.
 4. **Không thêm luật spec không có**, không "để sau mở rộng", không sửa phần không liên quan.
 5. **Giao diện chỉ dùng token của `DESIGN.md`.** Chưa có `DESIGN.md` → tạo trước (mode `design`), không tự bịa màu/khoảng cách.
 6. **"Xong" = cổng `--done` qua + DoD của project xanh + đã chạy thử đường thay đổi** (giao diện: đã xem trên trình duyệt). Không báo xanh khi chưa chạy.
 7. **Không sửa UC/ADR chính, không archive** — việc hợp nhất là mode `merge` của mk-specs.
+8. **Sửa proposal theo tiêu đề, không theo chuỗi tự do** (mọi Status). Sửa một mục (vd điền `## Bằng chứng nghiệm thu`) = thay đúng khối từ dòng bắt đầu bằng `## <tiêu đề>` tới dòng kế bắt đầu bằng `## `. Chạy `gate.py` trước và sau khi sửa: số "AC thêm/sửa" phải như nhau — khác là đã cắt mất hoặc nhân đôi AC, khôi phục rồi sửa lại.
 
 ## Tự bào chữa thường gặp
 
@@ -53,6 +54,7 @@ python3 <skill>/scripts/gate.py <slug-hoặc-thư-mục-change> --done   # trư�
 |---|---|
 | "AC này đơn giản, khỏi test" | AC đơn giản là chỗ hồi quy âm thầm. Test mất vài phút. |
 | "Viết code trước rồi test sau cho nhanh" | Test viết sau thường chỉ chụp lại code đang có, không kiểm AC. |
+| "Cổng chưa qua nhưng viết test nháp trước cho nhanh" | File nháp trong repo là việc làm trước duyệt; AC có thể đổi khi duyệt. Thử ở thư mục tạm ngoài repo. |
 | "Spec chắc ý là thế này" | Đoán = tạo luật mới không ai duyệt. Hỏi. |
 | "Thêm luôn chỗ kia cho tiện" | Ngoài proposal → một dòng ghi chú cho người dùng, không code. |
 | "Giao diện nhìn ổn trong code rồi" | Chưa mở trình duyệt thì chưa biết. |

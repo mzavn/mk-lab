@@ -8,6 +8,7 @@
 > <Một câu: app làm gì, cho ai.>
 >
 > **Khi code theo file này:** chọn story `Todo` đầu tiên ở §7 mà phụ thuộc đã `Done`, bỏ qua story `Blocked` → đổi `Status: In Progress` → code đúng "Done khi", không thêm điều PRD không nói; dòng gắn `[OPEN]` là giá trị tạm, giữ dễ đổi → đổi `Status` (Done, hoặc Partial + ghi phần thiếu) → commit `feat(<mã story>): …`. Mỗi lần đổi `Status`, đổi ở cả §2 và §7. PRD không trả lời được → hỏi chủ dự án, sửa PRD trước rồi mới code.
+> Lỗi ở story `Done`: tái hiện lỗi trước → tìm story có "Done khi" bị vi phạm → sửa code cho đúng "Done khi", giữ `Status: Done` → commit `fix(<mã story>): …`. Không story nào nói về hành vi đó → hỏi chủ dự án, thêm story vào PRD trước rồi mới sửa.
 
 ## 1. Vì sao
 - Vấn đề: <vấn đề cụ thể, ai đang khổ vì nó>

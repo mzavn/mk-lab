@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Regenerate <specs>/traceability.md and <specs>/open-issues.md, refresh README counters, print metrics.
+"""Regenerate <specs>/traceability.md and <specs>/open-issues.md, refresh README counters and the UC index between
+`<!-- mk-specs:uc-index:start -->` / `<!-- mk-specs:uc-index:end -->` (incomplete markers → README untouched), print metrics.
 
 Usage: gen.py [--root DIR] [--config FILE] [--verified-on YYYY-MM-DD] [--tests FILE.json] [--trust-list-command]
   --root         project root (default: cwd); config defaults to <root>/specs/mk-specs.yml
@@ -68,7 +69,7 @@ if P.cfg["tests"]["citation_style"] == "name":
             by_name.setdefault((m.group(1), m.group(2)), []).append(f"`{file}` › \"{name.replace(' > ', ' › ')}\"")
 
 # ── traceability ──
-summary, body = [], []
+summary, body, index = [], [], []
 tot = [0, 0, 0, 0]
 active = set(P.cfg["metrics"]["active_status"])
 spec_active = spec_covered = 0
@@ -82,6 +83,7 @@ for ctx, title in P.contexts:
             sys.exit(f"mk-specs: {ctx}/{f}: first line must be '# <UC-ID>: <name>'")
         uc, name = m.group(1), m.group(2)
         status, br = meta(lines, "Status"), meta(lines, "BR")
+        index.append((os.path.join(specs, ctx, f), uc, name, status))
         body.append(f"### [{uc}]({ctx}/{f}) {name}\nStatus: `{status}` · BR: {br}\n\n| AC | Test |\n|---|---|")
         n_uc += 1
         in_ac = False
@@ -238,10 +240,34 @@ M = {
     "adr_last": last_id("adr"), "br_last": last_id("br"),
 }
 
-# ── README: drop old banner lines, refresh counter lines ──
-notes = []
+# ── README: fill the UC index between its markers, drop old banner lines, refresh counter lines ──
+INDEX_START, INDEX_END = "<!-- mk-specs:uc-index:start -->", "<!-- mk-specs:uc-index:end -->"
+
+
+def uc_index(lines):
+    """README lines with the UC table between the uc-index markers; unchanged without markers; None if incomplete."""
+    starts = [i for i, l in enumerate(lines) if l.strip() == INDEX_START]
+    ends = [i for i, l in enumerate(lines) if l.strip() == INDEX_END]
+    if not starts and not ends:
+        return lines
+    if len(starts) != 1 or len(ends) != 1 or ends[0] < starts[0]:
+        return None
+    here = os.path.dirname(readme_path)
+    rows = ["| UC | Tên | Status |", "|---|---|---|"]
+    for path, uc, name, status in index:
+        link = os.path.relpath(path, here).replace(os.sep, "/")
+        name = name.replace("|", "\\|")
+        st = re.match(r"\W*([\w-]+)", status)
+        rows.append(f"| [{uc}]({link}) | {name} | {st.group(1) if st else status} |")
+    return lines[: starts[0] + 1] + rows + lines[ends[0]:]
+
+
+notes, lines = [], None
 if readme_path and os.path.exists(readme_path):
-    lines = read(readme_path).split("\n")
+    lines = uc_index(read(readme_path).split("\n"))
+    if lines is None:
+        notes.append("README: uc-index markers incomplete")  # README left as it is
+if lines is not None:
     banner = rcfg.get("banner") or {}
     if banner.get("match") and banner.get("keep") is not None:
         rx = re.compile(banner["match"])

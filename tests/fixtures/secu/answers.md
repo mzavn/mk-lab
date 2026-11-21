@@ -18,11 +18,11 @@ Không đưa file này cho agent soát. Đường dẫn tính từ gốc `app/` 
 | B1 | `orders.py` | 16-26 | IDOR | code sai AC | UC-101 AC-2 | `view_order` lấy đơn theo mã, không lọc chủ đơn: khách đọc đơn và địa chỉ giao của khách khác |
 | B2 | `auth.py` | 50-57 | RATE-LIMIT | code sai AC | UC-103 AC-3 | `login` không đếm lần sai, không khoá tạm: dò mật khẩu không giới hạn |
 | B3 | `settings.py` | 2 | SECRET | hạ tầng | thu hồi/đổi khoá | khoá ký phiên viết cứng và nằm trong git: ai đọc repo cũng ký được phiên của bất kỳ người dùng nào (kể cả nhân viên) |
-| B4 | `account.py` | 8-22 | MASS-ASSIGN | thiếu AC | ADDED UC-102 AC-n: khách gửi vai/điểm/email thì KHÔNG đổi | `update_profile` nhận `role`, `points`, `email` từ body: khách tự thành nhân viên, tự cộng điểm |
+| B4 | `account.py` | 8-22 | MASS-ASSIGN | code sai AC | UC-101 AC-4 | `update_profile` nhận `role`, `points`, `email` từ body: khách tự thành nhân viên, tự cộng điểm |
 | B5 | `account.py` | 25-42 | SSRF | thiếu AC · luật sai (UC-102 AC-3) | ADDED UC-102 AC-n: link trỏ địa chỉ nội bộ thì KHÔNG lấy; hoặc hỏi chủ nghiệp vụ về UC-102 AC-3 | `set_avatar` tải mọi URL http(s) từ máy chủ, `get_avatar` trả lại nội dung: đọc được dịch vụ nội bộ |
 | B6 | `orders.py` | 5-13 | SQLI | code sai AC | UC-101 AC-2 | `list_orders` ghép `tim` vào câu SQL: thoát điều kiện chủ đơn, đọc đơn người khác và bảng `users` |
 
-Phủ Loại: `code sai AC` ×3, `thiếu AC` ×2 (B5 chấp nhận cả `luật sai`), `hạ tầng` ×1. Mức không chấm.
+Phủ Loại: `code sai AC` ×4, `thiếu AC` ×1 (B5 chấp nhận cả `luật sai`), `hạ tầng` ×1. Mức không chấm.
 
 ## Bẫy (trông như lỗi, phải lần qua file khác mới thấy không phải)
 
@@ -44,3 +44,5 @@ Token đầu ở `orders.py:29-33` với lớp `SQLI` cũng tính là báo nhầ
 
 Ghi chú: `auth.py` ngoài `login` (băm PBKDF2 có muối, ký và đọc phiên có hạn) là đúng; phát hiện `xác nhận` ở đó với lớp
 khác `RATE-LIMIT` tính là phát hiện thừa.
+
+Đổi 2026-11-21: B4 theo UC-801 AC-12; bản trước sha256 `1b6ed90c…36cb9` dùng chấm lượt 3–4 (261027) và dry-run 261117.

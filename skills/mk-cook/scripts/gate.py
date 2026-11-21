@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""mk-cook gate: may this change be coded (or reported done)? Reads the change folder only; changes nothing.
+"""mk-cook gate: may this change be coded (or reported done)? Reads the change folder and UC files; changes nothing.
 
 Usage (from the project root):
   python3 <skill>/scripts/gate.py <change>           before coding
@@ -12,21 +12,30 @@ Before coding:
     (a new UC listing its AC). The owner UC is the inline ID, else the `### …` heading holding exactly one ID that
     matches `ids.uc` of specs/mk-specs.yml (default `UC-\\d+`). Unnumbered, scattered or ownerless AC → blocked.
   - More than 5 added/modified AC, or `- Quy mô: lớn` → plan.md names each one in exactly one `## ` phase.
+  - UC files of the repo (`<UC-ID>-*.md` / `<UC-ID>.md` under `specs_dir` of specs/mk-specs.yml, except `changes/`,
+    `_templates/`, `templates/`; AC = `### AC-n` heading inside `## Acceptance Criteria`, deprecated ones too; several
+    files with one id are read together): ADDED AC-n already there → blocked with the next free number, unless the
+    file holds `<slug>/proposal.md` (drafted for this change; then only two `### AC-n` headings block); MODIFIED or
+    DEPRECATED needs the UC file and the AC heading. No config or no specs_dir → these checks are skipped.
   Prints the AC list to write tests for (and the deprecated ones to remove).
 --done also: `## Bằng chứng nghiệm thu` exists, has no `<…>` placeholder outside backticks, names every AC.
 In plan.md and evidence, `UC-101 AC-1, AC-2` names both (each AC belongs to the closest ID before it).
 Exit 0 pass · 1 blocked (reasons printed) · 2 bad arguments. Standard library only; output is deterministic.
+UC-file reading is copied from mk-fix ac.py, not imported (ADR-29).
 """
 import argparse
 import json
 import os
 import re
 import sys
+import unicodedata
 
 sys.dont_write_bytecode = True
 
 PLAN_LIMIT = 5
 DEFAULT_UC = r"UC-\d+"
+SKIP_DIRS = {"changes", "_templates", "templates"}
+AC_HEAD = re.compile(r"^###\s+(AC-(\d+)[a-z]?)\b")
 ID = re.compile(r"\b([A-Z][A-Z0-9]*-\d+[a-z]?)\b")
 BULLET = r"^\s*(?:[-*]|\d+[.)])\s+"
 KEYWORD = re.compile(BULLET + r"(ADDED|MODIFIED|DEPRECATED)\b\s*(.*)$")
@@ -89,26 +98,32 @@ def may_hang(p):
     return False
 
 
-def uc_pattern(root):
-    """ids.uc of specs/mk-specs.yml, compiled; default when absent, too long, may hang or invalid."""
+def project_config(root):
+    """Text of specs/mk-specs.yml, or None when absent or unreadable."""
     try:
         with open(os.path.join(root, "specs", "mk-specs.yml"), encoding="utf-8") as fh:
-            cfg = fh.read()
+            return fh.read()
     except (OSError, UnicodeDecodeError):
-        cfg = ""
-    m = re.search(r"^\s+uc:\s*(?:'([^'\n]*)'|\"((?:[^\"\\\n]|\\.)*)\"|([^\s#]+))", cfg, re.M)
-    raw = DEFAULT_UC
-    if m and m.group(2) is not None:
-        try:
-            raw = json.loads('"' + m.group(2) + '"')
-        except ValueError:
-            pass
-    elif m:
-        raw = m.group(1) if m.group(1) is not None else m.group(3)
-    if not raw or len(raw) > 200 or may_hang(raw):
-        raw = DEFAULT_UC
+        return None
+
+
+def config_value(cfg, key, indented):
+    """Scalar `<key>:` of the simplified YAML config: quoted ('…' or JSON-style "…") or bare; None if absent."""
+    lead = r"^\s+" if indented else r"^"
+    m = re.search(lead + re.escape(key) + r":\s*(?:'([^'\n]*)'|\"((?:[^\"\\\n]|\\.)*)\"|([^\s#]+))", cfg, re.M)
+    if not m or m.group(2) is None:
+        return m and (m.group(1) if m.group(1) is not None else m.group(3))
     try:
-        return re.compile(raw)
+        return json.loads('"' + m.group(2) + '"')
+    except ValueError:
+        return None
+
+
+def uc_pattern(cfg):
+    """ids.uc of the config, compiled; default when absent, too long, may hang or invalid."""
+    raw = config_value(cfg or "", "uc", True)
+    try:
+        return re.compile(raw if raw and len(raw) <= 200 and not may_hang(raw) else DEFAULT_UC)
     except re.error:
         return re.compile(DEFAULT_UC)
 
@@ -118,12 +133,13 @@ def is_uc(tok, uc_re):
 
 
 def acs(text, uc_re):
-    """(changed, deprecated, problems): changed/deprecated = [(uc, ac)] in order; uc None = owner unknown.
+    """(changed, deprecated, problems, added): changed/deprecated = [(uc, ac)] in order; uc None = owner unknown;
+    added = the changed pairs that are new (`ADDED` or `- AC-n: Given …`), the rest of changed is MODIFIED.
 
     `### ` heading sets the owner (exactly one UC id, else none); a deeper heading with one UC id sets it,
     one without UC ids keeps the parent's. Lines inside ``` fences are examples, not AC."""
     body = section(text, "Thay đổi spec") or ""
-    changed, deprecated, problems, owner, fenced = [], [], [], None, False
+    changed, deprecated, problems, added, owner, fenced = [], [], [], set(), None, False
     split = "tách dòng (mỗi dòng một AC hoặc một dãy `AC-1, AC-2` ngay sau từ khoá)"
     for line in body.split("\n"):
         if line.lstrip().startswith("```"):
@@ -161,11 +177,77 @@ def acs(text, uc_re):
             m = NEW_AC.match(line)
             if not m or "Given" not in m.group(2):
                 continue
-            uc, ids, target = owner, [m.group(1)], changed
+            uc, ids, target, kind = owner, [m.group(1)], changed, "ADDED"
         for ac in ids:
             if (uc, ac) not in changed and (uc, ac) not in deprecated:
                 target.append((uc, ac))
-    return changed, deprecated, problems
+                if kind == "ADDED":
+                    added.add((uc, ac))
+    return changed, deprecated, problems, added
+
+
+def read_text(path):
+    with open(path, encoding="utf-8-sig", errors="replace") as fh:
+        return unicodedata.normalize("NFC", fh.read().replace("\r\n", "\n"))
+
+
+def uc_files(specs, uc_re):
+    """{uc_id: [paths]} for `<UC-ID>-*.md` / `<UC-ID>.md` under specs, skipping change and template folders."""
+    found = {}
+    for top, dirs, files in os.walk(specs):
+        dirs[:] = sorted(d for d in dirs if d not in SKIP_DIRS)
+        for stem in sorted(n[:-3] for n in files if n.endswith(".md")):
+            cuts = [i for i, c in enumerate(stem) if c == "-"] + [len(stem)]
+            uc = next((stem[:i] for i in cuts if is_uc(stem[:i], uc_re)), None)
+            if uc:
+                found.setdefault(uc, []).append(os.path.join(top, stem + ".md"))
+    return found
+
+
+def uc_headings(text):
+    """[(ac, number)] of `### AC-n` headings inside `## Acceptance Criteria`, deprecated ones included, repeats kept."""
+    out, fenced = [], False
+    for line in (section(text, "Acceptance Criteria") or "").split("\n"):
+        if line.lstrip().startswith("```"):
+            fenced = not fenced
+            continue
+        m = None if fenced else AC_HEAD.match(line)
+        if m:
+            out.append((m.group(1), int(m.group(2))))
+    return out
+
+
+def check_numbers(cfg, root, slug, changed, deprecated, added, uc_re):
+    """Blocks from the repo's UC files: ADDED number already taken, MODIFIED/DEPRECATED AC or UC missing.
+    No config or no specs_dir → []."""
+    specs = os.path.join(root, config_value(cfg, "specs_dir", False) or "specs") if cfg is not None else None
+    if not specs or not os.path.isdir(specs):
+        return []
+    files, mine, blocked, heads, drafted = uc_files(specs, uc_re), f"{slug}/proposal.md", [], {}, {}
+    for uc in dict.fromkeys(u for u, _ in changed + deprecated):
+        texts = [read_text(p) for p in files.get(uc, [])]
+        heads[uc] = [h for t in texts for h in uc_headings(t)] if texts else None
+        drafted[uc] = any(mine in t for t in texts)
+    missing_uc = set()
+    for uc, ac in changed + deprecated:
+        have = heads[uc]
+        if (uc, ac) in added:
+            if have is None:
+                continue
+            ids = [a for a, _ in have]
+            if drafted[uc] and ids.count(ac) > 1:
+                blocked.append(f"{uc} có hai tiêu đề `### {ac}` — đổi số một cái")
+            elif not drafted[uc] and ac in ids:
+                nxt = max(n for _, n in have) + 1
+                blocked.append(f"{ac} đã có trong {uc} — dùng số kế: AC-{nxt} (nếu đang viết sẵn UC này cho change này: "
+                               f"thêm dòng History trỏ `changes/archive/{slug}/proposal.md`)")
+        elif have is None:
+            if uc not in missing_uc:
+                missing_uc.add(uc)
+                blocked.append(f"không thấy file {uc} — MODIFIED/DEPRECATED cần UC có thật")
+        elif ac not in [a for a, _ in have]:
+            blocked.append(f"{uc} không có {ac}")
+    return blocked
 
 
 def pairs_in(text, uc_re):
@@ -248,8 +330,9 @@ def main():
     if blocked:
         return report(blocked, [])
 
-    uc_re = uc_pattern(args.root)
-    changed, deprecated, problems = acs(text, uc_re)
+    cfg = project_config(args.root)
+    uc_re = uc_pattern(cfg)
+    changed, deprecated, problems, added = acs(text, uc_re)
     if not changed and not deprecated and not problems:
         hint = ""
         if re.search(r"^#{3,}\s+AC-\d", section(text, "Thay đổi spec") or "", re.M):
@@ -262,6 +345,8 @@ def main():
                        + " — đặt dưới `### <UC-ID>` (một mã) hoặc ghi `ADDED <UC-ID> AC-n: …`")
     changed = [(u, a) for u, a in changed if u]
     deprecated = [(u, a) for u, a in deprecated if u]
+    slug = os.path.basename(os.path.dirname(os.path.abspath(path)))
+    blocked += check_numbers(cfg, args.root, slug, changed, deprecated, added, uc_re)
 
     warnings, plan_note = [], "không cần"
     large = first_word(header_value(text, "Quy mô")) == "lớn"

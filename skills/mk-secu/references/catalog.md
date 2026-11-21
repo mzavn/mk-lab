@@ -193,7 +193,7 @@ cho hai yêu cầu song song cùng rút → `RACE` (không phải `AUTHZ`). Mộ
 - Gợi ý AC: (hạ tầng, thường không thành AC) mỗi gói mới có trong kho chính thức và được ghim trong lockfile.
 
 ### RACE — Tranh chấp ở tiền, kho, lượt dùng
-- Dấu hiệu: đọc số dư/tồn kho/lượt dùng mã giảm giá → kiểm → ghi ở hai câu riêng, không khoá, không giao dịch, không điều kiện trong câu ghi; đếm lượt thử OTP sau khi đã so mã (yêu cầu song song cùng được so); đếm số bản ghi rồi mới chèn để giữ hạn mức; kiểm ở một giao dịch, ghi ở giao dịch khác.
+- Dấu hiệu: đọc số dư/tồn kho/lượt dùng mã giảm giá → kiểm → ghi ở hai câu riêng, không khoá, không giao dịch, không điều kiện trong câu ghi; kiểm điều kiện (kỳ đã chốt, trạng thái) ở một câu rồi ghi ở câu khác, không điều kiện trong câu ghi; đếm lượt thử OTP sau khi đã so mã (yêu cầu song song cùng được so); đếm số bản ghi rồi mới chèn để giữ hạn mức; kiểm ở một giao dịch, ghi ở giao dịch khác.
 - Nguồn: N1 (gửi nhiều yêu cầu song song).
 - Nặng khi: tiền, điểm, tồn kho, mã dùng một lần, hạn mức gói, lượt thử OTP — spec thường có AC "không âm"/"một lần"/"tối đa N".
 - Hạ khi: chạy một tiến trình một luồng theo cấu hình thấy được trong repo (không thấy cách chạy máy chủ → coi như có thể

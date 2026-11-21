@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Report (never rewrite) spec hygiene gaps: missing UC sections/metadata, code identifiers in business text,
-commits without a UC/BR/ADR ID since metrics.since.
+contexts the README never links to (`](<context dir>/`), commits without a UC/BR/ADR ID since metrics.since.
 
 Usage: audit.py [--root DIR] [--config FILE] [--limit N]
 Always exits 0; it is a to-do list for converting specs when they are next touched.
@@ -109,6 +109,22 @@ for rel, hits in sorted(code_lines, key=lambda x: -len(x[1])):
     print(f"- {rel}: {len(hits)} line(s)")
     for i, kinds, text in hits[: args.limit]:
         print(f"    {i}: [{', '.join(kinds)}] {text[:120]}")
+
+rfile = P.cfg["readme"].get("file")
+try:
+    readme = P.inside(rfile, P.specs, "readme.file") if rfile else None
+except mkspecs.ConfigError as e:
+    print(f"\n## Contexts missing from README: skipped ({e})")
+else:
+    if not readme or not os.path.isfile(readme):
+        print("\n## Contexts missing from README: skipped (no README)")
+    else:
+        text, here = mkspecs.read(readme), os.path.dirname(readme)
+        unlinked = [ctx for ctx, _ in P.contexts
+                    if f"]({os.path.relpath(os.path.join(P.specs, ctx), here).replace(os.sep, '/')}/" not in text]
+        print(f"\n## Contexts missing from README: {len(unlinked)}")
+        for ctx in unlinked:
+            print(f"- {ctx}")
 
 subjects = P.commits()
 if subjects is None:

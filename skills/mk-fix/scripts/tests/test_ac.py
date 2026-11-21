@@ -328,5 +328,44 @@ class Arguments(Repo):
         self.assertLess(time.monotonic() - start, 5)
 
 
+class PrdOnlyRepo(Repo):
+    MSG = "repo mức 1–3 (specs/PRD.md chưa promoted) — sửa theo story trong PRD, không dùng ac.py"
+
+    def prd(self, status):
+        self.put("specs/PRD.md", f"# PRD: Shop\n- Status: {status}\n- Người duyệt: mza\n\n## Stories\n"
+                 "- Status: promoted\n")
+
+    def test_unpromoted_prd_exits_2_in_every_mode_even_with_config_and_readme(self):
+        self.uc101()
+        for status in ("draft", "approved (2026-11-21)", "`draft`"):
+            self.prd(status)
+            for args in (("UC-101", "AC-1"), ("UC-101",), ("--tim", "giỏ")):
+                res = self.check(args, 2, self.MSG)
+                self.assertNotIn("UC-101-dat-hang.md", res.stdout, args)
+
+    def test_prd_check_runs_before_config_and_readme_checks(self):
+        self.prd("draft")
+        for missing in ("README.md", "mk-specs.yml"):
+            os.remove(os.path.join(self.root, "specs", missing))
+            res = self.check(("UC-101", "AC-1"), 2, self.MSG)
+            self.assertNotIn("cần repo mk-specs mức 4", res.stdout)
+
+    def test_status_after_first_section_or_missing_still_counts_as_unpromoted(self):
+        self.uc101()
+        self.put("specs/PRD.md", "# PRD: Shop\n\n## Stories\n- Status: promoted\n")
+        self.check(("UC-101", "AC-1"), 2, self.MSG)
+
+    def test_promoted_prd_or_no_prd_behaves_as_before(self):
+        self.uc101()
+        self.check(("UC-101", "AC-1"), 0, "specs/checkout/UC-101-dat-hang.md")
+        self.prd("promoted (2026-11-21, 261121-promote)")
+        self.check(("UC-101", "AC-1"), 0, "specs/checkout/UC-101-dat-hang.md")
+
+    def test_bad_arguments_still_print_usage_before_prd_check(self):
+        self.prd("draft")
+        res = self.check(("UC-101", "AC2"), 2, "ac.py <UC-ID> [AC-n]")
+        self.assertNotIn(self.MSG, res.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()

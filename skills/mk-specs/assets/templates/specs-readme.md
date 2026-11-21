@@ -40,6 +40,11 @@ ID vĩnh viễn: không đánh số lại, không dùng lại. AC bỏ thì ghi 
 0 UC · 0 AC · 0 AC có test · **0 AC chưa có test** (chi tiết: [traceability.md](traceability.md)).
 Chỉ số: AC Coverage — · Spec Coverage — (0/0 UC) · Trace Ratio — (0/0 commit từ —).
 
+<!-- mk-specs:uc-index:start -->
+| UC | Tên | Status |
+|---|---|---|
+<!-- mk-specs:uc-index:end -->
+
 ## 5. Hàng đợi quyết định
 
 Toàn bộ 0 divergence và 0 câu hỏi mở nằm ở [open-issues.md](open-issues.md). Dưới đây là các mục ảnh hưởng tới tiền, quyền truy cập, bảo mật hoặc lời hứa trong BR — chờ chủ sản phẩm quyết.

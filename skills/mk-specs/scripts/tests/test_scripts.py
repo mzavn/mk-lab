@@ -747,6 +747,153 @@ class ConfigLayout(unittest.TestCase):
             mkspecs.Project(self.root)
         self.assertIn("layout must be 'layers'", str(ctx.exception))
 
+def uc_text(uc, name, status):
+    return (f"# {uc}: {name}\n- Status: {status}\n- BR: BR-01\n\n## History\n- v1 (2026-10-25): khởi tạo\n\n"
+            "## Main Flow\n1. Bước 1\n\n## Acceptance Criteria\n### AC-1: A\n- Given a\n- When b\n- Then c\n"
+            "- Tests: ⚠ Chưa có test\n")
+
+
+START, END = "<!-- mk-specs:uc-index:start -->", "<!-- mk-specs:uc-index:end -->"
+
+
+class UcIndex(unittest.TestCase):
+    """gen.py fills the README table between the uc-index markers (UC-301 AC-12)."""
+
+    def setUp(self):
+        self.root = tempfile.mkdtemp()
+
+    def tree(self, layout, readme_file=None, readme_text=None):
+        base = "specs/use-cases/" if layout == "layers" else "specs/"
+        cfg = f"version: 1\nlanguage: vi\nspecs_dir: specs\nlayout: {layout}\n"
+        if layout == "contexts":
+            cfg += "contexts:\n  - id: ship\n  - id: checkout\n"
+        if readme_file:
+            cfg += f"readme:\n  file: {readme_file}\n"
+        write_tree(self.root, {
+            "specs/mk-specs.yml": cfg,
+            base + "ship/UC-901-trien-khai.md": uc_text("UC-901", "Triển khai | rollback", "`implemented` (v2)"),
+            base + "ship/UC-902-smoke.md": uc_text("UC-902", "Smoke", "draft"),
+            base + "checkout/UC-101-dat.md": uc_text("UC-101", "Đặt hàng", "partial — thiếu e2e"),
+        })
+        if layout == "contexts":  # UC outside the listed contexts gets no row
+            write_tree(self.root, {"specs/journal/UC-501-viet.md": uc_text("UC-501", "Viết", "draft")})
+        path = os.path.join(self.root, "specs", readme_file or "README.md")
+        write_tree(self.root, {os.path.relpath(path, self.root): readme_text})
+        return path
+
+    def readme(self, path):
+        with open(path, encoding="utf-8") as fh:
+            return fh.read()
+
+    def gen(self):
+        res = run("gen.py", self.root)
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+        return res
+
+    def table(self, prefix, order=("ship", "checkout")):
+        rows = {
+            "ship": [f"| [UC-901]({prefix}ship/UC-901-trien-khai.md) | Triển khai \\| rollback | implemented |",
+                     f"| [UC-902]({prefix}ship/UC-902-smoke.md) | Smoke | draft |"],
+            "checkout": [f"| [UC-101]({prefix}checkout/UC-101-dat.md) | Đặt hàng | partial |"],
+        }
+        return "\n".join(["| UC | Tên | Status |", "|---|---|---|"] + [r for c in order for r in rows[c]])
+
+    def test_table_between_markers_in_context_order_for_both_layouts_and_idempotent(self):
+        text = f"# Specs\n\n## 4. Chỉ mục\n{START}\n| cũ | bảng |\nchữ cũ\n{END}\nđuôi giữ nguyên\n"
+        cases = (("contexts", None, "", ("ship", "checkout")),
+                 ("contexts", "../README.md", "specs/", ("ship", "checkout")),
+                 ("layers", None, "use-cases/", ("checkout", "ship")))
+        for layout, readme_file, prefix, order in cases:
+            with self.subTest(layout=layout, readme=readme_file):
+                self.root = tempfile.mkdtemp()
+                path = self.tree(layout, readme_file, text)
+                self.gen()
+                want = f"# Specs\n\n## 4. Chỉ mục\n{START}\n{self.table(prefix, order)}\n{END}\nđuôi giữ nguyên\n"
+                self.assertEqual(self.readme(path), want)
+                self.assertNotIn("UC-501", self.readme(path))
+                trace = self.readme(os.path.join(self.root, "specs", "traceability.md"))
+                self.assertLess(trace.index("[UC-" + ("901" if order[0] == "ship" else "101")),
+                                trace.index("[UC-" + ("101" if order[0] == "ship" else "901")))
+                self.gen()
+                self.assertEqual(self.readme(path), want)
+
+    def test_incomplete_or_reversed_markers_leave_readme_unchanged_with_message(self):
+        for text in (f"# Specs\n{START}\nx\n", f"# Specs\nx\n{END}\n", f"# Specs\n{END}\nx\n{START}\n",
+                     f"# Specs\n{START}\n{START}\nx\n{END}\n"):
+            with self.subTest(text=text):
+                path = self.tree("contexts", None, text)
+                res = self.gen()
+                self.assertEqual(self.readme(path), text)
+                self.assertIn("README: uc-index markers incomplete", res.stdout)
+
+    def test_no_markers_leaves_readme_unchanged(self):
+        text = "# Specs\n\n| UC | Tên | Status |\n|---|---|---|\n"
+        path = self.tree("contexts", None, text)
+        res = self.gen()
+        self.assertEqual(self.readme(path), text)
+        self.assertNotIn("uc-index", res.stdout)
+
+    def test_template_readme_has_marker_pair_in_section_4(self):
+        with open(os.path.join(SCRIPTS, "..", "assets", "templates", "specs-readme.md"), encoding="utf-8") as fh:
+            text = fh.read()
+        sec4 = text.split("\n## 4.", 1)[1].split("\n## ", 1)[0]
+        self.assertEqual(text.count(START), 1)
+        self.assertEqual(text.count(END), 1)
+        self.assertLess(sec4.index(START), sec4.index(END))
+
+
+class AuditReadmeContexts(unittest.TestCase):
+    """audit.py lists contexts the README never links to (UC-303 AC-5)."""
+
+    def setUp(self):
+        self.root = tempfile.mkdtemp()
+
+    def audit(self, layout, readme, readme_file=None):
+        base = "specs/use-cases/" if layout == "layers" else "specs/"
+        cfg = f"version: 1\nlanguage: vi\nspecs_dir: specs\nlayout: {layout}\n"
+        if layout == "contexts":
+            cfg += "contexts:\n  - id: ship\n  - id: checkout\n"
+        if readme_file:
+            cfg += f"readme:\n  file: {readme_file}\n"
+        write_tree(self.root, {
+            "specs/mk-specs.yml": cfg,
+            base + "ship/UC-901-trien-khai.md": uc_text("UC-901", "Triển khai", "draft"),
+            base + "checkout/UC-101-dat.md": uc_text("UC-101", "Đặt", "draft"),
+        })
+        if readme is not None:
+            path = os.path.join(self.root, "specs", readme_file or "README.md")
+            write_tree(self.root, {os.path.relpath(path, self.root): readme})
+        res = run("audit.py", self.root)
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+        return res.stdout
+
+    def section(self, out):
+        return out.split("## Contexts missing from README:", 1)[1].split("\n## ", 1)[0]
+
+    def test_contexts_layout_lists_unlinked_context(self):
+        out = self.audit("contexts", "# Specs\n[UC-901](ship/UC-901-trien-khai.md)\n[checkout](checkout)\n")
+        self.assertIn("## Contexts missing from README: 1\n- checkout\n", out)
+        self.assertNotIn("- ship", self.section(out))
+
+    def test_all_linked_gives_zero_in_both_layouts(self):
+        out = self.audit("contexts", "[a](ship/UC-901-trien-khai.md) · [b](checkout/README.md)\n")
+        self.assertIn("## Contexts missing from README: 0\n", out)
+        self.root = tempfile.mkdtemp()
+        out = self.audit("layers", "[a](use-cases/ship/x.md) · [b](use-cases/checkout/)\n")
+        self.assertIn("## Contexts missing from README: 0\n", out)
+
+    def test_layers_ids_and_paths_relative_to_readme_dir(self):
+        out = self.audit("layers", "[a](ship/UC-901-trien-khai.md) · [b](use-cases/checkout/)\n")
+        self.assertIn("## Contexts missing from README: 1\n- use-cases/ship\n", out)
+        self.root = tempfile.mkdtemp()
+        out = self.audit("contexts", "[a](ship/x.md) · [b](specs/checkout/x.md)\n", "../README.md")
+        self.assertIn("## Contexts missing from README: 1\n- ship\n", out)
+
+    def test_no_readme_is_skipped(self):
+        out = self.audit("contexts", None)
+        self.assertIn("## Contexts missing from README: skipped (no README)\n", out)
+
+
 class SkillFrontmatter(unittest.TestCase):
     def setUp(self):
         self.skill_dir = os.path.dirname(SCRIPTS)

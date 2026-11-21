@@ -122,6 +122,11 @@ Lập bảng nháp (đưa vào báo cáo mục `## Bề mặt tấn công`):
 | `thấp` | ảnh hưởng hẹp, khó khai thác, hoặc chỉ lộ thông tin phụ trợ |
 | sàn | vi phạm AC bảo mật đang chạy (Loại `code sai AC`) → không dưới `trung bình`, kể cả khi dòng trên cho `thấp`; `secu.py check` chặn `code sai AC` + `thấp` chưa có `- Đã sửa:` |
 
+`RESOURCE` không dùng bảng trên: tính chi phí **một** yêu cầu với đầu vào lớn nhất máy chủ nhận (trần body/giải nén
+thấy được trong repo; không thấy trần → coi đầu vào ≥ 1 GB). ≥ 1 GB bộ nhớ hoặc ≥ 60 giây CPU → `cao`; ≥ 10 MB bộ nhớ
+hoặc ≥ 1 giây CPU → `trung bình`; dưới mức đó → không phải phát hiện (bỏ). Ghi con số đã tính ở `- Hậu quả:` (vd
+"trần giải nén 50 MB, giải nén trọn vào bộ nhớ → ~50 MB mỗi yêu cầu"; "không thấy trần, đọc trọn body → ≥ 1 GB").
+
 Một gốc lỗi vi phạm nhiều AC → một phát hiện, `- AC:` nêu đủ các AC đó; mỗi AC bị vi phạm phải có ở `- AC:` của ít
 nhất một phát hiện.
 
@@ -132,7 +137,11 @@ nhất một phát hiện.
 1. `- Spec: chưa có` → `chưa có spec`. Gợi ý mk-specs để có AC làm thước.
 2. Bí mật trong git, cấu hình triển khai, phụ thuộc → `hạ tầng`. Bí mật: ghi thêm "thu hồi/đổi khoá là việc của chủ
    dự án, ngoài repo"; mk-fix chỉ ghi `- Đã sửa:` sau khi người dùng xác nhận đã đổi khoá.
-3. Có AC bảo mật **đang chạy** mà code vi phạm → `code sai AC`, `- AC: <UC-ID> AC-n`.
+3. Có AC bảo mật **đang chạy** mà code vi phạm → `code sai AC`, `- AC: <UC-ID> AC-n`. Cả khi lỗi cho người kém tin
+   tự nâng vai/quyền (vd `MASS-ASSIGN` nhận `role`): có AC đang chạy mà Then sai khi người đó đã nâng (vd "khách làm
+   thao tác của nhân viên thì bị từ chối") → `code sai AC`, `- AC:` nêu AC đó; không AC nào bị sai → xét tiếp (thường
+   `thiếu AC`). `- Lớp:` vẫn theo bảng chọn mã (vẫn `MASS-ASSIGN`); dòng này chỉ quyết `- Loại:`. Mức theo sàn ở §7
+   (không dưới `trung bình`).
 4. AC có và **nói rõ** điều nguy hiểm là đúng (vd "ai có link đều xem được hoá đơn", "lấy ảnh từ mọi địa chỉ, kể cả
    mạng nội bộ") → `luật sai`, `- AC:` trỏ AC đó; nêu câu hỏi cho chủ nghiệp vụ (bối cảnh · phương án · AC liên quan ·
    hệ quả). Không tự sửa AC.
@@ -166,7 +175,9 @@ Số AC mới = số lớn nhất trong UC + 1. Nhiều phát hiện thiếu AC 
 - Đường dẫn: `<specs_dir>/security/<yyMMdd>-<slug>.md` (slug ngắn: `soat-toan-repo`, `soat-thanh-toan`). Tham chiếu
   một phát hiện ra ngoài: `<yyMMdd-slug> SEC-n`.
 - Thư mục `<specs_dir>/security/` chưa có → cảnh báo công bố trước khi ghi báo cáo **và** proposal nháp (SKILL.md,
-  cổng cứng 6).
+  cổng cứng 6). Không có công cụ hỏi người dùng trong phiên (chạy tự động, agent con) hoặc người dùng đã dặn không hỏi
+  → không thêm dòng nào vào `.git/info/exclude`; dòng đầu của `## Tóm tắt` là cảnh báo công bố: "Báo cáo nêu lỗ hổng
+  chưa sửa; repo công khai thì đừng commit báo cáo và proposal nháp."
 - Dùng `assets/report.md.template`; điền hết `<…>`; xoá khối phát hiện mẫu không dùng.
 - Chỉ `xác nhận` có `- Mức:`, `- Loại:`; `cần kiểm thêm` có `- Còn thiếu:`; `bác bỏ` có `- Lý do bác:`.
 - Bí mật: giữ ≤ 4 ký tự đầu rồi `••••` (`abcd••••`). Không chép chuỗi kết nối có mật khẩu, khoá riêng, token.

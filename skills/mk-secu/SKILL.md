@@ -63,7 +63,9 @@ checkout. `--thay-doi a..b` chỉ lấy file sửa/thêm giữa hai mốc (`audi
    proposal nháp, nói: báo cáo chứa lỗ hổng **chưa sửa**, proposal nháp viết từ phát hiện cũng hé lộ chúng; commit vào
    repo công khai là công bố. Đề xuất thêm dòng `<specs_dir>/security/` vào `.git/info/exclude` và giữ proposal nháp
    chưa commit tới khi sửa xong (proposal chỉ nêu luật "Then KHÔNG …", không tả cách khai thác); chỉ thêm khi người dùng
-   đồng ý.
+   đồng ý. Không có công cụ hỏi người dùng trong phiên (chạy tự động, agent con) hoặc người dùng đã dặn không hỏi →
+   không đụng `.git/info/exclude`; dòng đầu `## Tóm tắt` của báo cáo là cảnh báo công bố (báo cáo nêu lỗ hổng chưa
+   sửa; repo công khai thì đừng commit).
 7. **Không nói "an toàn".** Báo cáo có `- Phạm vi:` (lệnh `scope` đã dùng, số file) và `## Chưa soát` (gồm mọi file
    `BỎ QUA`); kết luận chỉ cho phần đã soát.
 8. **`secu.py check` thoát 0 trước khi báo xong.**

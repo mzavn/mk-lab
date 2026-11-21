@@ -49,7 +49,9 @@ EVIDENCE = """
 
 
 def run(*args, cwd=None):
-    return subprocess.run([sys.executable, GATE, *args], capture_output=True, text=True, cwd=cwd)
+    # default cwd has no specs/: the UC-file checks run only where a test writes specs/mk-specs.yml
+    return subprocess.run([sys.executable, GATE, *args], capture_output=True, text=True,
+                          cwd=cwd or tempfile.gettempdir())
 
 
 class Gate(unittest.TestCase):
@@ -257,6 +259,103 @@ class Gate(unittest.TestCase):
         res = run("261027-don-hang", "--root", self.root)
         self.assertEqual(res.returncode, 0, res.stdout)
         self.assertIn("ORD-12: AC-1", res.stdout)
+
+    def project(self, specs_dir="specs"):
+        os.makedirs(os.path.join(self.root, "specs"), exist_ok=True)
+        with open(os.path.join(self.root, "specs", "mk-specs.yml"), "w", encoding="utf-8") as fh:
+            fh.write(f"version: 1\nspecs_dir: {specs_dir}\nids:\n  uc: 'UC-\\d{{3}}'\n")
+
+    def uc_file(self, rel, acs, extra=""):
+        path = os.path.join(self.root, "specs", rel)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        heads = "".join(f"\n### {a}\n- Given a\n- When b\n- Then c\n" for a in acs)
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(f"# UC-201: Đặt\n- Status: implemented\n\n## History\n- v1\n{extra}\n"
+                     f"## Main Flow\n### AC-50: tiêu đề ngoài mục AC không tính\n\n## Acceptance Criteria\n{heads}"
+                     "```\n### AC-60: ví dụ trong khối code\n```\n")
+
+    def gate(self, changes, done=False):
+        evidence = "\n## Bằng chứng nghiệm thu\n- AC ↔ Test: UC-201 AC-9, AC-12, AC-14 ↔ `t`\n" if done else ""
+        self.write(body=self.spec_body(changes) + evidence)
+        return run(self.change, *(["--done"] if done else []), "--root", self.root)
+
+    def test_added_ac_already_in_the_uc_file_is_blocked_with_the_next_number(self):
+        self.project()
+        taken = ("CHẶN: AC-9 đã có trong UC-201 — dùng số kế: AC-12 (nếu đang viết sẵn UC này cho change này: "
+                 "thêm dòng History trỏ `changes/archive/261027-don-hang/proposal.md`)")
+        for acs in (["AC-9", "AC-10", "AC-11"], ["AC-9: cũ (deprecated v3: bỏ)", "AC-10", "AC-11"]):
+            self.uc_file("cook/UC-201-dat.md", acs)
+            for changes in ("### UC-201\n- ADDED AC-9: Given a When b Then c\n",
+                            "### UC-201 (mới)\n- AC-9: Given a When b Then c\n"):
+                for done in (False, True):
+                    res = self.gate(changes, done)
+                    self.assertEqual(res.returncode, 1, changes + res.stdout)
+                    self.assertIn(taken, res.stdout)
+        res = self.gate("### UC-201\n- ADDED AC-12: Given a When b Then c\n")
+        self.assertEqual(res.returncode, 0, res.stdout)
+        for outside in ("AC-50", "AC-60"):  # headings outside `## Acceptance Criteria` or in a fence are not AC
+            res = self.gate(f"### UC-201\n- ADDED {outside}: Given a When b Then c\n")
+            self.assertEqual(res.returncode, 0, outside + res.stdout)
+        for skipped in ("changes/261027-don-hang/UC-202-x.md", "_templates/UC-202.md", "templates/UC-202-y.md"):
+            self.uc_file(skipped, ["AC-1"])
+        res = self.gate("### UC-202\n- ADDED AC-1: Given a When b Then c\n")
+        self.assertEqual(res.returncode, 0, res.stdout)  # UC files under changes/ and template folders do not count
+
+    def test_uc_drafted_for_this_change_skips_only_the_taken_number_check(self):
+        self.project()
+        mine = "- v2 (change [x](../changes/archive/261027-don-hang/proposal.md))\n"
+        self.uc_file("cook/UC-201-dat.md", ["AC-9", "AC-10", "AC-11"], extra=mine)
+        for done in (False, True):
+            res = self.gate("### UC-201\n- ADDED AC-9: Given a When b Then c\n", done)
+            self.assertEqual(res.returncode, 0, res.stdout)
+        self.uc_file("cook/UC-201-dat.md", ["AC-9", "AC-9", "AC-10"], extra=mine)
+        res = self.gate("### UC-201\n- ADDED AC-9: Given a When b Then c\n")
+        self.assertEqual(res.returncode, 1, res.stdout)
+        self.assertIn("hai tiêu đề `### AC-9`", res.stdout)
+        self.uc_file("cook/UC-201-dat.md", ["AC-9"], extra=mine.replace("261027-don-hang", "261027-khac"))
+        res = self.gate("### UC-201\n- ADDED AC-9: Given a When b Then c\n")
+        self.assertIn("AC-9 đã có trong UC-201 — dùng số kế: AC-10", res.stdout)  # another change's draft
+
+    def test_modified_or_deprecated_ac_must_exist_in_a_real_uc(self):
+        self.project()
+        for done in (False, True):
+            for kind in ("MODIFIED", "DEPRECATED"):
+                res = self.gate(f"### UC-201\n- {kind} AC-14: a → b\n", done)
+                self.assertEqual(res.returncode, 1, kind + res.stdout)
+                self.assertIn("CHẶN: không thấy file UC-201 — MODIFIED/DEPRECATED cần UC có thật", res.stdout)
+            res = self.gate("### UC-201\n- MODIFIED AC-14: a\n- DEPRECATED AC-15: b\n", done)
+            self.assertEqual(res.stdout.count("không thấy file UC-201"), 1, res.stdout)
+            res = self.gate("### UC-201\n- ADDED AC-14: Given a When b Then c\n", done)
+            self.assertEqual(res.returncode, 0, res.stdout)  # a new UC has no file yet
+        self.uc_file("cook/UC-201-dat.md", ["AC-13"])
+        for done in (False, True):
+            for kind in ("MODIFIED", "DEPRECATED"):
+                res = self.gate(f"### UC-201\n- {kind} AC-14: a → b\n", done)
+                self.assertEqual(res.returncode, 1, kind + res.stdout)
+                self.assertIn("CHẶN: UC-201 không có AC-14", res.stdout)
+        self.uc_file("cook/UC-201-dat.md", ["AC-14"])
+        res = self.gate("### UC-201\n- MODIFIED AC-14: a → b\n")
+        self.assertEqual(res.returncode, 0, res.stdout)
+
+    def test_several_files_with_one_uc_id_are_read_together(self):
+        self.project()
+        self.uc_file("cook/UC-201-dat.md", ["AC-1", "AC-2"])
+        self.uc_file("cu/UC-201.md", ["AC-9"])
+        res = self.gate("### UC-201\n- MODIFIED AC-1: a\n- MODIFIED AC-9: b\n")
+        self.assertEqual(res.returncode, 0, res.stdout)
+        res = self.gate("### UC-201\n- ADDED AC-2: Given a When b Then c\n")
+        self.assertIn("AC-2 đã có trong UC-201 — dùng số kế: AC-10", res.stdout)
+
+    def test_no_config_or_missing_specs_dir_skips_the_uc_file_checks(self):
+        self.uc_file("cook/UC-201-dat.md", ["AC-9"])
+        changes = "### UC-201\n- ADDED AC-9: Given a When b Then c\n- MODIFIED AC-14: a\n### UC-202\n- MODIFIED AC-1: a\n"
+        res = self.gate(changes)
+        self.assertEqual(res.returncode, 0, res.stdout)  # no specs/mk-specs.yml
+        self.project(specs_dir="khong-co")
+        res = self.gate(changes)
+        self.assertEqual(res.returncode, 0, res.stdout)
+        self.project()
+        self.assertEqual(self.gate(changes).returncode, 1)
 
 
 if __name__ == "__main__":
