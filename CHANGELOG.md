@@ -12,6 +12,27 @@ Cập nhật: `bash ~/.mk-lab/install.sh --update`. Agent cũng tự nhắc khi 
 
 Dự kiến: v2.8.0
 
+### mk-cook
+
+**Sửa**
+
+- **Cổng chặn AC trùng số**: proposal thêm `AC-9` mà ca sử dụng đã có `AC-9` (kể cả AC đã bỏ) → `gate.py` chặn và gợi ý số kế tiếp; sửa hay bỏ một AC không có thật cũng bị chặn. Ca sử dụng đang viết sẵn cho chính thay đổi đó không bị chặn nhầm.
+- **Chưa qua cổng thì không làm trước**: agent không tạo file nào (kể cả test nháp, script thử) ngoài thư mục thay đổi cho tới khi cổng cho qua. Khi sửa proposal, agent thay đúng từng mục theo tiêu đề, không cắt nhầm.
+
+### mk-fix
+
+**Sửa**
+
+- **Repo chỉ có PRD**: mk-fix không còn coi nhầm là repo đặc tả đầy đủ. `ac.py` báo rõ, agent chỉ ra story trong PRD và hỏi bạn có muốn sửa theo story đó không — không tự sửa, không viết đề xuất.
+
+### mk-specs
+
+**Mới**
+
+- **Bảng chỉ mục ca sử dụng tự cập nhật**: đặt cặp dấu `<!-- mk-specs:uc-index:start -->` / `<!-- mk-specs:uc-index:end -->` trong `specs/README.md`, `gen.py` tự điền bảng (mẫu mới đã có sẵn).
+- `audit.py` báo vùng nghiệp vụ (context) nào chưa có dòng trong README.
+- Mẫu PRD có hướng dẫn sửa lỗi ở story đã xong.
+
 ### mk-secu
 
 **Mới**
@@ -21,6 +42,7 @@ Dự kiến: v2.8.0
 - **App có nhiều ca sử dụng** được đọc theo từng luồng (từ điểm vào tới chỗ lưu dữ liệu), rồi một lượt so chéo giữa các luồng.
 - **Code vi phạm luật bảo mật đã ghi trong spec** không bao giờ bị xếp mức thấp; `secu.py check` chặn khi điều này bị quên.
 - **Soát trước phát hành theo khoảng**: `secu.py scope --thay-doi v1..v2`.
+- **Kết quả ổn định hơn giữa các model**: lỗi cho người dùng tự nâng quyền xếp theo luật đã ghi trong spec; mức của lỗi làm cạn tài nguyên tính theo con số chi phí cụ thể; khi agent chạy tự động không hỏi được bạn, cảnh báo công bố báo cáo nằm ngay dòng đầu.
 
 ## v2.7.0 — 21/11/2026
 
